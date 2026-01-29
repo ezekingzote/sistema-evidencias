@@ -43,7 +43,7 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('asignar-materias')->group(function () {
             Route::get('/', [AsignarMaterias::class, 'index'])->name('asignar-materias');
-            Route::get('/create', [AsignarMaterias::class, 'create'])->name('asignar-una-materia');
+            Route::get('/create', [AsignarMaterias::class, 'asignar'])->name('asignar-una-materia');
             Route::get('/agregar', [AsignarMaterias::class, 'agregar'])->name('agregar-materia');
         });
 

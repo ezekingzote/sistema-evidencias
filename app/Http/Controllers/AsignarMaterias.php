@@ -13,9 +13,15 @@ class AsignarMaterias extends Controller
     }
 
     public function agregar(){
-        $titulo = 'Asignar Docente';
+        $titulo = 'Crear Materia';
 
         return view('modules.asignar-materias.create', compact('titulo'));
+    }
+
+    public function asignar(){
+        $titulo = 'Asignar Docente';
+
+        return view('modules.asignar-materias.asignar', compact('titulo'));
     }
     
 }
