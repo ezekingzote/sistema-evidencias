@@ -13,7 +13,7 @@
                 </ol>
             </nav>
         </div><!-- End Page Title -->
-        <a href="{{ route('nueva-materia') }}" class="btn btn-outline-primary"><i class="fa-solid fa-plus"></i> Nueva Materia</a>
+        <a href="{{ route('agregar-materia') }}" class="btn btn-outline-primary"><i class="fa-solid fa-plus"></i> Nueva Materia</a>
         <hr>
         <section class="section">
         <div class="row">

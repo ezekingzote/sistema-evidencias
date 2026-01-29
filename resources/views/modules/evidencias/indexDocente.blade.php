@@ -15,7 +15,7 @@
       </ol>
     </nav>
   </div><!-- End Page Title -->
-  <a href="./evidencias-docente-create.php" class="btn btn-outline-dark"><i class="fa-solid fa-circle-plus"></i> Subir nueva evidencia</a>
+  <a href="{{ route('agregar-evidencia') }}" class="btn btn-outline-dark"><i class="fa-solid fa-circle-plus"></i> Subir nueva evidencia</a>
   <hr>
   <div class="row">
     <div class="col-lg-12">

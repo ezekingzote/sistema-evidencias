@@ -13,10 +13,6 @@ class Materias extends Controller
         return view('modules.materias.index', compact('titulo'));
     }
 
-    public function create()
-    {
-        $titulo = 'Crear Docente';
-    }
 
     public function misMaterias()
     {

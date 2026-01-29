@@ -6,6 +6,7 @@ use App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Docentes;
 use App\Http\Controllers\Evidencias;
 use App\Http\Controllers\Materias;
+use App\Http\Controllers\PlanesEstudio;
 use App\Http\Controllers\Semestres;
 use Illuminate\Support\Facades\Route;
 
@@ -43,6 +44,7 @@ Route::middleware('auth')->group(function () {
         Route::prefix('asignar-materias')->group(function () {
             Route::get('/', [AsignarMaterias::class, 'index'])->name('asignar-materias');
             Route::get('/create', [AsignarMaterias::class, 'create'])->name('asignar-una-materia');
+            Route::get('/agregar', [AsignarMaterias::class, 'agregar'])->name('agregar-materia');
         });
 
 
@@ -62,6 +64,7 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('mis-evidencias')->group(function () {
             Route::get('/', [Evidencias::class, 'indexDocente'])->name('mis-evidencias');
+            Route::get('/agregar', [Evidencias::class, 'agregarEvidencia'])->name('agregar-evidencia');
         });
 
         Route::prefix('mis-materias')->group(function () {
@@ -69,8 +72,10 @@ Route::middleware('auth')->group(function () {
         });
 
         Route::prefix('planes-estudio')->group(function () {
-            Route::get('/', [Materias::class, 'planesEstudio'])->name('planes-estudio');
+            Route::get('/', [PlanesEstudio::class, 'index'])->name('planes-estudio');
+            Route::get('/agregar', [PlanesEstudio::class, 'agregar'])->name('agregar-plan-estudio');
         });
+        
     });
 
 });
