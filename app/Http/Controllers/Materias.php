@@ -16,7 +16,7 @@ class Materias extends Controller
 
     public function misMaterias()
     {
-        $titulo = 'Crear Docente';
+        $titulo = 'Agregar Docente';
 
         return view('modules.materias.misMaterias', compact('titulo'));
     }
