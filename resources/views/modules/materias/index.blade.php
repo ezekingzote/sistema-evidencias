@@ -12,55 +12,89 @@
                     <li class="breadcrumb-item active">Materias</li>
                 </ol>
             </nav>
-        </div><!-- End Page Title -->
-        <a href="{{ route('agregar-materia') }}" class="btn btn-outline-primary"><i class="fa-solid fa-plus"></i> Nueva Materia</a>
+        </div>
+
+        <a href="{{ route('nueva-materia') }}" class="btn btn-outline-primary"><i class="fa-solid fa-plus"></i> Nueva
+            Materia</a>
         <hr>
         <section class="section">
-        <div class="row">
-            <div class="col-lg-12">
+            <div class="row">
+                <div class="col-lg-12">
 
-                <div class="card">
-                    <div class="card-body">
+                    <div class="card">
+                        <div class="card-body">
 
-                        <table class="table datatable text-center">
-                            <thead>
-                                <tr>
-                                    <th>NOMBRE</th>
-                                    <th>CARRERA</th>
-                                    <th>SEMESTRE</th>
-                                    <th>CLAVE</th>
-                                    <th>N UNIDADES</th>
-                                    <th>Activo</th>
-                                    <th>Editar</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbody-usuarios">
-                                <tr>
-                                    <td>Inteligencia Artificial</td>
-                                    <td>Ing. Sistemas</td>
-                                    <td>9no</td>
-                                    <td>IASIS9</td>
-                                    <td>5</td>
+                            <table class="table datatable text-center">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center">NOMBRE</th>
+                                        <th class="text-center">CLAVE</th>
+                                        <th class="text-center">N UNIDADES</th>
+                                        <th class="text-center">CARRERA</th>
+                                        <th class="text-center">SEMESTRE</th>
+                                        <th class="text-center">ACTIVO</th>
+                                        <th class="text-center">ACCIONES</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-usuarios" class="text-center">
+                                    @include('modules.materias.tbody')
+                                </tbody>
 
-                                    <td>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="">
-                                        </div>
-                                    </td>
+                            </table>
 
-                                    <td>
-                                        <a href=""
-                                            class="btn btn-outline-warning"><i class="fa-solid fa-user-pen"></i></a>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-
+                        </div>
                     </div>
-                </div>
 
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
     </main>
 @endsection
+
+@push('scripts')
+    <script>
+        function recargar_tbody() {
+            $.ajax({
+                type: 'GET',
+                url: "{{ route('materias.tbody') }}",
+                success: function(respuesta) {
+                    $('#tbody-usuarios').html(respuesta);
+                }
+            });
+        }
+
+        function cambiar_estado(id, estado) {
+            $.ajax({
+                type: 'GET',
+                url: "{{ url('materias/cambiar-estado') }}/" + id + "/" + estado,
+                success: function(respuesta) {
+                    if (respuesta == 1) {
+                        Swal.fire({
+                            title: 'Éxito',
+                            text: 'Cambio de estado exitoso',
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar'
+                        });
+                        recargar_tbody();
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'No se pudo cambiar el estado',
+                            icon: 'error',
+                            confirmButtonText: 'Aceptar'
+                        });
+                    }
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            // Usamos delegación de eventos para que funcione tras recargar el tbody
+            $('#tbody-usuarios').on("change", ".form-check-input", function() {
+                let id = $(this).attr("id");
+                let estado = $(this).is(":checked") ? 1 : 0;
+                cambiar_estado(id, estado);
+            });
+        });
+    </script>
+@endpush

@@ -18,7 +18,7 @@ Route::post('/logear', [AuthController::class, 'logear'])->name('logear');
 
 // Rutas Protegidas por Autenticación
 Route::middleware('auth')->group(function () {
-    
+
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // ==========================================
@@ -26,7 +26,7 @@ Route::middleware('auth')->group(function () {
     // ==========================================
     Route::middleware('Checkrol:admin')->group(function () {
         Route::get('/home', [Dashboard::class, 'index'])->name('home');
-        
+
         Route::prefix('evidencias')->group(function () {
             Route::get('/', [Evidencias::class, 'index'])->name('evidencias');
             Route::get('/review', [Evidencias::class, 'review'])->name('review-evidencia');
@@ -43,16 +43,21 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('asignar-materias')->group(function () {
             Route::get('/', [AsignarMaterias::class, 'index'])->name('asignar-materias');
-            Route::get('/create', [AsignarMaterias::class, 'asignar'])->name('asignar-una-materia');
             Route::get('/agregar', [AsignarMaterias::class, 'agregar'])->name('agregar-materia');
         });
 
 
-        Route::prefix('materias')->group(function (){
+        Route::prefix('materias')->group(function () {
             Route::get('/', [Materias::class, 'index'])->name('materias');
             Route::get('/create', [Materias::class, 'create'])->name('nueva-materia');
+            Route::post('/store', [Materias::class, 'store'])->name('materias.store');
+            Route::get('/edit/{id}', [Materias::class, 'edit'])->name('materias.edit');
+            Route::put('/update/{id}', [Materias::class, 'update'])->name('materias.update');
+            Route::get('/tbody', [Materias::class, 'tbody'])->name('materias.tbody');
+            Route::get('/cambiar-estado/{id}/{estado}', [Materias::class, 'estado'])->name('materias.estado');
+            Route::get('/show/{id}', [Materias::class, 'show'])->name('materias.show');
+            Route::delete('/destroy/{id}', [Materias::class, 'destroy'])->name('materias.destroy');
         });
-
     });
 
     // ==========================================
@@ -75,7 +80,5 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [PlanesEstudio::class, 'index'])->name('planes-estudio');
             Route::get('/agregar', [PlanesEstudio::class, 'agregar'])->name('agregar-plan-estudio');
         });
-        
     });
-
 });
