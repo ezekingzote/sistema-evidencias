@@ -6,14 +6,18 @@ use App\Models\Materia;
 use App\Models\Semestre;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class Semestres extends Controller
 {
     public function index()
     {
         $titulo = 'Semestres';
-
-        return view('modules.semestres.index', compact('titulo'));
+        $semestres = Semestre::withCount('materias')->get();
+        return view('modules.semestres.index', compact(
+            'titulo',
+            'semestres'
+        ));
     }
 
     public function create()
@@ -26,15 +30,23 @@ class Semestres extends Controller
     public function store(Request $request)
     {
         try {
-            $item = new Semestre();
-            $item->nombre = $request->nombre;
-            $item->anio = $request->anio;
-            $item->carrera = $request->carrera;
-            $item->materia_id = $request->materias_select;
-            $item->save();
-            return to_route('semestres')->with('success', 'Semestre registrado con éxito!!!');
+
+            DB::beginTransaction();
+            $item = Semestre::create([
+                'nombre'  => $request->nombre,
+                'anio'    => $request->anio,
+                'carrera' => $request->carrera,
+            ]);
+            if ($request->has('materias_select')) {
+                $item->materias()->sync($request->materias_select);
+            }
+            DB::commit();
+            return to_route('semestres')
+                ->with('success', 'Semestre registrado con éxito!!!');
         } catch (Exception $e) {
-            return to_route('semestres')->with('error', 'No se pudo guardar!!!' . $e->getMessage());
+            DB::rollBack();
+            return to_route('semestres')
+                ->with('error', 'No se pudo guardar!!! ' . $e->getMessage());
         }
     }
 }

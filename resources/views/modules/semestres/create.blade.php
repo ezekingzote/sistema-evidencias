@@ -17,7 +17,7 @@
         </nav>
         </div>
         <section class="section">
-            <form action="#" id="formMateria" method="POST">
+            <form action="{{ route('semestre.store') }}" id="formMateria" method="POST">
                 @csrf
                 <div class="row g-3">
 
@@ -58,7 +58,7 @@
 
                     <div class="col-8">
                         <label class="form-label fw-bold" for="materias_select">Materias</label>
-                        <select id="materias_select" class="js-example-basic-multiple form-select" name="materias[]"
+                        <select id="materias_select" class="js-example-basic-multiple form-select" name="materias_select[]"
                             multiple required>
                             @foreach ($materias as $materia)
                                 @if ($materia->activo == 1)

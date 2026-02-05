@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('semestres', function (Blueprint $table) {
+        Schema::create('materia_semestre', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre');
-            $table->integer('anio');
-            $table->string('carrera', 70);
-            $table->boolean('activo');
+            $table->foreignId('semestre_id')
+                ->constrained()
+                ->cascadeOnDelete();
+            $table->foreignId('materia_id')
+                ->constrained()
+                ->cascadeOnDelete();
             $table->timestamps();
         });
     }
@@ -26,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('semestres');
+        Schema::dropIfExists('materia_semestre');
     }
 };
