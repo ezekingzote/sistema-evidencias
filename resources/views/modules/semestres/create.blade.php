@@ -12,10 +12,10 @@
                     <li class="breadcrumb-item active">Registrar nuevo semestre</li>
                 </ol>
             </nav>
-        </div><!-- End Page Title -->
+        </div>
         <nav>
         </nav>
-        </div><!-- End Page Title -->
+        </div>
         <section class="section">
             <form action="#" id="formMateria" method="POST">
                 @csrf
@@ -24,17 +24,16 @@
                     <div class="col-12">
                         <label class="form-label fw-bold" for="nombre">Nombre del semestre</label>
                         <input oninput="this.value = this.value.toUpperCase();" name="nombre" id="nombre" type="text"
-                            class="form-control" placeholder="Ej. Estructura de Datos" required>
+                            class="form-control" placeholder="Ej. 2026-1" required>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label fw-bold" for="clave">Año del semestre</label>
-                        <input oninput="this.value = this.value.toUpperCase();" name="clave" id="clave" type="text"
-                            class="form-control" placeholder="AED-128" required>
+                        <label class="form-label fw-bold" for="anio">Año del semestre</label>
+                        <input oninput="this.value = this.value.toUpperCase();" name="anio" id="anio" type="text"
+                            class="form-control" placeholder="2026" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-bold" for="carrera" for="carrera">Seleccione el Año ciclo
-                            escolar</label>
+                        <label class="form-label fw-bold" for="carrera">Seleccione la carrera</label>
                         <select id="carrera" name="carrera" class="form-select" required>
                             <option value="" selected disabled>Seleccione la carrera correspondiente...</option>
                             <option value="INGENIERIA EN SISTEMAS COMPUTACIONALES">INGENIERIA EN SISTEMAS COMPUTACIONALES
@@ -44,11 +43,30 @@
                             <option value="LICENCIATURA EN TURISMO">LICENCIATURA EN TURISMO</option>
                         </select>
                     </div>
-                    <div class="col-12">
-                        <label class="form-label fw-bold">Estados</label>
-                        <select class="js-example-basic-multiple form-select" name="states[]" multiple>
-                            <option value="AL">Alabama</option>
-                            <option value="WY">Wyoming</option>
+
+                    <div class="col-4">
+                        <label class="form-label fw-bold" for="semestre">Seleccione el Semestre</label>
+                        <select id="semestre" name="semestre" class="form-select" required>
+                            <option value="" selected disabled>Seleccione el semestre</option>
+                            @for ($i = 1; $i <= 9; $i++)
+                                <option value="{{ $i }}">
+                                    {{ $i }}{{ $i == 1 ? 'er' : ($i == 2 ? 'do' : ($i == 3 ? 'er' : 'to')) }}
+                                    Semestre</option>
+                            @endfor
+                        </select>
+                    </div>
+
+                    <div class="col-8">
+                        <label class="form-label fw-bold" for="materias_select">Materias</label>
+                        <select id="materias_select" class="js-example-basic-multiple form-select" name="materias[]"
+                            multiple required>
+                            @foreach ($materias as $materia)
+                                @if ($materia->activo == 1)
+                                    <option value="{{ $materia->id }}" data-semestre="{{ $materia->semestre }}">
+                                        {{ $materia->clave }} - {{ $materia->nombre }}
+                                    </option>
+                                @endif
+                            @endforeach
                         </select>
                     </div>
 
@@ -64,13 +82,39 @@
         </section>
     </main>
 @endsection
+
 @push('scripts')
+
     <script>
         $(document).ready(function() {
-            $('.js-example-basic-multiple').select2({
+            const $materias = $('.js-example-basic-multiple');
+            const opcionesOriginales = $materias.find('option').clone();
+
+            $materias.select2({
                 theme: 'bootstrap-5',
                 width: '100%'
             });
+
+            $('#semestre').on('change', function() {
+                const semestreSeleccionado = $(this).val();
+                const seleccionadas = $materias.val() || [];
+                $materias.empty();
+                opcionesOriginales.each(function() {
+                    const semestreMateria = $(this).data('semestre');
+                    const idMateria = $(this).val();
+                    if (
+                        semestreMateria == semestreSeleccionado ||
+                        seleccionadas.includes(idMateria)
+                    ) {
+                        $materias.append($(this));
+                    }
+                });
+
+                $materias.val(seleccionadas);
+                $materias.trigger('change');
+            });
+
         });
     </script>
+
 @endpush
