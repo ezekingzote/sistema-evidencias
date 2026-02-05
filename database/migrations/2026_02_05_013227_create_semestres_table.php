@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('nombre');
             $table->integer('anio');
-            $table->string('carrera', 70);
-            $table->boolean('activo');
+            $table->string('periodo');
+            $table->boolean('activo')->default(false);
             $table->timestamps();
         });
     }

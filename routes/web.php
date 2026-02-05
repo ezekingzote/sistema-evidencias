@@ -36,8 +36,14 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [Semestres::class, 'index'])->name('semestres');
             Route::get('/create', [Semestres::class, 'create'])->name('crear-semestre');
             Route::post('/store', [Semestres::class, 'store'])->name('semestre.store');
-            Route::post('/semestres/toggle/{id}', [Semestres::class, 'toggle'])->name('semestres.toggle');
+            Route::get('/cards', [Semestres::class, 'cards'])->name('semestres.cards');
+            Route::get('/cambiar-estado/{id}/{estado}', [Semestres::class, 'estado'])->name('semestres.estado');
+            Route::get('/edit/{id}', [Semestres::class, 'edit'])->name('semestres.edit');
+            Route::put('/update/{id}', [Semestres::class, 'update'])->name('semestres.update');
+            Route::get('/show/{id}', [Semestres::class, 'show'])->name('semestres.show');
+            Route::delete('/destroy/{id}', [Semestres::class, 'destroy'])->name('semestres.destroy');
         });
+
 
         Route::prefix('docentes')->group(function () {
             Route::get('/', [Docentes::class, 'index'])->name('docentes');
