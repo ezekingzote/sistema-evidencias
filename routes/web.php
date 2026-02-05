@@ -34,6 +34,7 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('semestres')->group(function () {
             Route::get('/', [Semestres::class, 'index'])->name('semestres');
+            Route::get('/create', [Semestres::class, 'create'])->name('crear-semestre');
         });
 
         Route::prefix('docentes')->group(function () {

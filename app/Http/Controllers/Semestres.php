@@ -11,4 +11,10 @@ class Semestres extends Controller
 
         return view('modules.semestres.index', compact('titulo'));
     }
+    public function create(){
+        $titulo = 'Semestres';
+
+        return view('modules.semestres.create', compact('titulo'));
+    }
+    
 }

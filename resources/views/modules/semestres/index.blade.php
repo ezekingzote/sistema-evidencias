@@ -6,6 +6,7 @@
     <main id="main" class="main">
         <div class="pagetitle">
             <h1>Semestres</h1>
+            
             <nav>
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
@@ -14,6 +15,9 @@
             </nav>
         </div>
         <section class="section">
+            <a href="{{ route('crear-semestre') }}" class="btn btn-outline-primary"><i class="fa-solid fa-plus"></i> Nuevo
+            Semestre</a>
+        <hr>
         <div class="row g-4">
             <div class="col-12 col-md-6 col-lg-3">
                 <div class="card shadow-sm h-100 border-start border-primary border-4">
