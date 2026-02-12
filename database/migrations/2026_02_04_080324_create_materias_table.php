@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('clave', 50);
             $table->unsignedInteger('unidades');
             $table->unsignedInteger('semestre');
+            $table->string('especialidad', 2);
             $table->string('carrera', 100);
             $table->boolean('activo')->default(true);
             $table->timestamps();

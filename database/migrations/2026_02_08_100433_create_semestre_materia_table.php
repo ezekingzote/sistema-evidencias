@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('semestres', function (Blueprint $table) {
+        Schema::create('semestre_materia', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre');
-            $table->integer('anio');
-            $table->string('periodo');
-            $table->boolean('activo')->default(false);
+            $table->unsignedBigInteger('semestre_id');
+            $table->unsignedBigInteger('materia_id');
             $table->timestamps();
+
+            $table->unique(['semestre_id', 'materia_id']); // evita duplicados
         });
     }
 
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('semestres');
+        Schema::dropIfExists('semestre_materia');
     }
 };

@@ -36,10 +36,10 @@
 
                         <span class="badge rounded-pill"
                             style="
-            background-color: {{ $semestre->activo ? '#e0f8e9' : '#fde2e2' }};
-            color: {{ $semestre->activo ? '#28a745' : '#dc3545' }};
-            font-size: 0.7rem;
-        ">
+                            background-color: {{ $semestre->activo ? '#e0f8e9' : '#fde2e2' }};
+                            color: {{ $semestre->activo ? '#28a745' : '#dc3545' }};
+                            font-size: 0.7rem;
+                        ">
                             {{ $semestre->activo ? 'Activo' : 'Inactivo' }}
                         </span>
                     </li>
@@ -66,17 +66,7 @@
                             <i class="bi bi-eye me-2"></i> Ver Materias
                         </button>
 
-                        <ul class="dropdown-menu w-100 shadow-sm">
-                            @forelse ($semestre->materias as $materia)
-                                <li>
-                                    <span class="dropdown-item-text small">
-                                        <i class="fa-solid fa-book-open me-2 text-primary"></i> {{ $materia->nombre }}
-                                    </span>
-                                </li>
-                            @empty
-                                <li><span class="dropdown-item-text small text-muted">No hay materias</span></li>
-                            @endforelse
-                        </ul>
+                        
                     </div>
                 </div>
 
