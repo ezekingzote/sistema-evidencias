@@ -4,115 +4,67 @@
 
 @section('contenido')
     <main id="main" class="main">
-        <div class="pagetitle">
-            <h1>Crear Nuevo semestre</h1>
-            <nav>
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
-                    <li class="breadcrumb-item active">Registrar nuevo semestre</li>
-                </ol>
-            </nav>
-        </div>
-        <nav>
-        </nav>
-        </div>
-        <section class="section">
-            <form action="{{ route('semestre.store') }}" id="formMateria" method="POST">
-                @csrf
-                <div class="row g-3">
-
-                    <div class="col-12">
-                        <label class="form-label fw-bold" for="nombre">Nombre del semestre</label>
-                        <input oninput="this.value = this.value.toUpperCase();" name="nombre" id="nombre" type="text"
-                            class="form-control" placeholder="Ej. 2026-1" required>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold" for="anio">Año del semestre</label>
-                        <input oninput="this.value = this.value.toUpperCase();" name="anio" id="anio" type="text"
-                            class="form-control" placeholder="2026" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold" for="periodo">Seleccione el periodo del semestre</label>
-                        <select id="periodo" name="periodo" class="form-select" required>
-                            <option value="" selected disabled>Seleccione la periodo correspondiente...</option>
-                            <option value="1">ENERO - JUNIO</option>
-                            <option value="2">AGOSTO DICIEMBRE</option>
-                            
-                        </select>
-                    </div>
-
-                    <div class="col-4">
-                        <label class="form-label fw-bold" for="semestre">Seleccione el Semestre</label>
-                        <select id="semestre" name="semestre" class="form-select" required>
-                            <option value="" selected disabled>Seleccione el semestre</option>
-                            @for ($i = 1; $i <= 9; $i++)
-                                <option value="{{ $i }}">
-                                    {{ $i }}{{ $i == 1 ? 'er' : ($i == 2 ? 'do' : ($i == 3 ? 'er' : 'to')) }}
-                                    Semestre</option>
-                            @endfor
-                        </select>
-                    </div>
-
-                    <div class="col-8">
-                        <label class="form-label fw-bold" for="materias_select">Materias</label>
-                        <select id="materias_select" class="js-example-basic-multiple form-select" name="materias_select[]"
-                            multiple required>
-                            @foreach ($materias as $materia)
-                                @if ($materia->activo == 1)
-                                    <option value="{{ $materia->id }}" data-semestre="{{ $materia->semestre }}">
-                                        {{ $materia->clave }} - {{ $materia->nombre }}
-                                    </option>
-                                @endif
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-12">
-                        <button type="submit" class="btn btn-outline-dark px-4">
-                            Crear Semestre
-                        </button>
-                        <a href="{{ route('materias') }}" class="btn btn-outline-info">Regresar</a>
-                    </div>
-
+        <div class="card mt-4 mb-4">
+            <div class="card-body">
+                <div class="pagetitle">
+                    <h1>Crear Nuevo semestre</h1>
+                    <nav>
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
+                            <li class="breadcrumb-item active">Registrar nuevo semestre</li>
+                        </ol>
+                    </nav>
                 </div>
-            </form>
+
+                <section class="section">
+                    <form action="{{ route('semestre.store') }}" id="formSemestre" method="POST">
+                        @csrf
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Nombre del Semestre</label>
+                                <input name="nombre" id="nombre" type="text" class="form-control bg-light" readonly>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Año</label>
+                                <input type="number" id="anio_manual" name="anio" class="form-control"
+                                    value="{{ date('Y') }}" min="{{ date('Y') - 1 }}" max="{{ date('Y') + 5 }}">
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Periodo</label>
+                                <select id="periodo_select" name="periodo" class="form-select" required>
+                                    <option value="" selected disabled>Seleccione el periodo...</option>
+                                    <option value="1">1 (ENERO - JUNIO)</option>
+                                    <option value="2">2 (JULIO - DICIEMBRE)</option>
+                                </select>
+                                <small id="error_duplicado" class="text-danger" style="display:none;">Este periodo ya está
+                                    registrado para este año.</small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Fecha Inicio</label>
+                                <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control" required
+                                    disabled>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Fecha Fin</label>
+                                <input type="date" id="fecha_fin" name="fecha_fin" class="form-control" required
+                                    disabled>
+                            </div>
+
+                            <div class="col-12 mt-4 text-center">
+                                <a href="{{ route('semestres') }}" class="btn btn-outline-info">
+                                    Regresar
+                                </a>
+                                <button type="submit" id="btnGuardar" class="btn btn-dark px-5">Registrar Semestre</button>
+                            </div>
+                        </div>
+                    </form>
+            </div>
+        </div>
         </section>
+
     </main>
 @endsection
-
-@push('scripts')
-
-    <script>
-        $(document).ready(function() {
-            const $materias = $('.js-example-basic-multiple');
-            const opcionesOriginales = $materias.find('option').clone();
-
-            $materias.select2({
-                theme: 'bootstrap-5',
-                width: '100%'
-            });
-
-            $('#semestre').on('change', function() {
-                const semestreSeleccionado = $(this).val();
-                const seleccionadas = $materias.val() || [];
-                $materias.empty();
-                opcionesOriginales.each(function() {
-                    const semestreMateria = $(this).data('semestre');
-                    const idMateria = $(this).val();
-                    if (
-                        semestreMateria == semestreSeleccionado ||
-                        seleccionadas.includes(idMateria)
-                    ) {
-                        $materias.append($(this));
-                    }
-                });
-
-                $materias.val(seleccionadas);
-                $materias.trigger('change');
-            });
-
-        });
-    </script>
-
-@endpush

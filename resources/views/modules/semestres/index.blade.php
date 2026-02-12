@@ -15,13 +15,17 @@
             </nav>
         </div>
         <section class="section">
-            <a href="{{ route('crear-semestre') }}" class="btn btn-outline-primary"><i class="fa-solid fa-plus"></i> Nuevo
+            <a href="{{ route('semestre.create') }}" class="btn btn-outline-primary"><i class="fa-solid fa-plus"></i> Nuevo
                 Semestre</a>
-            <hr>
-            <div class="row g-4" id="contenedor-semestres">
+            <div class="card mt-4 mb-4">
+                <div class="card-body">
 
-                @include('modules.semestres.cards')
+                    <div class="row g-4" id="contenedor-semestres">
 
+                        @include('modules.semestres.cards')
+
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -31,7 +35,6 @@
 
 @push('scripts')
     <script>
-
         function cambiar_estado(id, estado) {
             $.ajax({
                 type: "GET",

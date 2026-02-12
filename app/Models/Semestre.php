@@ -7,13 +7,34 @@ use Illuminate\Database\Eloquent\Model;
 class Semestre extends Model
 {
     protected $table = 'semestres';
-    public function materias()
-    {
-        return $this->belongsToMany(Materia::class);
-    }
+
     protected $fillable = [
         'nombre',
         'anio',
-        'periodo'
+        'periodo',
+        'fecha_inicio',
+        'fecha_fin',
+        'activo',
+        'materias_activas',
+        'materias_asignadas',
+        'materias_por_asignar',
+        'ids_materias_activas'
     ];
+
+    protected $casts = [
+        'fecha_inicio' => 'date',
+        'fecha_fin' => 'date',
+        'activo' => 'boolean'
+    ];
+
+    // Relación Many-to-Many con Materias
+    public function materias()
+    {
+        return $this->belongsToMany(
+            \App\Models\Materia::class,
+            'semestre_materia',
+            'semestre_id',
+            'materia_id'
+        );
+    }
 }

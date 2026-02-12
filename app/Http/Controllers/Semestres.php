@@ -13,7 +13,7 @@ class Semestres extends Controller
     public function index()
     {
         $titulo = 'Semestres';
-        $semestres = Semestre::withCount('materias')->get();
+        $semestres = Semestre::all();
         return view('modules.semestres.index', compact(
             'titulo',
             'semestres'
@@ -27,35 +27,66 @@ class Semestres extends Controller
         return view('modules.semestres.create', compact('titulo', 'materias'));
     }
 
+
     public function store(Request $request)
     {
-        try {
 
-            DB::beginTransaction();
-            $item = Semestre::create([
-                'nombre'  => $request->nombre,
-                'anio'    => $request->anio,
-                'periodo' => $request->periodo,
-            ]);
-            if ($request->has('materias_select')) {
-                $item->materias()->sync($request->materias_select);
+
+        try {
+            $semestre = new Semestre();
+            $hayActivo = Semestre::where('activo', 1)->exists();
+            $semestre->activo = $hayActivo ? 0 : 1;
+            $semestre->save();
+
+            if ($semestre->activo == 1) {
+                $materiasIds = Materia::where('activo', 1)->pluck('id');
+                $semestre->materias()->sync($materiasIds);
+
+                $total = $materiasIds->count();
+                $semestre->update([
+                    'materias_activas' => $total,
+                    'materias_por_asignar' => $total
+                ]);
             }
-            DB::commit();
-            return to_route('semestres')
-                ->with('success', 'Semestre registrado con éxito!!!');
+
+            return redirect()->route('semestres')->with('success', 'Semestre guardado correctamente.');
         } catch (Exception $e) {
-            DB::rollBack();
-            return to_route('semestres')
-                ->with('error', 'No se pudo guardar!!! ' . $e->getMessage());
+            return to_route('semestres')->with('error', 'Error: ' . $e->getMessage());
         }
     }
 
-    public function estado($id, $estado)
+    public function cambiarEstado($id)
     {
-        $item = Semestre::find($id);
-        $item->activo = $estado;
-        return $item->save();
+        $semestre = Semestre::findOrFail($id);
+
+        if ($semestre->activo) {
+            $semestre->activo = 0;
+        } else {
+            $existe = Semestre::where('activo', 1)
+                ->where('fecha_fin', '>=', now())
+                ->exists();
+
+            if ($existe) {
+                return response()->json([
+                    'error' => 'Ya hay un semestre activo vigente'
+                ], 400);
+            }
+
+            $semestre->activo = 1;
+            $materiasActivasIds = Materia::where('activo', 1)->pluck('id');
+            $semestre->materias()->sync($materiasActivasIds);
+            $total = $materiasActivasIds->count();
+            $asignadas = \App\Models\AsignacionMateria::where('semestre_id', $semestre->id)->count();
+            $semestre->materias_activas = $total;
+            $semestre->materias_asignadas = $asignadas;
+            $semestre->materias_por_asignar = max(0, $total - $asignadas);
+        }
+
+        $semestre->save();
+
+        return response()->json(['success' => true]);
     }
+
 
     public function cards()
     {

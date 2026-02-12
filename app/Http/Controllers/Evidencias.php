@@ -2,37 +2,140 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Materia;
+use App\Models\Semestre;
+use App\Models\AsignacionMateria;
+use Exception;
 use Illuminate\Http\Request;
 
-class Evidencias extends Controller
+class Materias extends Controller
 {
-    ##Funciones para panel de admin
     public function index()
     {
-        $titulo = 'Evidencias';
-
-        return view('modules.evidencias.index', compact('titulo'));
+        $titulo = 'Materias';
+        $items = Materia::all();
+        return view('modules.materias.index', compact('titulo', 'items'));
     }
 
-
-    public function review()
+    public function create()
     {
-        $titulo = 'Revisar Evidencia';
-
-        return view('modules.evidencias.review', compact('titulo'));
+        $titulo = 'Crear Materia';
+        return view('modules.materias.create', compact('titulo'));
     }
 
-    ##Funciones para panel Docente
-    public function indexDocente()
+    public function store(Request $request)
     {
-        $titulo = 'Evidencias Docente';
+        try {
+            $item = new Materia();
+            $item->nombre = $request->nombre;
+            $item->clave = $request->clave;
+            $item->unidades = $request->unidades;
+            $item->carrera = $request->carrera;
+            $item->especialidad = $request->especialidad;
+            $item->semestre = $request->semestre;
+            $item->activo = 1;
+            $item->save();
 
-        return view('modules.evidencias.indexDocente', compact('titulo'));
+            return to_route('materias')->with('success', 'Materia guardada con éxito!');
+        } catch (Exception $e) {
+            return to_route('materias')->with('error', 'Error al guardar Materia! ' . $e->getMessage());
+        }
     }
-    public function agregarEvidencia()
-    {
-        $titulo = 'Agregar Nueva Evidencia';
 
-        return view('modules.evidencias.create', compact('titulo'));
+    public function edit(string $id)
+    {
+        $titulo = 'Editar Materia';
+        $item = Materia::findOrFail($id);
+        return view('modules.materias.edit', compact('item', 'titulo'));
+    }
+
+    public function update(Request $request, string $id)
+    {
+        try {
+            $item = Materia::findOrFail($id);
+            $item->nombre = $request->nombre;
+            $item->clave = $request->clave;
+            $item->unidades = $request->unidades;
+            $item->carrera = $request->carrera;
+            $item->especialidad = $request->especialidad;
+            $item->semestre = $request->semestre;
+            $item->save();
+
+            return to_route('materias')->with('success', 'Materia actualizada con éxito!');
+        } catch (Exception $e) {
+            return to_route('materias')->with('error', 'No se pudo actualizar! ' . $e->getMessage());
+        }
+    }
+
+    public function show(string $id)
+    {
+        $titulo = 'Eliminar Materia';
+        $item = Materia::findOrFail($id);
+        return view('modules.materias.show', compact('item', 'titulo'));
+    }
+
+    public function destroy(string $id)
+    {
+        try {
+            $item = Materia::findOrFail($id);
+            $item->delete();
+            return to_route('materias')->with('success', 'Materia eliminada con éxito!');
+        } catch (Exception $e) {
+            return to_route('materias')->with('error', 'No se pudo eliminar! ' . $e->getMessage());
+        }
+    }
+
+    public function tbody()
+    {
+        $items = Materia::all();
+        return view('modules.materias.tbody', compact('items'));
+    }
+
+    public function misMaterias()
+    {
+        $titulo = 'Agregar Docente';
+        return view('modules.materias.misMaterias', compact('titulo'));
+    }
+
+    public function estado($id, $estado)
+    {
+        $materia = Materia::find($id);
+
+        if (!$materia) {
+            return back()->with('error', 'Materia no encontrada');
+        }
+
+        try {
+            $materia->activo = $estado;
+            $materia->save();
+
+            $semestreActivo = Semestre::where('activo', 1)->first();
+
+            if (!$semestreActivo) {
+                return back()->with('warning', 'No hay semestre activo');
+            }
+
+            if ($estado == 1) {
+                $semestreActivo->materias()->syncWithoutDetaching([$id]);
+            } else {
+                $semestreActivo->materias()->detach($id);
+            }
+
+            $idsMateriasActivas = $semestreActivo->materias()->pluck('materia_id')->toArray();
+            $totalActivas = count($idsMateriasActivas);
+            $asignadas = AsignacionMateria::where('semestre_id', $semestreActivo->id)->count();
+
+            $semestreActivo->update([
+                'materias_activas' => $totalActivas,
+                'materias_asignadas' => $asignadas,
+                'materias_por_asignar' => max(0, $totalActivas - $asignadas),
+                'ids_materias_activas' => json_encode($idsMateriasActivas)
+            ]);
+
+            return back()->with('success', $estado ? 'Materia activada' : 'Materia desactivada');
+
+        } catch (Exception $e) {
+            return back()->with('error', 'Error al actualizar el estado: ' . $e->getMessage());
+        }
     }
 }

@@ -9,12 +9,14 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function index(){
+    public function index()
+    {
         $titulo = "Login de usuarios";
         return view("modules.auth.login", compact("titulo"));
     }
 
-    public function logear(Request $request){
+    public function logear(Request $request)
+    {
         $credenciales = $request->validate([
             'email' => 'required|email',
             'password' => 'required'
@@ -27,13 +29,12 @@ class AuthController extends Controller
         }
 
         if (!$user->activo) {
-            return back()->withErrors(['email' =>'Tu cuenta esta inactiva!']);
+            return back()->withErrors(['email' => 'Tu cuenta esta inactiva!']);
         }
 
         Auth::login($user);
         $request->session()->regenerate();
 
-        // REDIRECCIÓN SEGÚN ROL
         if ($user->rol === 'admin') {
             return redirect()->route('home');
         } else if ($user->rol === 'docente') {
@@ -43,7 +44,8 @@ class AuthController extends Controller
         return redirect()->route('home');
     }
 
-    public function crearAdmin(){
+    public function crearAdmin()
+    {
         User::create([
             'name' => 'Ezequiel Mendoza',
             'email' => 'admin@admin.com',
@@ -54,19 +56,37 @@ class AuthController extends Controller
         return 'Admin creado con Exito';
     }
 
-    public function crearUsuario(){
-        User::create([
-            'name' => 'Usuario Docente',
-            'email' => 'docente@test.com',
-            'password' => Hash::make('docente'),
-            'activo' => true,
-            'rol' => 'docente'
-        ]);
-        return 'Docente creado con Exito';
-    }
-
-    public function logout(){
+    public function logout()
+    {
         Auth::logout();
         return to_route('login');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|min:8|confirmed',
+        ], [
+            'password.confirmed' => 'Las nuevas contraseñas no coinciden.',
+            'password.min' => 'La nueva contraseña debe tener al menos 8 caracteres.'
+        ]);
+
+        $user = User::findOrFail(Auth::id());
+
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->with('error', 'Tu contraseña actual no coincide con nuestros registros.');
+        }
+
+
+        if (Hash::check($request->password, $user->password)) {
+            return back()->with('error', 'La nueva contraseña debe ser diferente a la anterior.');
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return back()->with('success', '¡Contraseña actualizada con éxito!');
     }
 }
