@@ -70,8 +70,8 @@ class Materias extends Controller
     public function show(string $id)
     {
         $titulo = 'Eliminar Materia';
-        $item = Materia::findOrFail($id);
-        return view('modules.materias.show', compact('item', 'titulo'));
+        $items = Materia::findOrFail($id);
+        return view('modules.materias.show', compact('items', 'titulo'));
     }
 
     public function destroy(string $id)

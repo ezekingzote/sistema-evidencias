@@ -72,16 +72,10 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-12 mt-3">
-                                        <div class="alert alert-info border-0 shadow-sm mb-0">
-                                            <i class="bi bi-info-circle me-2"></i>
-                                            La contraseña se generará automáticamente con el formato: <strong>SistemaNombreCompletoDelUsuario!</strong>
-                                        </div>
-                                    </div>
 
                                     <div class="col-12 mt-4 border-top pt-4 d-flex justify-content-end gap-3">
                                         <a href="{{ route('home') }}" class="btn btn-outline-secondary px-4">Cancelar</a>
-                                        <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                                        <button type="submit" class="btn btn-outline-primary px-5 shadow-sm">
                                             <i class="bi bi-save me-1"></i> Registrar Usuario
                                         </button>
                                     </div>
@@ -95,7 +89,8 @@
             </div>
         </section>
     </main>
-
+@push('scripts')
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const rolSelect = document.getElementById('rol_select');
@@ -113,4 +108,5 @@
             });
         });
     </script>
+@endpush
 @endsection

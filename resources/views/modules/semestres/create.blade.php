@@ -44,21 +44,20 @@
 
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Fecha Inicio</label>
-                                <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control" required
-                                    disabled>
+                                <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control" required>
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Fecha Fin</label>
-                                <input type="date" id="fecha_fin" name="fecha_fin" class="form-control" required
-                                    disabled>
+                                <input type="date" id="fecha_fin" name="fecha_fin" class="form-control" required>
                             </div>
 
                             <div class="col-12 mt-4 text-center">
                                 <a href="{{ route('semestres') }}" class="btn btn-outline-info">
-                                    Regresar
+                                    <i class="bi bi-x-circle me-2"></i> Cancelar
                                 </a>
-                                <button type="submit" id="btnGuardar" class="btn btn-dark px-5">Registrar Semestre</button>
+                                <button type="submit" id="btnGuardar" class="btn btn-outline-dark px-5">
+                                    <i class="fa-solid fa-floppy-disk"></i> Registrar Semestre</button>
                             </div>
                         </div>
                     </form>
@@ -68,3 +67,87 @@
 
     </main>
 @endsection
+
+@push('scripts')
+    <script>
+
+        const semestresExistentes = @json($semestres->map(fn($s) => ['anio' => $s->anio, 'periodo' => $s->periodo]));
+
+        function generarNombre() {
+            const anio = document.getElementById('anio_manual').value;
+            const periodo = document.getElementById('periodo_select').value;
+
+            if (!anio || !periodo) return;
+
+            const inicio = document.getElementById('fecha_inicio');
+            const fin = document.getElementById('fecha_fin');
+            let textoPeriodo = '';
+
+            if (periodo == '1') {
+                textoPeriodo = 'ENE - JUN';
+                inicio.min = `${anio}-01-01`;
+                inicio.max = `${anio}-01-31`;
+                inicio.value = `${anio}-01-01`;
+                fin.min = `${anio}-06-01`;
+                fin.max = `${anio}-06-30`;
+                fin.value = `${anio}-06-30`;
+            }
+
+            if (periodo == '2') {
+                textoPeriodo = 'JUL - DIC';
+                inicio.min = `${anio}-07-01`;
+                inicio.max = `${anio}-07-31`;
+                inicio.value = `${anio}-07-01`;
+                fin.min = `${anio}-12-01`;
+                fin.max = `${anio}-12-31`;
+                fin.value = `${anio}-12-31`;
+            }
+
+            document.getElementById('nombre').value = `${anio}-${periodo} ${textoPeriodo}`;
+        }
+
+        function verificarDuplicado() {
+            const anio = document.getElementById('anio_manual').value;
+            const periodoSelect = document.getElementById('periodo_select');
+            const error = document.getElementById('error_duplicado');
+            const btn = document.getElementById('btnGuardar');
+
+            if (!anio) return;
+
+
+            for (const option of periodoSelect.options) {
+                if (option.value !== "") option.disabled = false;
+            }
+
+            const duplicados = semestresExistentes.filter(s => s.anio == anio);
+            duplicados.forEach(s => {
+                const opt = periodoSelect.querySelector(`option[value="${s.periodo}"]`);
+                if (opt) opt.disabled = true;
+            });
+
+            const periodoActual = periodoSelect.value;
+            if (duplicados.some(s => s.periodo == periodoActual)) {
+                error.style.display = 'block';
+                btn.disabled = true;
+            } else {
+                error.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        document.getElementById('anio_manual').addEventListener('change', () => {
+            generarNombre();
+            verificarDuplicado();
+        });
+
+        document.getElementById('periodo_select').addEventListener('change', () => {
+            generarNombre();
+            verificarDuplicado();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            generarNombre();
+            verificarDuplicado();
+        });
+    </script>
+@endpush

@@ -12,14 +12,6 @@
                 </a>
             </li>
 
-
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="{{ route('evidencias') }}">
-                    <i class="fa-solid fa-folder-closed"></i>
-                    <span>Gestión de Evidencias</span>
-                </a>
-            </li>
-
             <li class="nav-item">
                 <a class="nav-link collapsed" href="{{ route('semestres') }}">
                     <i class="fa-solid fa-school-circle-check"></i>
@@ -60,12 +52,6 @@
                 </a>
             </li>
 
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="{{ route('mis-evidencias') }}">
-                    <i class="fa-solid fa-folder-open"></i>
-                    <span>Mis Evidencias</span>
-                </a>
-            </li>
 
             <li class="nav-item">
                 <a class="nav-link collapsed" href="{{ route('mis-materias') }}">

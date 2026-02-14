@@ -7,6 +7,9 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Barryvdh\DomPDF\Facade\Pdf;
+
+
 
 class Docentes extends Controller
 {
@@ -32,84 +35,67 @@ class Docentes extends Controller
             $nombre = strtoupper(trim($request->name));
             $apellidoP = strtoupper(trim($request->apellido_p));
             $apellidoM = strtoupper(trim($request->apellido_m));
-
             $nombreCompleto = "$nombre $apellidoP $apellidoM";
 
 
             $emailBase = strtolower(trim($request->email));
-            $dominio = $request->rol == 'admin' ? '@admin.com' : '@docente.com';
+            $dominio = ($request->rol == 'admin') ? '@admin.com' : '@docente.com';
             $emailCompleto = $emailBase . $dominio;
-
-            $nombrePartes = explode(' ', $nombreCompleto);
-
-            $nombreFormateado = '';
-            foreach ($nombrePartes as $parte) {
-                $nombreFormateado .= ucfirst(strtolower($parte));
-            }
-
-            $password = "Sistema" . $nombreFormateado;
 
 
             if (User::where('email', $emailCompleto)->exists()) {
-
-                return back()
-                    ->withInput()
-                    ->with('error', 'El correo ya existe. No se puede registrar.');
+                return back()->withInput()->with('error', 'El correo ya existe.');
             }
 
 
-            $usuarios = User::all();
-
-            foreach ($usuarios as $usuario) {
-
-                if (Hash::check($password, $usuario->password)) {
-
-                    return back()
-                        ->withInput()
-                        ->with('error', 'La contraseña generada ya existe. No se puede registrar.');
-                }
+            $partes = explode(' ', strtolower($nombreCompleto));
+            $nombreFormateado = '';
+            foreach ($partes as $p) {
+                $nombreFormateado .= ucfirst($p);
             }
+            $passwordTemporal = "Sistema" . $nombreFormateado;
 
 
             $user = new User();
             $user->name = $nombreCompleto;
             $user->email = $emailCompleto;
-            $user->password = Hash::make($password);
+            $user->password = Hash::make($passwordTemporal);
             $user->rol = $request->rol;
             $user->activo = 1;
-
             $user->save();
 
-            return to_route('docentes')->with('success', 'Usuario guardado con éxito!');
-        } catch (Exception $e) {
+            $urlPdf = route('pdf.descargar', [
+                'nombre' => (string)$nombreCompleto,
+                'email'  => (string)$emailCompleto,
+                'pass'   => (string)$passwordTemporal
+            ]);
 
-            return back()
-                ->withInput()
-                ->with('error', 'Error al guardar usuario');
+
+            return redirect()->route('docentes')
+                ->with('success', 'Usuario guardado con éxito!')
+                ->with('pdf', $urlPdf);
+        } catch (Exception $e) {
+            return back()->withInput()->with('error', 'Error: ' . $e->getMessage());
         }
     }
+
 
     public function resetPassword(Request $request, $id)
     {
         try {
             $admin = Auth::user();
-
             if (!Hash::check($request->password, $admin->password)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Contraseña incorrecta'
-                ]);
+                return response()->json(['success' => false, 'message' => 'Contraseña de admin incorrecta']);
             }
 
             $user = User::findOrFail($id);
 
-            $nombre = explode(' ', strtolower($user->name));
+
+            $partes = explode(' ', strtolower($user->name));
             $nombreFormateado = '';
-
-            foreach ($nombre as $n) {
-                $nombreFormateado .= ucfirst($n);
+            foreach ($partes as $p) {
+                $nombreFormateado .= ucfirst($p);
             }
-
             $nuevaPassword = "Sistema" . $nombreFormateado;
 
             $user->password = Hash::make($nuevaPassword);
@@ -117,14 +103,32 @@ class Docentes extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Contraseña restablecida correctamente'
+                'message' => 'Contraseña restablecida',
+                'pdf' => route('pdf.descargar', [
+                    'nombre' => $user->name,
+                    'email' => $user->email,
+                    'pass' => $nuevaPassword
+                ])
             ]);
         } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error del servidor'
-            ]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
+    }
+
+    public function downloadPdf(Request $request)
+    {
+
+        $data = [
+            'titulo' => 'COMPROBANTE DE CREDENCIALES',
+            'nombre' => $request->query('nombre'),
+            'email'  => $request->query('email'),
+            'pass'   => $request->query('pass'),
+            'fecha'  => now()->format('d/m/Y H:i A'),
+            'leyenda' => $request->query('leyenda', 'Guarde sus credenciales en un lugar seguro y cambie su contraseña al iniciar sesión.')
+        ];
+
+        $pdf = Pdf::loadView('pdfs.comprobante_registro', $data);
+        return $pdf->stream("Comprobante_{$request->nombre}.pdf");
     }
 
 

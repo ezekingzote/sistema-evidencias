@@ -6,6 +6,7 @@ use App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Docentes;
 use App\Http\Controllers\Evidencias;
 use App\Http\Controllers\Materias;
+use App\Http\Controllers\Pdfs;
 use App\Http\Controllers\PlanesEstudio;
 use App\Http\Controllers\Semestres;
 use App\Models\User;
@@ -28,17 +29,15 @@ Route::middleware('auth')->group(function () {
     Route::middleware('Checkrol:admin')->group(function () {
         Route::get('/home', [Dashboard::class, 'index'])->name('home');
 
-        Route::prefix('evidencias')->group(function () {
-            Route::get('/', [Evidencias::class, 'index'])->name('evidencias');
-            Route::get('/review', [Evidencias::class, 'review'])->name('review-evidencia');
-        });
 
         Route::prefix('semestres')->group(function () {
             Route::get('/', [Semestres::class, 'index'])->name('semestres');
             Route::get('/create', [Semestres::class, 'create'])->name('semestre.create');
             Route::post('/store', [Semestres::class, 'store'])->name('semestre.store');
+            Route::get('/verificar', [Semestres::class, 'verificar'])->name('semestre.verificar');
             Route::get('/cards', [Semestres::class, 'cards'])->name('semestres.cards');
-            Route::get('/cambiar-estado/{id}/{estado}', [Semestres::class, 'estado'])->name('semestres.estado');
+            Route::post('/cambiar-estado/{id}', [Semestres::class, 'cambiarEstado']);
+            Route::post('/cambiar-estado-confirmar/{id}', [Semestres::class,'cambiarEstadoConfirmar']);
             Route::get('/edit/{id}', [Semestres::class, 'edit'])->name('semestres.edit');
             Route::put('/update/{id}', [Semestres::class, 'update'])->name('semestres.update');
             Route::get('/show/{id}', [Semestres::class, 'show'])->name('semestres.show');
@@ -49,6 +48,7 @@ Route::middleware('auth')->group(function () {
         Route::prefix('docentes')->group(function () {
             Route::get('/', [Docentes::class, 'index'])->name('docentes');
             Route::get('/create', [Docentes::class, 'create'])->name('nuevo-docente');
+            Route::get('/descargar-comprobante', [Docentes::class, 'downloadPdf'])->name('pdf.descargar');
             Route::post('/store', [Docentes::class, 'store'])->name('docente.store');
             Route::post('/reset-password/{id}', [Docentes::class, 'resetPassword'])->name('docentes.resetPassword');
             Route::get('/tbody', [Docentes::class, 'tbody'])->name('docentes.tbody');
@@ -87,10 +87,6 @@ Route::middleware('auth')->group(function () {
         // Dashboard específico del docente
         Route::get('/dashboard', [Dashboard::class, 'indexDocente'])->name('dashboard');
 
-        Route::prefix('mis-evidencias')->group(function () {
-            Route::get('/', [Evidencias::class, 'indexDocente'])->name('mis-evidencias');
-            Route::get('/agregar', [Evidencias::class, 'agregarEvidencia'])->name('agregar-evidencia');
-        });
 
         Route::prefix('mis-materias')->group(function () {
             Route::get('/', [Materias::class, 'misMaterias'])->name('mis-materias');

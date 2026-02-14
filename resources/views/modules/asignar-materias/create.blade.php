@@ -18,8 +18,8 @@
         <section class="section">
             <div class="card shadow-sm" style="border-radius: 15px;">
                 <div class="card-body p-4">
-                    
-                    @if(!$semestreActivo)
+
+                    @if (!$semestreActivo)
                         <div class="alert alert-warning">No hay un semestre activo configurado.</div>
                     @else
                         <form action="{{ route('asignar-materias.store') }}" method="POST">
@@ -29,26 +29,32 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold text-primary">Semestre Académico Activo</label>
-                                    <input type="text" class="form-control bg-light fw-bold" 
-                                           value="{{ $semestreActivo->nombre }}" readonly>
+                                    <input type="text" class="form-control bg-light fw-bold"
+                                        value="{{ $semestreActivo->nombre }}" readonly>
                                 </div>
 
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold">Grupo Generado</label>
-                                    <input type="text" name="grupo" id="grupo_input" class="form-control bg-light fw-bold text-primary" 
-                                           readonly required placeholder="Se generará al seleccionar la materia">
+                                    <input type="text" name="grupo" id="grupo_input"
+                                        class="form-control bg-light fw-bold text-primary" readonly required
+                                        placeholder="Se generará al seleccionar la materia">
                                 </div>
 
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold">Materia</label>
                                     <select id="materia_select" name="materia_id" class="form-select" required>
                                         <option value="" selected disabled>Seleccione la materia...</option>
+
                                         @foreach ($materias as $materia)
-                                            <option value="{{ $materia->id }}">
+                                            <option value="{{ $materia->id }}"
+                                                data-carrera="{{ strtoupper($materia->carrera) }}"
+                                                data-semestre="{{ $materia->semestre }}">
                                                 {{ $materia->nombre }}
                                             </option>
                                         @endforeach
+
                                     </select>
+
                                 </div>
 
                                 <div class="col-md-12">
@@ -56,13 +62,15 @@
                                     <select name="docente_id" class="form-select" required>
                                         <option value="" selected disabled>Seleccione un docente...</option>
                                         @foreach ($docentes as $docente)
-                                            <option value="{{ $docente->id }}">{{ $docente->name }} {{ $docente->apellido }}</option>
+                                            <option value="{{ $docente->id }}">{{ $docente->name }}
+                                                {{ $docente->apellido }}</option>
                                         @endforeach
                                     </select>
                                 </div>
 
                                 <div class="col-12 mt-4 text-center">
-                                    <a href="{{ route('asignar-materias') }}" class="btn btn-outline-info px-4"><i class="fa-solid fa-xmark"></i> Cancelar</a>
+                                    <a href="{{ route('asignar-materias') }}" class="btn btn-outline-info px-4"><i
+                                            class="fa-solid fa-xmark"></i> Cancelar</a>
                                     <button type="submit" class="btn btn-outline-primary px-5 shadow-sm">
                                         <i class="bi bi-check-circle me-1"></i> Registrar Asignación
                                     </button>
@@ -77,27 +85,36 @@
 @endsection
 
 @push('scripts')
-<script>
-    $(document).ready(function() {
-        const siglasCarreras = {
-            'INGENIERIA EN SISTEMAS COMPUTACIONALES': 'SIS',
-            'INGENIERIA INDUSTRIAL': 'IND',
-            'INGENIERIA EN GESTION EMPRESARIAL': 'IGE',
-            'LICENCIATURA EN TURISMO': 'TM'
-        };
+    <script>
+        $(document).ready(function() {
 
-        $('#materia_select').on('change', function() {
-            const $opcion = $(this).find('option:selected');
-            const carreraNom = $opcion.data('carrera');
-            const semestre = $opcion.data('semestre') || '';
+            const siglasCarreras = {
+                'INGENIERIA EN SISTEMAS COMPUTACIONALES': 'SIS',
+                'INGENIERIA INDUSTRIAL': 'IND',
+                'INGENIERIA EN GESTION EMPRESARIAL': 'IGE',
+                'LICENCIATURA EN TURISMO': 'TM'
+            };
 
-            if (carreraNom) {
+            $('#materia_select').on('change', function() {
+
+                const opcion = $(this).find('option:selected');
+
+                const carreraNom = opcion.data('carrera');
+                const semestre = opcion.data('semestre');
+
+                if (!carreraNom || !semestre) {
+                    $('#grupo_input').val('');
+                    return;
+                }
+
                 const sigla = siglasCarreras[carreraNom] || 'GEN';
-                // El grupo ahora es solo SIGLA-SEMESTRE (ej: SIS-9)
+
                 const grupoFinal = sigla + '-' + semestre;
+
                 $('#grupo_input').val(grupoFinal);
-            }
+
+            });
+
         });
-    });
-</script>
+    </script>
 @endpush

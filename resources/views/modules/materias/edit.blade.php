@@ -126,8 +126,10 @@
 
                                     <div class="col-12 mt-5">
                                         <div class="d-flex justify-content-end gap-2">
-                                            <a href="{{ route('materias') }}" class="btn btn-outline-info border px-4">
-                                                <i class="bi bi-x-circle me-2"> </i>Cancelar
+                                            <a href="{{ route('materias') }}"
+                                                class="btn btn-outline-info btn-lg px-4 shadow-sm"
+                                                style="border-radius: 10px;">
+                                                <i class="bi bi-x-circle me-2"></i>Cancelar y Regresar
                                             </a>
                                             <button type="submit" class="btn btn-outline-warning px-5 shadow-sm fw-bold">
                                                 <i class="bi bi-arrow-clockwise me-1"></i> Actualizar Cambios

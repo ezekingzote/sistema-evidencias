@@ -17,7 +17,7 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <a href="{{ route('asignar-materias.create') }}" class="btn btn-outline-primary shadow-sm">
                 <i class="fa-solid fa-plus me-1"></i>
-                Asignar Profesor
+                Hacer una Asignación
             </a>
         </div>
 

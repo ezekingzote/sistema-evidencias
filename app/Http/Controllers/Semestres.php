@@ -6,7 +6,9 @@ use App\Models\Materia;
 use App\Models\Semestre;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class Semestres extends Controller
 {
@@ -22,70 +24,120 @@ class Semestres extends Controller
 
     public function create()
     {
-        $titulo = 'Semestres';
-        $materias = Materia::all();
-        return view('modules.semestres.create', compact('titulo', 'materias'));
+        $titulo = 'Crear Semestre';
+        $semestres = Semestre::all();
+        return view('modules.semestres.create', compact('titulo', 'semestres'));
+    }
+
+
+    public function verificar(Request $request)
+    {
+
+        $existe = Semestre::where('anio', $request->anio)
+            ->where('periodo', $request->periodo)
+            ->exists();
+
+        return response()->json([
+            'existe' => $existe
+        ]);
     }
 
 
     public function store(Request $request)
     {
-
-
         try {
-            $semestre = new Semestre();
-            $hayActivo = Semestre::where('activo', 1)->exists();
-            $semestre->activo = $hayActivo ? 0 : 1;
-            $semestre->save();
 
-            if ($semestre->activo == 1) {
-                $materiasIds = Materia::where('activo', 1)->pluck('id');
-                $semestre->materias()->sync($materiasIds);
 
-                $total = $materiasIds->count();
-                $semestre->update([
-                    'materias_activas' => $total,
-                    'materias_por_asignar' => $total
-                ]);
+            $request->validate([
+                'anio' => 'required|integer',
+                'periodo' => 'required|in:1,2',
+            ]);
+
+
+            $existe = Semestre::where('anio', $request->anio)
+                ->where('periodo', $request->periodo)
+                ->exists();
+
+            if ($existe) {
+                return back()->with('error', 'Ya existe un semestre con ese año y periodo');
             }
 
-            return redirect()->route('semestres')->with('success', 'Semestre guardado correctamente.');
+
+            $periodoTexto = $request->periodo == 1 ? 'ENE - JUN' : 'JUL - DIC';
+            $nombre = $request->anio . '-' . $request->periodo . ' ' . $periodoTexto;
+
+
+            if ($request->periodo == 1) {
+                $fecha_inicio = $request->anio . '-01-01';
+                $fecha_fin    = $request->anio . '-06-30';
+            } else {
+                $fecha_inicio = $request->anio . '-07-01';
+                $fecha_fin    = $request->anio . '-12-31';
+            }
+
+            Semestre::create([
+                'nombre'       => $nombre,
+                'anio'         => $request->anio,
+                'periodo'      => $request->periodo,
+                'fecha_inicio' => $fecha_inicio,
+                'fecha_fin'    => $fecha_fin,
+            ]);
+
+            return redirect()->route('semestres')->with('success', 'Semestre creado correctamente');
         } catch (Exception $e) {
-            return to_route('semestres')->with('error', 'Error: ' . $e->getMessage());
+            return back()->with('error', 'Error al crear el semestre: ' . $e->getMessage());
         }
     }
+
 
     public function cambiarEstado($id)
     {
         $semestre = Semestre::findOrFail($id);
 
-        if ($semestre->activo) {
-            $semestre->activo = 0;
-        } else {
-            $existe = Semestre::where('activo', 1)
-                ->where('fecha_fin', '>=', now())
-                ->exists();
+        return response()->json([
+            'success' => false,
+            'confirmar' => true,
+            'semestre_id' => $semestre->id,
+            'message' => 'Se requiere contraseña para cambiar el estado de este semestre.'
+        ]);
+    }
 
-            if ($existe) {
-                return response()->json([
-                    'error' => 'Ya hay un semestre activo vigente'
-                ], 400);
-            }
 
-            $semestre->activo = 1;
-            $materiasActivasIds = Materia::where('activo', 1)->pluck('id');
-            $semestre->materias()->sync($materiasActivasIds);
-            $total = $materiasActivasIds->count();
-            $asignadas = \App\Models\AsignacionMateria::where('semestre_id', $semestre->id)->count();
-            $semestre->materias_activas = $total;
-            $semestre->materias_asignadas = $asignadas;
-            $semestre->materias_por_asignar = max(0, $total - $asignadas);
+
+    public function cambiarEstadoConfirmar(Request $request, $id)
+    {
+        $semestre = Semestre::findOrFail($id);
+
+        if (!Hash::check($request->password, Auth::user()->password)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'La contraseña es incorrecta'
+            ], 401);
         }
 
+        if (!$semestre->activo) {
+            $otroActivo = Semestre::where('activo', 1)
+                ->where('id', '!=', $semestre->id)
+                ->exists();
+
+            if ($otroActivo) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Ya hay un semestre activo. Solo se puede activar uno a la vez.'
+                ], 400);
+            }
+        }
+
+        $semestre->activo = !$semestre->activo;
         $semestre->save();
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'message' => 'El estado del semestre ha sido modificado.'
+        ]);
     }
+
+
 
 
     public function cards()
@@ -98,13 +150,8 @@ class Semestres extends Controller
     {
         $titulo = 'Eliminar Semestre';
 
-        $item = Semestre::select(
-            'semestres.*'
-        )
-            ->with([
-                'materias:id,nombre,clave,unidades'
-            ])
-            ->where('semestres.id', $id)
+        $item = Semestre::select('id', 'nombre', 'anio', 'periodo', 'fecha_inicio', 'fecha_fin', 'activo')
+            ->where('id', $id)
             ->firstOrFail();
 
         return view('modules.semestres.show', compact('titulo', 'item'));
@@ -113,75 +160,75 @@ class Semestres extends Controller
     public function edit(string $id)
     {
         $titulo = 'Editar Semestre';
+        $item = Semestre::findOrFail($id);
+        $semestres = Semestre::all(); // Para verificar duplicados en JS
 
-        $item = Semestre::with('materias')->findOrFail($id);
-        $materias = Materia::where('activo', 1)->get();
-
-        return view('modules.semestres.edit', compact(
-            'titulo',
-            'item',
-            'materias'
-        ));
+        return view('modules.semestres.edit', compact('titulo', 'item', 'semestres'));
     }
 
     public function update(Request $request, string $id)
     {
-        try {
-            DB::beginTransaction();
+        $request->validate([
+            'anio' => 'required|integer',
+            'periodo' => 'required|in:1,2',
+            'fecha_inicio' => 'required|date',
+            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
+        ]);
 
-            $item = Semestre::findOrFail($id);
+        $existe = Semestre::where('anio', $request->anio)
+            ->where('periodo', $request->periodo)
+            ->where('id', '!=', $id)
+            ->exists();
 
-            $item->update([
-                'nombre'  => $request->nombre,
-                'anio'    => $request->anio,
-                'periodo' => $request->periodo,
-                'semestre' => $request->semestre,
-            ]);
-
-            if ($request->has('materias_select')) {
-                $item->materias()->sync($request->materias_select);
-            } else {
-                $item->materias()->detach();
-            }
-
-            DB::commit();
-
-            return to_route('semestres')
-                ->with('success', 'Semestre actualizado correctamente');
-        } catch (Exception $e) {
-            DB::rollBack();
-
-            return back()
-                ->withInput()
-                ->with('error', 'No se pudo actualizar: ' . $e->getMessage());
+        if ($existe) {
+            return back()->with('error', 'Ya existe un semestre con ese año y periodo');
         }
+
+        $semestre = Semestre::findOrFail($id);
+        $periodoTexto = $request->periodo == 1 ? 'ENE - JUN' : 'JUL - DIC';
+        $nombre = $request->anio . '-' . $request->periodo . ' ' . $periodoTexto;
+
+        $semestre->update([
+            'nombre' => $nombre,
+            'anio' => $request->anio,
+            'periodo' => $request->periodo,
+            'fecha_inicio' => $request->fecha_inicio,
+            'fecha_fin' => $request->fecha_fin,
+        ]);
+
+        return redirect()->route('semestres')->with('success', 'Semestre actualizado correctamente');
     }
 
 
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
+        $request->validate([
+            'password' => 'required|string'
+        ]);
+
+        $user = Auth::user();
+
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json(['error' => 'La contraseña es incorrecta'], 401);
+        }
+
         try {
-            DB::beginTransaction();
+            $semestre = Semestre::findOrFail($id);
 
-            $item = Semestre::findOrFail($id);
+            $semestre->delete();
 
-            if ($item->materias()->count() > 0) {
-                $item->materias()->detach();
-            }
-
-            $item->delete();
-
-            DB::commit();
-
-            return to_route('semestres')
-                ->with('success', 'Semestre eliminado correctamente');
-        } catch (Exception $e) {
-            DB::rollBack();
-
-            return to_route('semestres')
-                ->with('error', 'No se pudo eliminar el semestre: ' . $e->getMessage());
+            return response()->json([
+                'success' => true,
+                'message' => 'El semestre ha sido eliminado correctamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'No se pudo eliminar el semestre: ' . $e->getMessage()
+            ], 500);
         }
     }
+
+
 
     public function listarMaterias($id)
     {
