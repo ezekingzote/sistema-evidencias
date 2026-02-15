@@ -27,14 +27,10 @@ class Semestre extends Model
         'activo' => 'boolean'
     ];
 
-    // Relación Many-to-Many con Materias
     public function materias()
     {
-        return $this->belongsToMany(
-            \App\Models\Materia::class,
-            'semestre_materia',
-            'semestre_id',
-            'materia_id'
-        );
+        return $this->belongsToMany(Materia::class, 'materias_semestres')
+            ->withPivot('asignada')
+            ->withTimestamps();
     }
 }

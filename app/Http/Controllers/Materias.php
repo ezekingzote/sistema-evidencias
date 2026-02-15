@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Materia;
 use App\Models\Semestre;
-use App\Models\AsignacionMateria;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class Materias extends Controller
 {
@@ -26,6 +26,7 @@ class Materias extends Controller
     public function store(Request $request)
     {
         try {
+
             $item = new Materia();
             $item->nombre = $request->nombre;
             $item->clave = $request->clave;
@@ -33,12 +34,15 @@ class Materias extends Controller
             $item->carrera = $request->carrera;
             $item->especialidad = $request->especialidad;
             $item->semestre = $request->semestre;
-            $item->activo = 1;
+            $item->activo = 0;
             $item->save();
 
-            return to_route('materias')->with('success', 'Materia guardada con éxito!');
+            return to_route('materias')
+                ->with('success', 'Materia guardada con éxito!');
         } catch (Exception $e) {
-            return to_route('materias')->with('error', 'Error al guardar Materia! ' . $e->getMessage());
+
+            return to_route('materias')
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -46,24 +50,31 @@ class Materias extends Controller
     {
         $titulo = 'Editar Materia';
         $item = Materia::findOrFail($id);
+
         return view('modules.materias.edit', compact('item', 'titulo'));
     }
 
     public function update(Request $request, string $id)
     {
         try {
+
             $item = Materia::findOrFail($id);
+
             $item->nombre = $request->nombre;
             $item->clave = $request->clave;
             $item->unidades = $request->unidades;
             $item->carrera = $request->carrera;
             $item->especialidad = $request->especialidad;
             $item->semestre = $request->semestre;
+
             $item->save();
 
-            return to_route('materias')->with('success', 'Materia actualizada con éxito!');
+            return to_route('materias')
+                ->with('success', 'Materia actualizada correctamente');
         } catch (Exception $e) {
-            return to_route('materias')->with('error', 'No se pudo actualizar! ' . $e->getMessage());
+
+            return to_route('materias')
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -71,77 +82,115 @@ class Materias extends Controller
     {
         $titulo = 'Eliminar Materia';
         $items = Materia::findOrFail($id);
+
         return view('modules.materias.show', compact('items', 'titulo'));
     }
 
     public function destroy(string $id)
     {
         try {
+
             $item = Materia::findOrFail($id);
+
+            // eliminar también del pivote
+            $item->semestres()->detach();
+
             $item->delete();
-            return to_route('materias')->with('success', 'Materia eliminada con éxito!');
+
+            return to_route('materias')
+                ->with('success', 'Materia eliminada correctamente');
         } catch (Exception $e) {
-            return to_route('materias')->with('error', 'No se pudo eliminar! ' . $e->getMessage());
+
+            return to_route('materias')
+                ->with('error', $e->getMessage());
         }
     }
 
     public function tbody()
     {
         $items = Materia::all();
+
         return view('modules.materias.tbody', compact('items'));
     }
 
     public function misMaterias()
     {
-        $titulo = 'Agregar Docente';
+        $titulo = 'Mis Materias';
+
         return view('modules.materias.misMaterias', compact('titulo'));
     }
 
+    /*
+    ====================================================
+    ACTIVAR / DESACTIVAR MATERIA
+    ====================================================
+    */
     public function estado(Request $request)
     {
-        $id = $request->id;
-        $estado = $request->estado;
-
-        $materia = Materia::find($id);
-
-        // Cambié 'message' por 'mensaje' para ser consistentes
-        if (!$materia) {
-            return response()->json(['success' => false, 'mensaje' => 'Materia no encontrada']);
-        }
-
         try {
-            $materia->activo = $estado;
-            $materia->save();
+
+            DB::beginTransaction();
+
+            $materia = Materia::findOrFail($request->id);
 
             $semestreActivo = Semestre::where('activo', 1)->first();
+
             if (!$semestreActivo) {
-                return response()->json(['success' => false, 'mensaje' => 'No hay semestre activo']);
+
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No hay semestre activo'
+                ]);
             }
 
-            if ($estado == 1) {
-                $semestreActivo->materias()->syncWithoutDetaching([$materia->id]);
-            } else {
-                $semestreActivo->materias()->detach($materia->id);
+            /*
+            ============================
+            ACTIVAR
+            ============================
+            */
+            if ($request->estado == 1) {
+
+                $materia->activo = 1;
+                $materia->save();
+
+                // INSERTAR EN PIVOTE
+                $semestreActivo
+                    ->materias()
+                    ->syncWithoutDetaching([$materia->id]);
             }
 
-            $idsMateriasActivas = $semestreActivo->materias()->pluck('materias.id')->toArray();
-            $totalActivas = count($idsMateriasActivas);
-            $asignadas = AsignacionMateria::where('semestre_id', $semestreActivo->id)->count();
+            /*
+            ============================
+            DESACTIVAR
+            ============================
+            */ else {
 
-            $semestreActivo->update([
-                'materias_activas' => $totalActivas,
-                'materias_asignadas' => $asignadas,
-                'materias_por_asignar' => max(0, $totalActivas - $asignadas),
-                'ids_materias_activas' => json_encode($idsMateriasActivas)
-            ]);
+                $materia->activo = 0;
+                $materia->save();
+
+                // ELIMINAR DE PIVOTE
+                $materia
+                    ->semestres()
+                    ->detach($semestreActivo->id);
+            }
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
-                'mensaje' => $estado ? 'Materia activada correctamente' : 'Materia desactivada correctamente',
-                'total' => $totalActivas
+                'mensaje' =>
+                $request->estado
+                    ? 'Materia activada correctamente'
+                    : 'Materia desactivada correctamente'
             ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'mensaje' => 'Error: ' . $e->getMessage()], 500);
+
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'mensaje' => $e->getMessage()
+            ], 500);
         }
     }
 }

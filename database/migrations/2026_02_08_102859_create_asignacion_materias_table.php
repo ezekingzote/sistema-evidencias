@@ -10,14 +10,25 @@ return new class extends Migration
     {
         Schema::create('asignacion_materias', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('semestre_id')->constrained('semestres')->onDelete('cascade');
-            $table->foreignId('materia_id')->constrained('materias')->onDelete('cascade');
+
+            $table->foreignId('materia_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('docente_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('semestre_id')->constrained()->cascadeOnDelete();
+
+            $table->string('grupo', 20);
+
+            $table->boolean('activo')->default(1);
+            $table->boolean('asignada')->default(0);
+
             $table->timestamps();
         });
     }
 
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('asignacion_materias');
+        Schema::table('asignacion_materias', function (Blueprint $table) {
+            $table->dropForeign(['docente_id']);
+            $table->dropColumn('docente_id');
+        });
     }
 };

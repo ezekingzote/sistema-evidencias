@@ -37,7 +37,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/verificar', [Semestres::class, 'verificar'])->name('semestre.verificar');
             Route::get('/cards', [Semestres::class, 'cards'])->name('semestres.cards');
             Route::post('/cambiar-estado/{id}', [Semestres::class, 'cambiarEstado']);
-            Route::post('/cambiar-estado-confirmar/{id}', [Semestres::class,'cambiarEstadoConfirmar']);
+            Route::post('/cambiar-estado-confirmar/{id}', [Semestres::class, 'cambiarEstadoConfirmar']);
             Route::get('/edit/{id}', [Semestres::class, 'edit'])->name('semestres.edit');
             Route::put('/update/{id}', [Semestres::class, 'update'])->name('semestres.update');
             Route::get('/show/{id}', [Semestres::class, 'show'])->name('semestres.show');
@@ -55,16 +55,21 @@ Route::middleware('auth')->group(function () {
             Route::get('/cambiar-estado/{id}/{estado}', [Docentes::class, 'estado'])->name('docentes.estado');
             Route::get('/edit/{id}', [Docentes::class, 'edit'])->name('docentes.edit');
             Route::put('/update/{id}', [Docentes::class, 'update'])->name('docentes.update');
-
-
         });
 
         Route::prefix('asignar-materias')->group(function () {
             Route::get('/', [AsignarMaterias::class, 'index'])->name('asignar-materias');
+            Route::get('/tbody', [AsignarMaterias::class, 'tbody'])->name('asignar-materias.tbody');
             Route::get('/create', [AsignarMaterias::class, 'create'])->name('asignar-materias.create');
-            Route::get('/materias-por-carrera', [AsignarMaterias::class, 'getMateriasPorCarrera'])->name('asignar-materias.por-carrera');
             Route::post('/store', [AsignarMaterias::class, 'store'])->name('asignar-materias.store');
-            });
+            Route::get('/edit/{id}', [AsignarMaterias::class, 'edit'])->name('asignar-materias.edit');
+            Route::put('/update/{id}', [AsignarMaterias::class, 'update'])->name('asignar-materias.update');
+            Route::get('/show/{id}', [AsignarMaterias::class, 'show'])->name('asignar-materias.show');
+            Route::delete('/destroy/{id}', [AsignarMaterias::class, 'destroy'])->name('asignar-materias.destroy');
+            Route::post('/estado', [AsignarMaterias::class, 'estado'])->name('asignar-materias.estado');
+        });
+
+
 
 
         Route::prefix('materias')->group(function () {
@@ -73,10 +78,10 @@ Route::middleware('auth')->group(function () {
             Route::post('/store', [Materias::class, 'store'])->name('materias.store');
             Route::get('/edit/{id}', [Materias::class, 'edit'])->name('materias.edit');
             Route::put('/update/{id}', [Materias::class, 'update'])->name('materias.update');
-            Route::get('/tbody', [Materias::class, 'tbody'])->name('materias.tbody');Route::get('/show/{id}', [Materias::class, 'show'])->name('materias.show');
+            Route::get('/tbody', [Materias::class, 'tbody'])->name('materias.tbody');
+            Route::get('/show/{id}', [Materias::class, 'show'])->name('materias.show');
             Route::delete('/destroy/{id}', [Materias::class, 'destroy'])->name('materias.destroy');
             Route::post('/estado', [Materias::class, 'estado'])->name('materias.estado.ajax');
-
         });
     });
 

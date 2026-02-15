@@ -7,67 +7,238 @@ use App\Models\Materia;
 use App\Models\Semestre;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class AsignarMaterias extends Controller
 {
+
     public function index()
     {
-        $titulo = 'Asignar Materias';
+        $titulo = "Asignar Materias";
 
-        return view('modules.asignar-materias.index', compact('titulo'));
+        $items = AsignacionMateria::with([
+            'materia',
+            'docente',
+            'semestre'
+        ])
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return view('modules.asignar-materias.index', compact(
+            'titulo',
+            'items'
+        ));
     }
+
+
 
     public function create()
     {
         $titulo = "Asignar Materia";
 
         $docentes = User::where('rol', 'docente')
-                        ->where('activo', 1)
-                        ->orderBy('name', 'asc')
-                        ->get();
-
+            ->where('activo', 1)
+            ->orderBy('name')
+            ->get();
 
         $materias = Materia::where('activo', 1)
-                           ->orderBy('nombre', 'asc')
-                           ->get(['id', 'nombre', 'carrera', 'semestre']);
-
+            ->orderBy('nombre')
+            ->get();
 
         $semestreActivo = Semestre::where('activo', 1)->first();
 
-        return view('modules.asignar-materias.create', compact('titulo', 'docentes', 'materias', 'semestreActivo'));
+        return view('modules.asignar-materias.create', compact(
+            'titulo',
+            'docentes',
+            'materias',
+            'semestreActivo'
+        ));
     }
+
+
 
     public function store(Request $request)
     {
-        $request->validate([
-            'materia_id'  => 'required',
-            'docente_id'  => 'required',
-            'grupo'       => 'required',
-            'semestre_id' => 'required'
-        ]);
-
-        $existe = Materia::where('materia_id', $request->materia_id)
-                                    ->where('docente_id', $request->docente_id)
-                                    ->where('semestre_id', $request->semestre_id)
-                                    ->where('grupo', $request->grupo)
-                                    ->exists();
-
-        if ($existe) {
-            return back()->withInput()->with('error', 'Esta asignación ya existe para el semestre actual.');
-        }
-
         try {
-            $asignacion = new AsignacionMateria();
-            $asignacion->materia_id  = $request->materia_id;
-            $asignacion->docente_id  = $request->docente_id;
-            $asignacion->semestre_id = $request->semestre_id;
-            $asignacion->grupo       = $request->grupo;
-            $asignacion->activo      = 1;
-            $asignacion->save();
 
-            return redirect()->route('asignar-materias')->with('success', 'Materia asignada correctamente.');
+            DB::beginTransaction();
+
+            $request->validate([
+                'semestre_id' => 'required|exists:semestres,id',
+                'materia_id' => 'required|exists:materias,id',
+                'docente_id' => 'required|exists:users,id',
+                'grupo' => 'required'
+            ]);
+
+            $existe = AsignacionMateria::where('semestre_id', $request->semestre_id)
+                ->where('materia_id', $request->materia_id)
+                ->exists();
+
+            if ($existe) {
+
+                return back()->with(
+                    'error',
+                    'Esta materia ya está asignada en este semestre'
+                );
+            }
+
+
+            AsignacionMateria::create([
+                'semestre_id' => $request->semestre_id,
+                'materia_id' => $request->materia_id,
+                'docente_id' => $request->docente_id,
+                'grupo' => $request->grupo,
+                'activo' => 1
+            ]);
+
+
+            DB::table('materias_semestres')
+                ->where('semestre_id', $request->semestre_id)
+                ->where('materia_id', $request->materia_id)
+                ->update([
+                    'asignada' => 1,
+                    'updated_at' => now()
+                ]);
+
+
+            DB::commit();
+
+            return redirect()->route('asignar-materias')
+                ->with('success', 'Materia asignada correctamente');
         } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Error al guardar: ' . $e->getMessage());
+
+            DB::rollBack();
+
+            return back()->with('error', $e->getMessage());
         }
+    }
+
+
+
+    public function edit($id)
+    {
+        $titulo = "Editar Asignación";
+
+        $item = AsignacionMateria::findOrFail($id);
+
+        $docentes = User::where('rol', 'docente')
+            ->where('activo', 1)
+            ->get();
+
+        return view('modules.asignar-materias.edit', compact(
+            'titulo',
+            'item',
+            'docentes'
+        ));
+    }
+
+
+
+    public function update(Request $request, $id)
+    {
+        try {
+
+            $request->validate([
+                'docente_id' => 'required|exists:users,id'
+            ]);
+
+            $item = AsignacionMateria::findOrFail($id);
+
+            $item->docente_id = $request->docente_id;
+
+            $item->save();
+
+            return redirect()->route('asignar-materias')
+                ->with('success', 'Asignación actualizada correctamente');
+        } catch (\Exception $e) {
+
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function show($id)
+    {
+        $titulo = "Eliminar Asignación";
+
+        $item = AsignacionMateria::with([
+            'materia',
+            'semestre'
+        ])->findOrFail($id);
+
+        return view('modules.asignar-materias.show', compact(
+            'titulo',
+            'item'
+        ));
+    }
+
+
+    public function destroy(Request $request, $id)
+    {
+        try {
+
+            if (!Hash::check($request->password, Auth::user()->password)) {
+
+                return response()->json([
+                    'error' => 'Contraseña incorrecta'
+                ], 401);
+            }
+
+
+            DB::beginTransaction();
+
+            $item = AsignacionMateria::findOrFail($id);
+
+
+            DB::table('materias_semestres')
+                ->where('semestre_id', $item->semestre_id)
+                ->where('materia_id', $item->materia_id)
+                ->update([
+                    'asignada' => 0,
+                    'updated_at' => now()
+                ]);
+
+
+            $item->delete();
+
+            DB::commit();
+
+
+            return response()->json([
+                'success' => true
+            ]);
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function estado(Request $request)
+    {
+        $item = AsignacionMateria::findOrFail($request->id);
+        $item->activo = $request->estado;
+        $item->save();
+
+        return response()->json([
+            'success' => true,
+            'mensaje' => 'Estado actualizado correctamente'
+        ]);
+    }
+
+
+    public function tbody()
+    {
+        $items = AsignacionMateria::with([
+            'materia',
+            'docente',
+            'semestre'
+        ])->get();
+
+        return view('modules.asignar-materias.tbody', compact('items'));
     }
 }

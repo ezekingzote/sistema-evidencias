@@ -15,7 +15,21 @@ class Semestres extends Controller
     public function index()
     {
         $titulo = 'Semestres';
-        $semestres = Semestre::all();
+
+        $semestres = Semestre::withCount([
+
+            'materias as materias_asignadas_count' => function ($q) {
+                $q->where('materias_semestres.asignada', 1);
+            },
+
+            'materias as materias_por_asignar_count' => function ($q) {
+                $q->where('materias_semestres.asignada', 0);
+            },
+
+            'materias as materias_activas_count'
+
+        ])->get();
+
         return view('modules.semestres.index', compact(
             'titulo',
             'semestres'
@@ -89,7 +103,6 @@ class Semestres extends Controller
         }
     }
 
-
     public function cambiarEstado($id)
     {
         $semestre = Semestre::findOrFail($id);
@@ -103,41 +116,52 @@ class Semestres extends Controller
     }
 
 
-
     public function cambiarEstadoConfirmar(Request $request, $id)
     {
-        $semestre = Semestre::findOrFail($id);
+        try {
 
-        if (!Hash::check($request->password, Auth::user()->password)) {
+            DB::beginTransaction();
+
+            $semestre = Semestre::findOrFail($id);
+
+            $nuevoEstado = $semestre->activo ? 0 : 1;
+
+            if ($nuevoEstado == 1) {
+
+                Semestre::where('activo', 1)->update([
+                    'activo' => 0
+                ]);
+
+                $semestre->activo = 1;
+                $semestre->save();
+            } else {
+
+                $semestre->activo = 0;
+                $semestre->save();
+
+                foreach ($semestre->materias as $materia) {
+
+                    $materia->activo = 0;
+                    $materia->save();
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Estado del semestre actualizado correctamente'
+            ]);
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'error' => 'La contraseña es incorrecta'
-            ], 401);
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        if (!$semestre->activo) {
-            $otroActivo = Semestre::where('activo', 1)
-                ->where('id', '!=', $semestre->id)
-                ->exists();
-
-            if ($otroActivo) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Ya hay un semestre activo. Solo se puede activar uno a la vez.'
-                ], 400);
-            }
-        }
-
-        $semestre->activo = !$semestre->activo;
-        $semestre->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'El estado del semestre ha sido modificado.'
-        ]);
     }
-
-
 
 
     public function cards()
@@ -166,37 +190,43 @@ class Semestres extends Controller
         return view('modules.semestres.edit', compact('titulo', 'item', 'semestres'));
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        $request->validate([
-            'anio' => 'required|integer',
-            'periodo' => 'required|in:1,2',
-            'fecha_inicio' => 'required|date',
-            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
-        ]);
-
-        $existe = Semestre::where('anio', $request->anio)
-            ->where('periodo', $request->periodo)
-            ->where('id', '!=', $id)
-            ->exists();
-
-        if ($existe) {
-            return back()->with('error', 'Ya existe un semestre con ese año y periodo');
-        }
-
         $semestre = Semestre::findOrFail($id);
-        $periodoTexto = $request->periodo == 1 ? 'ENE - JUN' : 'JUL - DIC';
-        $nombre = $request->anio . '-' . $request->periodo . ' ' . $periodoTexto;
 
-        $semestre->update([
-            'nombre' => $nombre,
-            'anio' => $request->anio,
-            'periodo' => $request->periodo,
-            'fecha_inicio' => $request->fecha_inicio,
-            'fecha_fin' => $request->fecha_fin,
-        ]);
+        DB::beginTransaction();
 
-        return redirect()->route('semestres')->with('success', 'Semestre actualizado correctamente');
+        try {
+
+            $semestre->nombre = $request->nombre;
+
+            // Forzar booleano correcto
+            $semestre->activo = $request->has('activo') ? 1 : 0;
+
+            $semestre->save();
+
+            // 🔴 SI EL SEMESTRE QUEDA INACTIVO
+            if ($semestre->activo == 0) {
+
+                DB::table('materias_semestres')
+                    ->where('semestre_id', $semestre->id)
+                    ->update([
+                        'asignada' => 0,
+                        'updated_at' => now()
+                    ]);
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->route('semestres.index')
+                ->with('success', 'Semestre actualizado correctamente');
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return back()->with('error', $e->getMessage());
+        }
     }
 
 

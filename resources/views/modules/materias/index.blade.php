@@ -5,9 +5,7 @@
 @section('contenido')
 
     <main id="main" class="main">
-
         <div class="pagetitle">
-
             <h1>Materias</h1>
 
             <nav>
@@ -28,84 +26,47 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
 
             <a href="{{ route('nueva-materia') }}" class="btn btn-outline-primary shadow-sm">
-
-                <i class="fa-solid fa-plus me-1"></i>
-
-                Nueva Materia
-
+                <i class="fa-solid fa-plus me-1"></i> Nueva Materia
             </a>
 
         </div>
 
 
         <section class="section mt-2">
-
             <div class="row">
-
                 <div class="col-lg-12">
-
-
                     <div class="card shadow-sm border-0" style="border-radius: 15px;">
                         <div class="card mt-2">
-
                             <div class="card-body p-4">
-
-
                                 <div class="card-header bg-white py-3">
-
                                     <div class="d-flex align-items-center">
-
                                         <div class="p-2 bg-primary-light rounded-3 me-3">
-
                                             <i class="bi bi-collection-fill text-primary fs-4"></i>
-
                                         </div>
 
                                         <h5 class="card-title mb-0 p-0">
-
                                             Lista de Materias
-
                                         </h5>
-
                                     </div>
-
                                 </div>
 
 
 
                                 <div class="card-body p-4">
-
-
                                     <div class="table-responsive">
-
-
                                         <table class="table table-hover align-middle text-center datatable">
-
-
                                             <thead class="table-light">
-
                                                 <tr>
-
                                                     <th class="text-center">NOMBRE</th>
-
                                                     <th class="text-center">CLAVE</th>
-
                                                     <th class="text-center">UNIDADES</th>
-
                                                     <th class="text-center">CARRERA</th>
-
                                                     <th class="text-center">ESPECIALIDAD</th>
-
                                                     <th class="text-center">SEMESTRE</th>
-
                                                     <th class="text-center">ACTIVO</th>
-
                                                     <th class="text-center">EDITAR</th>
-
                                                 </tr>
-
                                             </thead>
-
 
                                             <tbody id="tbody_materias">
 
@@ -113,32 +74,16 @@
 
                                             </tbody>
 
-
                                         </table>
-
-
                                     </div>
-
-
                                 </div>
-
-
                             </div>
                         </div>
                     </div>
-
-
                 </div>
-
-
             </div>
-
-
         </section>
-
-
     </main>
-
 @endsection
 
 
