@@ -120,11 +120,6 @@ class Materias extends Controller
         return view('modules.materias.misMaterias', compact('titulo'));
     }
 
-    /*
-    ====================================================
-    ACTIVAR / DESACTIVAR MATERIA
-    ====================================================
-    */
     public function estado(Request $request)
     {
         try {
@@ -143,32 +138,19 @@ class Materias extends Controller
                 ]);
             }
 
-            /*
-            ============================
-            ACTIVAR
-            ============================
-            */
             if ($request->estado == 1) {
 
                 $materia->activo = 1;
                 $materia->save();
-
-                // INSERTAR EN PIVOTE
                 $semestreActivo
                     ->materias()
                     ->syncWithoutDetaching([$materia->id]);
             }
 
-            /*
-            ============================
-            DESACTIVAR
-            ============================
-            */ else {
+            else {
 
                 $materia->activo = 0;
                 $materia->save();
-
-                // ELIMINAR DE PIVOTE
                 $materia
                     ->semestres()
                     ->detach($semestreActivo->id);

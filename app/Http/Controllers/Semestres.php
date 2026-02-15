@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AsignacionMateria;
 use App\Models\Materia;
 use App\Models\Semestre;
 use Exception;
@@ -18,15 +19,19 @@ class Semestres extends Controller
 
         $semestres = Semestre::withCount([
 
+            'materias as materias_activas_count' => function ($q) {
+                $q->where('materias.activo', 1);
+            },
+
             'materias as materias_asignadas_count' => function ($q) {
-                $q->where('materias_semestres.asignada', 1);
+                $q->where('materias_semestres.asignada', 1)
+                    ->where('materias.activo', 1);
             },
 
             'materias as materias_por_asignar_count' => function ($q) {
-                $q->where('materias_semestres.asignada', 0);
-            },
-
-            'materias as materias_activas_count'
+                $q->where('materias_semestres.asignada', 0)
+                    ->where('materias.activo', 1);
+            }
 
         ])->get();
 
@@ -139,11 +144,16 @@ class Semestres extends Controller
                 $semestre->activo = 0;
                 $semestre->save();
 
-                foreach ($semestre->materias as $materia) {
+                $idsMaterias = $semestre->materias()->pluck('materias.id');
 
-                    $materia->activo = 0;
-                    $materia->save();
-                }
+                Materia::whereIn('id', $idsMaterias)->update([
+                    'activo' => 0
+                ]);
+
+                AsignacionMateria::where('semestre_id', $semestre->id)->update([
+                    'activo' => 0,
+                    'asignada' => 0
+                ]);
             }
 
             DB::commit();
@@ -162,6 +172,7 @@ class Semestres extends Controller
             ], 500);
         }
     }
+
 
 
     public function cards()

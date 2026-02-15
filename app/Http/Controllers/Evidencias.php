@@ -119,11 +119,26 @@ class Materias extends Controller
                 $semestreActivo->materias()->syncWithoutDetaching([$id]);
             } else {
                 $semestreActivo->materias()->detach($id);
+
+                AsignacionMateria::where('materia_id', $id)
+                    ->where('semestre_id', $semestreActivo->id)
+                    ->update(['activo' => 0]);
+
+                AsignacionMateria::where('materia_id', $id)
+                    ->where('semestre_id', $semestreActivo->id)
+                    ->update([
+                        'activo' => 0,
+                        'asignada' => 0
+                    ]);
             }
 
             $idsMateriasActivas = $semestreActivo->materias()->pluck('materia_id')->toArray();
             $totalActivas = count($idsMateriasActivas);
-            $asignadas = AsignacionMateria::where('semestre_id', $semestreActivo->id)->count();
+
+            $asignadas = AsignacionMateria::where('semestre_id', $semestreActivo->id)
+                ->where('activo', 1)
+                ->where('asignada', 1)
+                ->count();
 
             $semestreActivo->update([
                 'materias_activas' => $totalActivas,
@@ -133,7 +148,6 @@ class Materias extends Controller
             ]);
 
             return back()->with('success', $estado ? 'Materia activada' : 'Materia desactivada');
-
         } catch (Exception $e) {
             return back()->with('error', 'Error al actualizar el estado: ' . $e->getMessage());
         }
