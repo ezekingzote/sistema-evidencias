@@ -220,7 +220,25 @@ class AsignarMaterias extends Controller
 
     public function estado(Request $request)
     {
-        $item = AsignacionMateria::findOrFail($request->id);
+        $item = AsignacionMateria::with(['materia', 'docente'])->findOrFail($request->id);
+
+        if ($request->estado == 1) {
+
+            if (!$item->materia || $item->materia->activo == 0) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No se puede activar: La materia asociada está desactivada.'
+                ]);
+            }
+
+            if (!$item->docente || $item->docente->activo == 0) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No se puede activar: El docente asociado está desactivado.'
+                ]);
+            }
+        }
+
         $item->activo = $request->estado;
         $item->save();
 

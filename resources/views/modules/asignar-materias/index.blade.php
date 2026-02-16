@@ -98,45 +98,41 @@
 
 
         function cambiar_estado(id, estado) {
-
             fetch("{{ route('asignar-materias.estado') }}", {
-
                     method: 'POST',
-
                     headers: {
-
                         'Content-Type': 'application/json',
-
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
-
                     },
-
                     body: JSON.stringify({
-
                         id: id,
-
                         estado: estado
-
                     })
-
                 })
                 .then(res => res.json())
                 .then(data => {
-
-                    Swal.fire({
-
-                        icon: data.success ? 'success' : 'error',
-
-                        title: data.mensaje
-
-                    });
-
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Logrado!',
+                            text: data.mensaje,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Atención',
+                            text: data.mensaje
+                        });
+                    }
                     recargar_tbody();
-
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    recargar_tbody();
                 });
-
         }
-
 
         $('#tbody_asignaciones').on("change", ".chkToggle", function() {
 
