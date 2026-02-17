@@ -117,13 +117,14 @@
                             title: '¡Logrado!',
                             text: data.mensaje,
                             timer: 1500,
-                            showConfirmButton: false
+                            showConfirmButton: true
                         });
-                    } else {
+
                         Swal.fire({
-                            icon: 'warning',
+                            icon: 'success',
                             title: 'Atención',
-                            text: data.mensaje
+                            text: data.mensaje,
+                            confirmButtonText: 'Entendido'
                         });
                     }
                     recargar_tbody();

@@ -32,22 +32,29 @@ class AsignarMaterias extends Controller
         ));
     }
 
-
-
     public function create()
     {
         $titulo = "Asignar Materia";
 
+        // 1. Solo docentes activos
         $docentes = User::where('rol', 'docente')
             ->where('activo', 1)
             ->orderBy('name')
             ->get();
 
-        $materias = Materia::where('activo', 1)
-            ->orderBy('nombre')
-            ->get();
-
         $semestreActivo = Semestre::where('activo', 1)->first();
+
+
+        if ($semestreActivo) {
+            $materias = Materia::where('activo', 1) // Solo materias activas
+                ->whereDoesntHave('asignaciones', function ($query) use ($semestreActivo) {
+                    $query->where('semestre_id', $semestreActivo->id);
+                })
+                ->orderBy('nombre')
+                ->get();
+        } else {
+            $materias = collect();
+        }
 
         return view('modules.asignar-materias.create', compact(
             'titulo',
@@ -57,12 +64,9 @@ class AsignarMaterias extends Controller
         ));
     }
 
-
-
     public function store(Request $request)
     {
         try {
-
             DB::beginTransaction();
 
             $request->validate([
@@ -72,16 +76,17 @@ class AsignarMaterias extends Controller
                 'grupo' => 'required'
             ]);
 
-            $existe = AsignacionMateria::where('semestre_id', $request->semestre_id)
+            $asignacionExistente = AsignacionMateria::where('semestre_id', $request->semestre_id)
                 ->where('materia_id', $request->materia_id)
-                ->exists();
+                ->first();
 
-            if ($existe) {
+            if ($asignacionExistente) {
 
-                return back()->with(
-                    'error',
-                    'Esta materia ya está asignada en este semestre'
-                );
+                if (!$asignacionExistente->activo) {
+                    return back()->with('warning_existente', 'Existe una asignación inactiva para esta asignatura. Por favor, actívela desde la lista principal.');
+                }
+
+                return back()->with('error', 'Esta materia ya está asignada y activa en este semestre.');
             }
 
 
@@ -93,7 +98,6 @@ class AsignarMaterias extends Controller
                 'activo' => 1
             ]);
 
-
             DB::table('materias_semestres')
                 ->where('semestre_id', $request->semestre_id)
                 ->where('materia_id', $request->materia_id)
@@ -102,27 +106,20 @@ class AsignarMaterias extends Controller
                     'updated_at' => now()
                 ]);
 
-
             DB::commit();
 
             return redirect()->route('asignar-materias')
                 ->with('success', 'Materia asignada correctamente');
         } catch (\Exception $e) {
-
             DB::rollBack();
-
             return back()->with('error', $e->getMessage());
         }
     }
 
-
-
     public function edit($id)
     {
         $titulo = "Editar Asignación";
-
         $item = AsignacionMateria::findOrFail($id);
-
         $docentes = User::where('rol', 'docente')
             ->where('activo', 1)
             ->get();
@@ -134,8 +131,6 @@ class AsignarMaterias extends Controller
         ));
     }
 
-
-
     public function update(Request $request, $id)
     {
         try {
@@ -143,11 +138,8 @@ class AsignarMaterias extends Controller
             $request->validate([
                 'docente_id' => 'required|exists:users,id'
             ]);
-
             $item = AsignacionMateria::findOrFail($id);
-
             $item->docente_id = $request->docente_id;
-
             $item->save();
 
             return redirect()->route('asignar-materias')
@@ -190,7 +182,6 @@ class AsignarMaterias extends Controller
 
             $item = AsignacionMateria::findOrFail($id);
 
-
             DB::table('materias_semestres')
                 ->where('semestre_id', $item->semestre_id)
                 ->where('materia_id', $item->materia_id)
@@ -199,19 +190,14 @@ class AsignarMaterias extends Controller
                     'updated_at' => now()
                 ]);
 
-
             $item->delete();
-
             DB::commit();
-
-
             return response()->json([
                 'success' => true
             ]);
+
         } catch (\Exception $e) {
-
             DB::rollBack();
-
             return response()->json([
                 'error' => $e->getMessage()
             ], 500);
