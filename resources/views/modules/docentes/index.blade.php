@@ -37,7 +37,7 @@
                                 </div>
 
                                 <div class="table-responsive">
-                                    <table class="table table-hover align-middle text-center datatable">
+                                    <table id="tablaDocentes" class="table table-hover align-middle text-center">
                                         <thead class="table-light">
                                             <tr>
                                                 <th>ID</th>
@@ -49,9 +49,7 @@
                                                 <th>EDITAR</th>
                                             </tr>
                                         </thead>
-                                        <tbody id="tbody_docentes">
-                                            @include('modules.docentes.tbody')
-                                        </tbody>
+                                        <tbody></tbody>
                                     </table>
                                 </div>
                             </div>
@@ -75,40 +73,64 @@
     @endif
 
     <script>
-        function recargar_tbody() {
-            $('#tbody_docentes').html('<tr><td colspan="7">Cargando...</td></tr>');
-            $.ajax({
-                type: 'GET',
-                url: "{{ route('docentes.tbody') }}",
-                success: function(respuesta) {
-                    $('#tbody_docentes').html(respuesta);
-                }
-            });
-        }
+        $(document).ready(function() {
 
-        function cambiar_estado(id, estado) {
-            $.ajax({
-                type: 'GET',
-                url: "{{ url('docentes/cambiar-estado') }}/" + id + "/" + estado,
-                success: function(respuesta) {
-                    if (respuesta == 1) {
-                        Swal.fire('Éxito', 'Estado actualizado correctamente', 'success');
-                        recargar_tbody();
-                    } else {
-                        Swal.fire('Error', 'No se pudo actualizar el estado', 'error');
+            let tabla = $('#tablaDocentes').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: "{{ route('docentes.data') }}",
+                columns: [{
+                        data: 'id',
+                        name: 'id'
+                    },
+                    {
+                        data: 'nombre',
+                        name: 'nombre'
+                    },
+                    {
+                        data: 'email',
+                        name: 'email'
+                    },
+                    {
+                        data: 'rol',
+                        name: 'rol'
+                    },
+                    {
+                        data: 'password_btn',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'activo_switch',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'editar_btn',
+                        orderable: false,
+                        searchable: false
                     }
+                ],
+                order: [
+                    [0, 'desc']
+                ]
+            });
+
+        });
+        $('#tablaDocentes').on('change', '.cambiar-estado', function() {
+
+            let id = $(this).data('id');
+            let estado = $(this).is(':checked') ? 1 : 0;
+
+            $.get("{{ url('docentes/cambiar-estado') }}/" + id + "/" + estado, function(res) {
+                if (res == 1) {
+                    $('#tablaDocentes').DataTable().ajax.reload(null, false);
+                    Swal.fire('Éxito', 'Estado actualizado', 'success');
                 }
             });
-        }
 
-
-        $('#tbody_docentes').on("change", ".form-check-input", function() {
-            let id = $(this).attr("id");
-            let estado = $(this).is(":checked") ? 1 : 0;
-            cambiar_estado(id, estado);
         });
-
-
+        /*
         $('#tbody_docentes').on("click", ".reset-btn", function() {
             let userId = $(this).data("id");
             Swal.fire({
@@ -146,5 +168,6 @@
                 }
             });
         });
+        */
     </script>
 @endpush

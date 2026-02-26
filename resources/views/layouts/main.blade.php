@@ -105,7 +105,7 @@
     
     <script>
         $(document).ready(function() {
-            $('.datatable').DataTable({
+            $('.datatable').not('#tablaDocentes').DataTable({
                 layout: {
                     topStart: {
                         buttons: ['copy', 'csv', 'excel', 'pdf', 'print']

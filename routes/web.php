@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('docentes')->group(function () {
             Route::get('/', [Docentes::class, 'index'])->name('docentes');
+            Route::get('docentes/data', [Docentes::class, 'data'])->name('docentes.data');
             Route::get('/create', [Docentes::class, 'create'])->name('nuevo-docente');
             Route::get('/descargar-comprobante', [Docentes::class, 'downloadPdf'])->name('pdf.descargar');
             Route::post('/store', [Docentes::class, 'store'])->name('docente.store');

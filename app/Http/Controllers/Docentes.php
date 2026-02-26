@@ -8,17 +8,60 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Barryvdh\DomPDF\Facade\Pdf;
-
-
+use Yajra\DataTables\DataTables;
 
 class Docentes extends Controller
 {
     public function index()
     {
         $titulo = 'Docentes';
-        $items = User::all();
+        return view('modules.docentes.index', compact('titulo'));
+    }
 
-        return view('modules.docentes.index', compact('titulo', 'items'));
+    public function data()
+    {
+        $query = User::where('rol', 'docente');
+
+        return DataTables::of($query)
+
+            ->addColumn('nombre', function ($row) {
+                return strtoupper($row->name);
+            })
+
+            ->addColumn('password_btn', function ($row) {
+                return '<button class="btn btn-outline-secondary btn-sm reset-btn" data-id="' . $row->id . '">
+                        <i class="fa-solid fa-user-lock"></i>
+                    </button>';
+            })
+
+            ->addColumn('activo_switch', function ($row) {
+                $checked = $row->activo ? 'checked' : '';
+
+                return '<div class="form-check form-switch d-flex justify-content-center">
+                        <input class="form-check-input cambiar-estado" 
+                               type="checkbox" 
+                               data-id="' . $row->id . '" 
+                               ' . $checked . '>
+                    </div>';
+            })
+
+            ->addColumn('editar_btn', function ($row) {
+                return '<a href="' . route('docentes.edit', $row->id) . '" 
+                        class="btn btn-outline-warning btn-sm">
+                        <i class="fa-solid fa-user-pen"></i>
+                    </a>';
+            })
+
+            ->editColumn('rol', function ($row) {
+                if ($row->rol === 'admin') {
+                    return '<span class="badge bg-danger">ADMIN</span>';
+                }
+
+                return '<span class="badge bg-info text-dark">DOCENTE</span>';
+            })
+
+            ->rawColumns(['rol', 'password_btn', 'activo_switch', 'editar_btn'])
+            ->make(true);
     }
 
     public function create()
