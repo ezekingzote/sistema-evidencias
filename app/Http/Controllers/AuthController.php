@@ -49,6 +49,7 @@ class AuthController extends Controller
         User::create([
             'name' => 'Ezequiel Mendoza',
             'email' => 'admin@admin.com',
+            'departamento' => 'Ciencias Basicas',
             'password' => Hash::make('admin'),
             'activo' => true,
             'rol' => 'admin'

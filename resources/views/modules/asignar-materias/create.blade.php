@@ -60,7 +60,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     <label class="form-label fw-bold">Docente (Solo Activos)</label>
                                     <select name="docente_id" class="form-select" required>
                                         <option value="" selected disabled>Seleccione un docente...</option>
@@ -72,6 +72,16 @@
                                             <option disabled>No hay docentes activos disponibles</option>
                                         @endforelse
                                     </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold" for="unidades">
+                                        <i class="bi bi-list-check me-1"></i> Número Alumnos
+                                    </label>
+                                    <div class="input-group">
+                                        <input name="alumnos" id="alumnos" type="number" 
+                                               class="form-control" min="1" max="50" value="1" required>
+                                        <span class="input-group-text">alumnos</span>
+                                    </div>
                                 </div>
 
                                 <div class="col-12 mt-4 text-center">

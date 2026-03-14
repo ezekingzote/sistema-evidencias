@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('semestre_id')->constrained()->cascadeOnDelete();
 
             $table->string('grupo', 20);
+            $table->string('alumnos', 20);
 
             $table->boolean('activo')->default(1);
             $table->boolean('asignada')->default(0);

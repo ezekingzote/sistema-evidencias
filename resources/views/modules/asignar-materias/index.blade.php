@@ -47,6 +47,7 @@
                                     <th>MATERIA</th>
                                     <th>DOCENTE</th>
                                     <th>GRUPO</th>
+                                    <th>N.Alumnos</th>
                                     <th>ACTIVO</th>
                                     <th>EDITAR</th>
                                 </tr>

@@ -35,8 +35,6 @@ class AsignarMaterias extends Controller
     public function create()
     {
         $titulo = "Asignar Materia";
-
-        // 1. Solo docentes activos
         $docentes = User::where('rol', 'docente')
             ->where('activo', 1)
             ->orderBy('name')
@@ -46,7 +44,7 @@ class AsignarMaterias extends Controller
 
 
         if ($semestreActivo) {
-            $materias = Materia::where('activo', 1) // Solo materias activas
+            $materias = Materia::where('activo', 1)
                 ->whereDoesntHave('asignaciones', function ($query) use ($semestreActivo) {
                     $query->where('semestre_id', $semestreActivo->id);
                 })
@@ -95,6 +93,7 @@ class AsignarMaterias extends Controller
                 'materia_id' => $request->materia_id,
                 'docente_id' => $request->docente_id,
                 'grupo' => $request->grupo,
+                'alumnos' => $request->alumnos,
                 'activo' => 1
             ]);
 
@@ -138,7 +137,8 @@ class AsignarMaterias extends Controller
             $request->validate([
                 'docente_id' => 'required|exists:users,id'
             ]);
-            $item = AsignacionMateria::findOrFail($id);
+            $item = AsignacionMateria::findOrFail($id);            
+            $item ->alumnos = $request->alumnos;
             $item->docente_id = $request->docente_id;
             $item->save();
 

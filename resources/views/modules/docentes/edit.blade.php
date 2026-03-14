@@ -53,7 +53,7 @@
                                 <div class="row g-4 mt-4">
 
 
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label class="form-label fw-bold">
                                             <i class="bi bi-shield-lock me-1"></i> Rol de Sistema
                                         </label>
@@ -64,8 +64,31 @@
                                                 ADMINISTRADOR</option>
                                         </select>
                                     </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">Departamento</label>
+                                        <select name="dpto" id="dpto" class="form-select"
+                                            style="border-left: 5px solid #0d6efd;" required>
 
-                                    <div class="col-md-6">
+                                            <option value="" disabled>SELECCIONA UN DEPARTAMENTO</option>
+
+                                            <option value="Ciencias Económico-Administrativas"
+                                                {{ $item->departamento == 'Ciencias Económico-Administrativas' ? 'selected' : '' }}>
+                                                CIENCIAS ECONÓMICO-ADMINISTRATIVAS
+                                            </option>
+
+                                            <option value="Ciencias Básicas y Sistemas"
+                                                {{ $item->departamento == 'Ciencias Básicas y Sistemas' ? 'selected' : '' }}>
+                                                CIENCIAS BÁSICAS Y SISTEMAS
+                                            </option>
+
+                                            <option value="Departamento de Ingenierías"
+                                                {{ $item->departamento == 'Departamento de Ingenierías' ? 'selected' : '' }}>
+                                                DEPARTAMENTO DE INGENIERÍAS
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-4">
                                         <label class="form-label fw-bold">
                                             <i class="bi bi-envelope me-1"></i> Correo Usuario
                                         </label>

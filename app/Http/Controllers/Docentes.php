@@ -79,8 +79,6 @@ class Docentes extends Controller
             $apellidoP = strtoupper(trim($request->apellido_p));
             $apellidoM = strtoupper(trim($request->apellido_m));
             $nombreCompleto = "$nombre $apellidoP $apellidoM";
-
-
             $emailBase = strtolower(trim($request->email));
             $dominio = ($request->rol == 'admin') ? '@admin.com' : '@docente.com';
             $emailCompleto = $emailBase . $dominio;
@@ -104,6 +102,7 @@ class Docentes extends Controller
             $user->email = $emailCompleto;
             $user->password = Hash::make($passwordTemporal);
             $user->rol = $request->rol;
+            $user->departamento = $request->dpto;
             $user->activo = 1;
             $user->save();
 
@@ -238,6 +237,7 @@ class Docentes extends Controller
             $item->name = $nombreCompleto;
             $item->email = $emailCompleto;
             $item->rol = $request->rol;
+            $item->departamento = $request->dpto;
 
             $item->save();
 

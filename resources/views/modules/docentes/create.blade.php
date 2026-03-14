@@ -53,20 +53,35 @@
                                             placeholder="APELLIDO MATERNO" style="text-transform: uppercase;">
                                     </div>
 
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label class="form-label fw-bold">Rol de Usuario</label>
-                                        <select name="rol" id="rol_select" class="form-select" style="border-left: 5px solid #0d6efd;" required>
-                                            <option value="docente" {{ old('rol') == 'docente' ? 'selected' : '' }}>DOCENTE</option>
-                                            <option value="admin" {{ old('rol') == 'admin' ? 'selected' : '' }}>ADMINISTRADOR</option>
+                                        <select name="rol" id="rol_select" class="form-select"
+                                            style="border-left: 5px solid #0d6efd;" required>
+                                            <option value="docente" {{ old('rol') == 'docente' ? 'selected' : '' }}>DOCENTE
+                                            </option>
+                                            <option value="admin" {{ old('rol') == 'admin' ? 'selected' : '' }}>
+                                                ADMINISTRADOR</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">Departamento</label>
+                                        <select name="dpto" id="dpto" class="form-select"
+                                            style="border-left: 5px solid #0d6efd;" required>
+                                            <option value="" selected disabled>SELECCIONA UN DEPARTAMENTO</option>
+                                            <option value="Ciencias Económico-Administrativas">CIENCIAS
+                                                ECONÓMICO-ADMINISTRATIVAS</option>
+                                            <option value="Ciencias Básicas y Sistemas">CIENCIAS BÁSICAS Y SISTEMAS</option>
+                                            <option value="Departamento de Ingenierías">DEPARTAMENTO DE INGENIERÍAS</option>
                                         </select>
                                     </div>
 
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label class="form-label fw-bold">Correo Electrónico (Usuario)</label>
                                         <div class="input-group">
                                             <input type="text" name="email" id="email_username" class="form-control"
                                                 placeholder="ejemplo.usuario" autocomplete="off" required>
-                                            <span class="input-group-text bg-light fw-bold text-primary" id="email_domain" style="min-width: 130px; justify-content: center;">
+                                            <span class="input-group-text bg-light fw-bold text-primary" id="email_domain"
+                                                style="min-width: 130px; justify-content: center;">
                                                 @docente.com
                                             </span>
                                         </div>
@@ -89,24 +104,23 @@
             </div>
         </section>
     </main>
-@push('scripts')
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const rolSelect = document.getElementById('rol_select');
-            const emailDomain = document.getElementById('email_domain');
-            const emailInput = document.getElementById('email_username');
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const rolSelect = document.getElementById('rol_select');
+                const emailDomain = document.getElementById('email_domain');
+                const emailInput = document.getElementById('email_username');
 
-            rolSelect.addEventListener('change', function() {
-                emailDomain.textContent = (this.value === 'admin') ? '@admin.com' : '@docente.com';
-            });
+                rolSelect.addEventListener('change', function() {
+                    emailDomain.textContent = (this.value === 'admin') ? '@admin.com' : '@docente.com';
+                });
 
-            emailInput.addEventListener('input', function() {
-                let valor = this.value.toLowerCase().replace(/\s+/g, '');
-                if (valor.includes('@')) valor = valor.split('@')[0];
-                this.value = valor;
+                emailInput.addEventListener('input', function() {
+                    let valor = this.value.toLowerCase().replace(/\s+/g, '');
+                    if (valor.includes('@')) valor = valor.split('@')[0];
+                    this.value = valor;
+                });
             });
-        });
-    </script>
-@endpush
+        </script>
+    @endpush
 @endsection

@@ -16,6 +16,7 @@ class AsignacionMateria extends Model
         'docente_id',
         'semestre_id',
         'grupo',
+        'alumnos',
         'activo'
     ];
 

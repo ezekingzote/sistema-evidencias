@@ -14,6 +14,9 @@
         <td>
             {{ $item->email }}
         </td>
+        <td class="fw-bold text-uppercase">
+            {{ $item->departamento }}
+        </td>
 
         <td>
 

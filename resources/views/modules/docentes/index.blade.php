@@ -43,6 +43,7 @@
                                                 <th>ID</th>
                                                 <th>NOMBRE</th>
                                                 <th>CORREO</th>
+                                                <th>DEPARTAMENTO</th>
                                                 <th>ROL</th>
                                                 <th>CAMBIAR PASSWORD</th>
                                                 <th>ACTIVO</th>
@@ -90,6 +91,10 @@
                     {
                         data: 'email',
                         name: 'email'
+                    },
+                    {
+                        data: 'departamento',
+                        name: 'departamento'
                     },
                     {
                         data: 'rol',

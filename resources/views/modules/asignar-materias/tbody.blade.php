@@ -16,6 +16,9 @@
         <td>
             {{ $item->grupo }}
         </td>
+        <td>
+            {{ $item->alumnos }}
+        </td>
 
         <td>
 
