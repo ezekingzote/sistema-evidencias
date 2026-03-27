@@ -2,154 +2,59 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Materia;
-use App\Models\Semestre;
+use App\Models\Evidencia;
+use App\Models\Revision;
 use App\Models\AsignacionMateria;
-use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
-class Materias extends Controller
+class Evidencias extends Controller
 {
+
     public function index()
     {
-        $titulo = 'Materias';
-        $items = Materia::all();
-        return view('modules.materias.index', compact('titulo', 'items'));
+
+        $titulo = "Subir Evidencias";
+
+        $revisiones = Revision::where('activo', 1)->get();
+
+        $materiasAsignadas = AsignacionMateria::with('materia')
+            ->where('docente_id', Auth::id())
+            ->where('activo', 1)
+            ->get();
+
+        return view('modules.evidencias.index', compact(
+            'titulo',
+            'revisiones',
+            'materiasAsignadas'
+        ));
     }
 
-    public function create()
-    {
-        $titulo = 'Crear Materia';
-        return view('modules.materias.create', compact('titulo'));
-    }
 
     public function store(Request $request)
     {
-        try {
-            $item = new Materia();
-            $item->nombre = $request->nombre;
-            $item->clave = $request->clave;
-            $item->unidades = $request->unidades;
-            $item->carrera = $request->carrera;
-            $item->especialidad = $request->especialidad;
-            $item->semestre = $request->semestre;
-            $item->activo = 1;
-            $item->save();
 
-            return to_route('materias')->with('success', 'Materia guardada con éxito!');
-        } catch (Exception $e) {
-            return to_route('materias')->with('error', 'Error al guardar Materia! ' . $e->getMessage());
-        }
-    }
+        $request->validate([
+            'revision_id' => 'required|exists:revisiones,id',
+            'documentos' => 'required|file|max:5120',
+            'evidencias' => 'required|file|max:5120'
+        ]);
 
-    public function edit(string $id)
-    {
-        $titulo = 'Editar Materia';
-        $item = Materia::findOrFail($id);
-        return view('modules.materias.edit', compact('item', 'titulo'));
-    }
+        $docente = Auth::id();
 
-    public function update(Request $request, string $id)
-    {
-        try {
-            $item = Materia::findOrFail($id);
-            $item->nombre = $request->nombre;
-            $item->clave = $request->clave;
-            $item->unidades = $request->unidades;
-            $item->carrera = $request->carrera;
-            $item->especialidad = $request->especialidad;
-            $item->semestre = $request->semestre;
-            $item->save();
+        $rutaDocumentos = $request->file('documentos')
+            ->store('evidencias/documentos');
 
-            return to_route('materias')->with('success', 'Materia actualizada con éxito!');
-        } catch (Exception $e) {
-            return to_route('materias')->with('error', 'No se pudo actualizar! ' . $e->getMessage());
-        }
-    }
+        $rutaEvidencias = $request->file('evidencias')
+            ->store('evidencias/evidencias');
 
-    public function show(string $id)
-    {
-        $titulo = 'Eliminar Materia';
-        $item = Materia::findOrFail($id);
-        return view('modules.materias.show', compact('item', 'titulo'));
-    }
+        Evidencia::create([
+            'docente_id' => $docente,
+            'revision_id' => $request->revision_id,
+            'carpeta_documentos' => $rutaDocumentos,
+            'carpeta_evidencias' => $rutaEvidencias
+        ]);
 
-    public function destroy(string $id)
-    {
-        try {
-            $item = Materia::findOrFail($id);
-            $item->delete();
-            return to_route('materias')->with('success', 'Materia eliminada con éxito!');
-        } catch (Exception $e) {
-            return to_route('materias')->with('error', 'No se pudo eliminar! ' . $e->getMessage());
-        }
-    }
-
-    public function tbody()
-    {
-        $items = Materia::all();
-        return view('modules.materias.tbody', compact('items'));
-    }
-
-    public function misMaterias()
-    {
-        $titulo = 'Agregar Docente';
-        return view('modules.materias.misMaterias', compact('titulo'));
-    }
-
-    public function estado($id, $estado)
-    {
-        $materia = Materia::find($id);
-
-        if (!$materia) {
-            return back()->with('error', 'Materia no encontrada');
-        }
-
-        try {
-            $materia->activo = $estado;
-            $materia->save();
-
-            $semestreActivo = Semestre::where('activo', 1)->first();
-
-            if (!$semestreActivo) {
-                return back()->with('warning', 'No hay semestre activo');
-            }
-
-            if ($estado == 1) {
-                $semestreActivo->materias()->syncWithoutDetaching([$id]);
-            } else {
-                $semestreActivo->materias()->detach($id);
-
-                AsignacionMateria::where('materia_id', $id)
-                    ->where('semestre_id', $semestreActivo->id)
-                    ->update(['activo' => 0]);
-
-                AsignacionMateria::where('materia_id', $id)
-                    ->where('semestre_id', $semestreActivo->id)
-                    ->update([
-                        'activo' => 0,
-                        'asignada' => 0
-                    ]);
-            }
-
-            $idsMateriasActivas = $semestreActivo->materias()->pluck('materia_id')->toArray();
-            $totalActivas = count($idsMateriasActivas);
-
-            $asignadas = AsignacionMateria::where('semestre_id', $semestreActivo->id)
-                ->where('activo', 1)
-                ->where('asignada', 1)
-                ->count();
-
-            $semestreActivo->update([
-                'materias_activas' => $totalActivas,
-                'materias_asignadas' => $asignadas,
-                'materias_por_asignar' => max(0, $totalActivas - $asignadas),
-                'ids_materias_activas' => json_encode($idsMateriasActivas)
-            ]);
-
-            return back()->with('success', $estado ? 'Materia activada' : 'Materia desactivada');
-        } catch (Exception $e) {
-            return back()->with('error', 'Error al actualizar el estado: ' . $e->getMessage());
-        }
+        return back()->with('success', 'Evidencias subidas correctamente');
     }
 }

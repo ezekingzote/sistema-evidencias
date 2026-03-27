@@ -61,7 +61,6 @@
                                                     <th class="text-center">CLAVE</th>
                                                     <th class="text-center">UNIDADES</th>
                                                     <th class="text-center">CARRERA</th>
-                                                    <th class="text-center">ESPECIALIDAD</th>
                                                     <th class="text-center">SEMESTRE</th>
                                                     <th class="text-center">ACTIVO</th>
                                                     <th class="text-center">EDITAR</th>
@@ -111,7 +110,7 @@
     }
 
     function cambiar_estado(id, estado) {
-        fetch('{{ route('materias.estado.ajax') }}', {
+        fetch("{{ route('materias.estado.ajax') }}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

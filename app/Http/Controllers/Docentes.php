@@ -249,4 +249,6 @@ class Docentes extends Controller
                 ->with('error', 'No se pudo actualizar: ' . $e->getMessage());
         }
     }
+
+    
 }

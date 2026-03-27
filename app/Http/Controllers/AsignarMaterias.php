@@ -165,7 +165,6 @@ class AsignarMaterias extends Controller
         ));
     }
 
-
     public function destroy(Request $request, $id)
     {
         try {
@@ -234,7 +233,6 @@ class AsignarMaterias extends Controller
         ]);
     }
 
-
     public function tbody()
     {
         $items = AsignacionMateria::with([
@@ -245,4 +243,5 @@ class AsignarMaterias extends Controller
 
         return view('modules.asignar-materias.tbody', compact('items'));
     }
+    
 }

@@ -98,11 +98,11 @@
 
     <!-- Template Main JS File -->
     <script src="{{ asset('NiceAdmin/assets/js/main.js') }}"></script>
-    
+
     <!-- Select2 -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-    
+
     <script>
         $(document).ready(function() {
             $('.datatable').not('#tablaDocentes').DataTable({
@@ -112,36 +112,35 @@
                     }
                 },
                 language: {
-                    url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-MX.json",
-                    paginate: {
-                        first: "Primero",
-                        last: "Último",
-                        next: "Siguiente",
-                        previous: "Anterior"
-                    }
+                    url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-MX.json"
                 }
             });
+
+            // 1. Capturamos los mensajes de Laravel en variables de JS
+            // Usamos el operador ternario de PHP para evitar que JS reciba un null
+            const successMessage = "{{ session('success') }}";
+            const errorMessage = "{{ session('error') }}";
+
+            // 2. Disparamos la alerta si la variable tiene contenido
+            if (successMessage) {
+                Swal.fire({
+                    title: '¡Éxito!',
+                    text: successMessage,
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar'
+                });
+            }
+
+            if (errorMessage) {
+                Swal.fire({
+                    title: 'Error',
+                    text: errorMessage,
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar'
+                });
+            }
         });
- 
- 
-        @if (session('success'))
-            Swal.fire({
-                title: 'Exito',
-                text: '{{ session('success') }}',
-                icon: 'success',
-                confirmButtonText: 'Aceptar'
-            });
-        @endif
- 
-        @if (session('error'))
-            Swal.fire({
-                title: 'Error',
-                text: '{{ session('error') }}',
-                icon: 'error',
-                confirmButtonText: 'Aceptar'
-            });
-        @endif
-    </script> 
+    </script>
     @stack('scripts')
     @include('modules.auth.modal-password')
 </body>

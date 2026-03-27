@@ -4,7 +4,6 @@
         <td>{{ $item->clave }}</td>
         <td class="text-center">{{ $item->unidades }}</td>
         <td>{{ $item->carrera }}</td>
-        <td>{{ $item->especialidad }}</td>
         <td class="text-center">{{ $item->semestre }}</td>
         <td class="text-center">
             <div class="form-check form-switch d-flex justify-content-center">

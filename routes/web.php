@@ -8,6 +8,8 @@ use App\Http\Controllers\Evidencias;
 use App\Http\Controllers\Materias;
 use App\Http\Controllers\Pdfs;
 use App\Http\Controllers\PlanesEstudio;
+use App\Http\Controllers\SeguimientoDocentes;
+use App\Http\Controllers\Revisiones;
 use App\Http\Controllers\Semestres;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -84,6 +86,13 @@ Route::middleware('auth')->group(function () {
             Route::delete('/destroy/{id}', [Materias::class, 'destroy'])->name('materias.destroy');
             Route::post('/estado', [Materias::class, 'estado'])->name('materias.estado.ajax');
         });
+
+
+        Route::prefix('revisiones')->group(function () {
+            Route::get('/', [Revisiones::class, 'index'])->name('revisiones');
+            Route::post('/cambiar-estado/{id}', [Revisiones::class, 'cambiarEstado']);
+            Route::post('/cambiar-estado-confirmar/{id}', [Revisiones::class, 'cambiarEstadoConfirmar']);
+        });
     });
 
     // ==========================================
@@ -101,6 +110,11 @@ Route::middleware('auth')->group(function () {
         Route::prefix('planes-estudio')->group(function () {
             Route::get('/', [PlanesEstudio::class, 'index'])->name('planes-estudio');
             Route::get('/agregar', [PlanesEstudio::class, 'agregar'])->name('agregar-plan-estudio');
+        });
+
+        Route::prefix('evidencias')->group(function () {
+            Route::get('/', [Evidencias::class, 'index'])->name('evidencias');
+            Route::post('/store', [Evidencias::class, 'store'])->name('evidencias.store');
         });
     });
 });
