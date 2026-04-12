@@ -59,4 +59,9 @@ class Semestre extends Model
             ->withPivot('asignada')
             ->withTimestamps();
     }
+    
+    public function revisiones()
+    {
+        return $this->hasMany(Revision::class);
+    }
 }

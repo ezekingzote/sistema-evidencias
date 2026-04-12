@@ -1,205 +1,121 @@
 @extends('layouts.main')
 
-@section('titulo', 'Crear Nueva Evidencia')
+@section('titulo', 'Listado de Evidencias')
 
 @section('contenido')
 <main id="main" class="main">
 
     <div class="pagetitle">
-        <h1>Crear Nueva Evidencia</h1>
-
+        <h1>Gestión de Evidencias</h1>
         <nav>
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="">Home</a></li>
-                <li class="breadcrumb-item"><a href="">Evidencias</a></li>
-                <li class="breadcrumb-item active">Nueva</li>
+                <li class="breadcrumb-item active">Evidencias</li>
             </ol>
         </nav>
-
     </div>
 
     <section class="section">
-
-        <div class="row justify-content-center">
-            <div class="col-lg-11">
+        <div class="row">
+            <div class="col-lg-12">
 
                 <div class="card shadow-sm border-0" style="border-radius: 15px;">
-
-                    <div class="card-header bg-white py-3">
-
-                        <div class="d-flex align-items-center">
-
-                            <div class="p-2 bg-primary bg-opacity-10 rounded-3 me-3">
-                                <i class="bi bi-cloud-arrow-up-fill text-primary fs-4"></i>
-                            </div>
-
-                            <div>
-                                <h5 class="card-title mb-0 p-0">Detalles de la Evidencia</h5>
-                                <p class="text-muted small mb-0">Complete todos los campos para registrar el archivo en el sistema.</p>
-                            </div>
-
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title mb-0 p-0">Evidencias Registradas</h5>
+                            <p class="text-muted small mb-0">Visualiza y gestiona los documentos cargados al sistema.</p>
                         </div>
+                        <a href="{{ route('evidencias.create') }}" class="btn btn-outline-primary rounded-pill px-4 shadow-sm">
+                            <i class="bi bi-plus-lg me-1"></i> Nueva Evidencia
+                        </a>
                     </div>
 
                     <div class="card-body p-4">
-
-                        <form id="formNuevaEvidencia" class="row g-4" action="{{ route('evidencias.store') }}" method="POST" enctype="multipart/form-data">
-
-                            @csrf
-
-                            <div class="col-md-6">
-
-                                <label class="form-label fw-bold small text-uppercase text-secondary">Revisión</label>
-
-                                <div class="input-group">
-
-                                    <span class="input-group-text bg-light border-end-0">
-                                        <i class="bi bi-book text-muted"></i>
-                                    </span>
-
-                                    <select name="revision_id" class="form-control" required>
-
-                                        <option value="" selected disabled>Seleccione revisión</option>
-
-                                        @foreach($revisiones as $revision)
-
-                                        <option value="{{ $revision->id }}">
-
-                                            {{ $revision->nombre }}
-
-                                        </option>
-
-                                        @endforeach
-
-                                    </select>
-
-                                </div>
-                            </div>
-                            <div class="mb-3">
-
-                                <label class="form-label"><strong>Carpeta Documentos (MAX 5MB)</strong></label>
-
-                                <input type="file" name="documentos" class="form-control" webkitdirectory directory required>
-
-                            </div>
-
-                            <div class="mb-3">
-
-                                <label class="form-label">Carpeta Evidencias (MAX 5MB)</label>
-
-                                <input type="file" name="evidencias" class="form-control" webkitdirectory directory required>
-
-
-                            </div>
-
-                            <div class="col-12">
-
-                                <label class="form-label fw-bold small text-uppercase text-secondary">
-                                    Tipo de Evidencia
-                                </label>
-
-                                <select name="tipo_evidencia" id="tipo_evidencia" class="form-select" style="border-left: 5px solid #0d6efd;" required>
-
-                                    <option selected disabled>Seleccione el tipo de documento...</option>
-
-                                    <optgroup label="Documentos">
-
-                                        <option value="instrumentacion">
-                                            Instrumentación didáctica completa, por asignatura.
-                                        </option>
-
-                                        <option value="calificaciones">
-                                            Listas de calificaciones
-                                        </option>
-
-                                        <option value="reportes">
-                                            Reportes y Acuerdos.
-                                        </option>
-
-                                    </optgroup>
-
-                                    <optgroup label="Evidencias">
-
-                                        <option value="tareas">
-                                            Muestra de tareas y/o trabajos complementarios.
-                                        </option>
-
-                                        <option value="rubricas">
-                                            Rúbricas utilizadas para tareas y trabajos por asignatura.
-                                        </option>
-
-                                        <option value="examen">
-                                            Examen diagnóstico y análisis de este.
-                                        </option>
-
-                                    </optgroup>
-
-                                </select>
-
-                            </div>
-
-
-                            <div class="col-12 mt-5 border-top pt-4 d-flex justify-content-between align-items-center gap-2">
-
-                                <a href="" class="btn btn-outline-secondary px-4">
-                                    <i class="bi bi-arrow-left me-1"></i> Regresar
-                                </a>
-
-                                <div class="d-flex gap-2">
-
-                                    <button type="reset" class="btn btn-light px-4">
-                                        <i class="bi bi-arrow-counterclockwise me-1"></i> Limpiar
-                                    </button>
-
-                                    <button type="submit" class="btn btn-primary px-5 shadow-sm">
-                                        <i class="bi bi-cloud-upload me-2"></i>Subir Evidencia
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-                        </form>
-
-
-                    </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" id="tablaEvidencias">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" class="text-uppercase small fw-bold text-center">Asignatura</th>
+                                        <th scope="col" class="text-uppercase small fw-bold text-center">Revisión</th>
+                                        <th scope="col" class="text-uppercase small fw-bold text-center">Archivos</th>
+                                        <th scope="col" class="text-uppercase small fw-bold text-center">Fecha de Carga</th>
+                                        <th scope="col" class="text-uppercase small fw-bold text-center">Status</th>
+                                        <th scope="col" class="text-uppercase small fw-bold text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($evidencias as $evidencia)
+                                    <tr>
+                                        <td class="fw-bold text-secondary">#{{ $evidencia->id }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="p-2 bg-info bg-opacity-10 rounded-circle me-2">
+                                                    <i class="bi bi-journal-text text-info"></i>
+                                                </div>
+                                                <span>{{ $evidencia->revision->nombre }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @php
+                                                $badgeClass = match($evidencia->tipo_evidencia) {
+                                                    'instrumentacion' => 'bg-primary',
+                                                    'calificaciones' => 'bg-success',
+                                                    'examen' => 'bg-warning text-dark',
+                                                    default => 'bg-secondary',
+                                                };
+                                            @endphp
+                                            <span class="badge {{ $badgeClass }} bg-opacity-10 text-{{ str_replace('bg-', '', explode(' ', $badgeClass)[0]) }} border border-{{ str_replace('bg-', '', explode(' ', $badgeClass)[0]) }} px-3 py-2">
+                                                {{ ucfirst($evidencia->tipo_evidencia) }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge rounded-pill bg-light text-dark border">
+                                                <i class="bi bi-folder2-open me-1 text-primary"></i> 2 Carpetas
+                                            </span>
+                                        </td>
+                                        <td class="small text-muted">
+                                            {{ $evidencia->created_at->format('d/m/Y H:i') }}
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="dropdown">
+                                                <button class="btn btn-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
+                                                    <i class="bi bi-three-dots-vertical"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                                    <li><a class="dropdown-item" href="#"><i class="bi bi-eye me-2 text-info"></i> Ver Detalles</a></li>
+                                                    <li><a class="dropdown-item" href="#"><i class="bi bi-download me-2 text-success"></i> Descargar ZIP</a></li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <form action="" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar esta evidencia?')">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="dropdown-item text-danger">
+                                                                <i class="bi bi-trash me-2"></i> Eliminar
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5">
+                                            <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" alt="No data" style="width: 80px;" class="opacity-25 mb-3">
+                                            <p class="text-muted">No se encontraron evidencias registradas.</p>
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                        </div>
                 </div>
 
             </div>
         </div>
-
     </section>
 
 </main>
-
-
-@push('scripts')
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-
-        const tipoEvidencia = document.getElementById('tipo_evidencia');
-
-        const contenedorRubrica = document.getElementById('contenedorRubrica');
-
-
-        tipoEvidencia.addEventListener('change', function() {
-
-            if (this.value === 'instrumentacion') {
-
-                contenedorRubrica.style.display = 'none';
-
-            } else {
-
-                contenedorRubrica.style.display = 'block';
-
-            }
-
-        });
-
-    });
-</script>
-
-@endpush
-
 @endsection

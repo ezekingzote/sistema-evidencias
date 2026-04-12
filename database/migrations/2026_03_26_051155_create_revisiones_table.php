@@ -16,6 +16,10 @@ return new class extends Migration
             $table->string('nombre');
             $table->integer('numero');
             $table->boolean('activo')->default(false);
+            $table->foreignId('semestre_id')
+                ->nullable()
+                ->constrained('semestres')
+                ->nullOnDelete();
             $table->timestamps();
         });
     }

@@ -44,19 +44,6 @@ class AuthController extends Controller
         return redirect()->route('home');
     }
 
-    public function crearAdmin()
-    {
-        User::create([
-            'name' => 'Ezequiel Mendoza',
-            'email' => 'admin@admin.com',
-            'departamento' => 'Ciencias Basicas',
-            'password' => Hash::make('admin'),
-            'activo' => true,
-            'rol' => 'admin'
-        ]);
-        return 'Admin creado con Exito';
-    }
-
     public function logout()
     {
         Auth::logout();

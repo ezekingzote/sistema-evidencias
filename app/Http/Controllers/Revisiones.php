@@ -47,7 +47,31 @@ class Revisiones extends Controller
 
             $revision = Revision::findOrFail($id);
 
-            $revision->activo = $revision->activo ? 0 : 1;
+            $nuevoEstado = $revision->activo ? 0 : 1;
+
+            if ($nuevoEstado == 1) {
+
+                // 🔥 Buscar semestre activo
+                $semestreActivo = Semestre::where('activo', 1)->first();
+
+                if (!$semestreActivo) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'No hay un semestre activo'
+                    ], 400);
+                }
+
+                // Activar revisión y asignar semestre
+                $revision->activo = 1;
+                $revision->semestre_id = $semestreActivo->id;
+            } else {
+
+                // Desactivar revisión
+                $revision->activo = 0;
+
+                // (Opcional) quitar semestre
+                $revision->semestre_id = null;
+            }
 
             $revision->save();
 

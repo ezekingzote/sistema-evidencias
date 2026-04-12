@@ -31,4 +31,9 @@ class Revision extends Model
         'numero',
         'activo'
     ];
+
+    public function semestre()
+    {
+        return $this->belongsTo(Semestre::class);
+    }
 }

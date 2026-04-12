@@ -23,10 +23,6 @@ return new class extends Migration
                 ->constrained('materias')
                 ->cascadeOnDelete();
 
-            $table->foreignId('semestre_id')
-                ->constrained('semestres')
-                ->cascadeOnDelete();
-
             $table->timestamps();
         });
     }

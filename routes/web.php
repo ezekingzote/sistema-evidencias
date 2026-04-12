@@ -15,7 +15,6 @@ use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 // Rutas Públicas e Iniciales
-Route::get('/crear-admin', [AuthController::class, 'crearAdmin']);
 Route::get('/', [AuthController::class, 'index'])->name('login');
 Route::post('/logear', [AuthController::class, 'logear'])->name('logear');
 
@@ -114,7 +113,7 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('evidencias')->group(function () {
             Route::get('/', [Evidencias::class, 'index'])->name('evidencias');
-            Route::post('/store', [Evidencias::class, 'store'])->name('evidencias.store');
+            Route::get('/create', [Evidencias::class, 'create'])->name('evidencias.create');
         });
     });
 });
