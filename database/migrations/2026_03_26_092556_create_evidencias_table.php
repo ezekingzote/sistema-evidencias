@@ -20,7 +20,8 @@ return new class extends Migration
             $table->string('carpeta_documentos');
             $table->string('carpeta_evidencias');
 
-            $table->timestamps();
+            $table->datetime('created_at')->nullable();
+            $table->datetime('updated_at')->nullable();
         });
     }
 

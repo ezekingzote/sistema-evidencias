@@ -23,7 +23,8 @@ return new class extends Migration
                 ->constrained('materias')
                 ->cascadeOnDelete();
 
-            $table->timestamps();
+            $table->datetime('created_at')->nullable();
+            $table->datetime('updated_at')->nullable();
         });
     }
 

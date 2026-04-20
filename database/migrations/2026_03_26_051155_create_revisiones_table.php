@@ -20,7 +20,8 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('semestres')
                 ->nullOnDelete();
-            $table->timestamps();
+            $table->datetime('created_at')->nullable();
+            $table->datetime('updated_at')->nullable();
         });
     }
 

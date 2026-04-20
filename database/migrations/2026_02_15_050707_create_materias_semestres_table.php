@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('materia_id')->constrained('materias')->onDelete('cascade');
             $table->foreignId('semestre_id')->constrained('semestres')->onDelete('cascade');
             $table->boolean('asignada')->default(0);
-            $table->timestamps();
+            $table->datetime('created_at')->nullable();
+            $table->datetime('updated_at')->nullable();
         });
     }
 

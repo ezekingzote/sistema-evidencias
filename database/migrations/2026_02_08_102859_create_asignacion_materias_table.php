@@ -21,7 +21,8 @@ return new class extends Migration
             $table->boolean('activo')->default(1);
             $table->boolean('asignada')->default(0);
 
-            $table->timestamps();
+            $table->datetime('created_at')->nullable();
+            $table->datetime('updated_at')->nullable();
         });
     }
 

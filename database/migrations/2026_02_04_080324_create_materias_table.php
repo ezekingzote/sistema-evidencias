@@ -19,7 +19,8 @@ return new class extends Migration
             $table->unsignedInteger('semestre');
             $table->string('carrera', 100);
             $table->boolean('activo')->default(false);
-            $table->timestamps();
+            $table->datetime('created_at')->nullable();
+            $table->datetime('updated_at')->nullable();
 
         });
     }

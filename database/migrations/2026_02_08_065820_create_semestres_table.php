@@ -21,7 +21,8 @@ return new class extends Migration
             $table->date('fecha_inicio');
             $table->date('fecha_fin');
             $table->boolean('activo')->default(false);
-            $table->timestamps();
+            $table->datetime('created_at')->nullable();
+            $table->datetime('updated_at')->nullable();
 
             $table->unique(['anio', 'periodo']);
 

@@ -59,9 +59,9 @@
                                                 <tr>
                                                     <th class="text-center">NOMBRE</th>
                                                     <th class="text-center">CLAVE</th>
-                                                    <th class="text-center">UNIDADES</th>
-                                                    <th class="text-center">CARRERA</th>
                                                     <th class="text-center">SEMESTRE</th>
+                                                    <th class="text-center">CARRERA</th>
+                                                    <th class="text-center">UNIDADES</th>
                                                     <th class="text-center">ACTIVO</th>
                                                     <th class="text-center">EDITAR</th>
                                                 </tr>

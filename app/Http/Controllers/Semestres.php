@@ -196,7 +196,7 @@ class Semestres extends Controller
     {
         $titulo = 'Editar Semestre';
         $item = Semestre::findOrFail($id);
-        $semestres = Semestre::all(); // Para verificar duplicados en JS
+        $semestres = Semestre::all(); 
 
         return view('modules.semestres.edit', compact('titulo', 'item', 'semestres'));
     }
@@ -230,7 +230,7 @@ class Semestres extends Controller
             DB::commit();
 
             return redirect()
-                ->route('semestres.index')
+                ->route('semestres')
                 ->with('success', 'Semestre actualizado correctamente');
         } catch (\Exception $e) {
 

@@ -18,7 +18,7 @@
         }
 
         .header {
-            background-color: #0d6efd;
+            background-color: #1B396A;
             /* Azul Laravel/Bootstrap */
             color: white;
             padding: 40px 20px;
@@ -99,7 +99,6 @@
     <div class="header">
         <h1>{{ $titulo }}</h1>
     </div>
-
     <div class="container">
         <div class="welcome-msg">
             Estimado(a) <strong>{{ $nombre }}</strong>,<br>
