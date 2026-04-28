@@ -6,16 +6,19 @@
 <main id="main" class="main">
 
     <div class="pagetitle">
-        <h1>Crear Nueva Evidencia</h1>
+        <h1 class="fw-bold text-primary">Crear Nueva Evidencia</h1>
 
         <nav>
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="">Home</a></li>
-                <li class="breadcrumb-item"><a href="">Evidencias</a></li>
-                <li class="breadcrumb-item active">Nueva</li>
+                <li class="breadcrumb-item">
+                    <a href="" class="text-decoration-none text-secondary">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{{ route('evidencias') }}" class="text-decoration-none text-secondary">Evidencias</a>
+                </li>
+                <li class="breadcrumb-item active text-primary fw-semibold">Nueva</li>
             </ol>
         </nav>
-
     </div>
 
     <section class="section">
@@ -23,19 +26,24 @@
         <div class="row justify-content-center">
             <div class="col-lg-11">
 
-                <div class="card shadow-sm border-0" style="border-radius: 15px;">
+                <div class="card border-0 shadow-lg evidencia-card">
 
-                    <div class="card-header bg-white py-3">
+                    <div class="card-header evidencia-header">
 
                         <div class="d-flex align-items-center">
 
-                            <div class="p-2 bg-primary bg-opacity-10 rounded-3 me-3">
-                                <i class="bi bi-cloud-arrow-up-fill text-primary fs-4"></i>
+                            <div class="icon-box me-3">
+                                <i class="bi bi-cloud-arrow-up-fill fs-3 text-white"></i>
                             </div>
 
                             <div>
-                                <h5 class="card-title mb-0 p-0">Detalles de la Evidencia</h5>
-                                <p class="text-muted small mb-0">Complete todos los campos para registrar el archivo en el sistema.</p>
+                                <h4 class="mb-1 fw-bold text-dark">
+                                    Detalles de la Evidencia
+                                </h4>
+
+                                <p class="mb-0 text-muted">
+                                    Complete todos los campos para registrar los archivos en el sistema.
+                                </p>
                             </div>
 
                         </div>
@@ -43,124 +51,202 @@
 
                     <div class="card-body p-4">
 
-                        <form id="formNuevaEvidencia" class="row g-4" action="" method="POST" enctype="multipart/form-data">
-
+                        <form action="" method="POST" enctype="multipart/form-data">
                             @csrf
 
-                            <div class="col-md-6">
+                            <div class="mb-4">
 
-                                <label class="form-label fw-bold small text-uppercase text-secondary">Revisión</label>
+                                <label class="form-label fw-bold text-uppercase text-secondary small">
+                                    Revisión
+                                </label>
 
-                                <div class="input-group">
+                                <div class="input-group input-custom">
 
-                                    <span class="input-group-text bg-light border-end-0">
-                                        <i class="bi bi-book text-muted"></i>
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="bi bi-journal-bookmark-fill text-primary"></i>
                                     </span>
 
-                                    <select name="revision_id" class="form-control" required>
-
-                                        <option value="" selected disabled>Seleccione revisión</option>
-
-                                        @foreach($revisiones as $revision)
-
-                                        <option value="{{ $revision->id }}">
-
-                                            {{ $revision->nombre }}
-
+                                    <select name="revision_id" class="form-control border-start-0" required>
+                                        <option value="" selected disabled>
+                                            Seleccione revisión
                                         </option>
 
+                                        @foreach($revisiones as $revision)
+                                        <option value="{{ $revision->id }}">
+                                            {{ $revision->nombre }}
+                                        </option>
                                         @endforeach
-
                                     </select>
 
                                 </div>
                             </div>
-                            <div class="mb-3">
 
-                                <label class="form-label"><strong>Carpeta Documentos (MAX 5MB)</strong></label>
+                            <div class="row g-4">
 
-                                <input type="file" name="documentos" class="form-control" webkitdirectory directory required>
+                                <div class="col-md-6">
 
-                            </div>
+                                    <div class="section-box">
+                                        <h4 class="section-title">
+                                            <i class="bi bi-folder2-open me-2"></i>
+                                            Documentos
+                                        </h4>
 
-                            <div class="mb-3">
+                                        <div class="mb-4">
+                                            <label class="form-label fw-semibold">
+                                                a) Instrumentación didáctica completa, por asignatura
+                                            </label>
 
-                                <label class="form-label">Carpeta Evidencias (MAX 5MB)</label>
+                                            <div class="d-flex gap-2 align-items-center">
+                                                <input type="file" name="doc_a" class="form-control" accept=".pdf" required>
 
-                                <input type="file" name="evidencias" class="form-control" webkitdirectory directory required>
+                                                <button type="button" class="btn btn-danger btn-sm action-btn">
+                                                    <i class="fa-solid fa-file-circle-minus"></i>
+                                                </button>
 
+                                                <button type="button" class="btn btn-primary btn-sm action-btn">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                            </div>
 
-                            </div>
+                                            <small class="helper-text">
+                                                Solo PDF • Máximo 1 MB
+                                            </small>
+                                        </div>
 
-                            <div class="col-12">
+                                        <div class="mb-4">
+                                            <label class="form-label fw-semibold">
+                                                b) Lista de calificaciones
+                                            </label>
 
-                                <label class="form-label fw-bold small text-uppercase text-secondary">
-                                    Tipo de Evidencia
-                                </label>
+                                            <div class="d-flex gap-2 align-items-center">
+                                                <input type="file" name="doc_b" class="form-control" accept=".pdf" required>
 
-                                <select name="tipo_evidencia" id="tipo_evidencia" class="form-select" style="border-left: 5px solid #0d6efd;" required>
+                                                <button type="button" class="btn btn-danger btn-sm action-btn">
+                                                    <i class="fa-solid fa-file-circle-minus"></i>
+                                                </button>
 
-                                    <option selected disabled>Seleccione el tipo de documento...</option>
+                                                <button type="button" class="btn btn-primary btn-sm action-btn">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                            </div>
 
-                                    <optgroup label="Documentos">
+                                            <small class="helper-text">
+                                                Solo PDF • Máximo 1 MB
+                                            </small>
+                                        </div>
 
-                                        <option value="instrumentacion">
-                                            Instrumentación didáctica completa, por asignatura.
-                                        </option>
+                                        <div class="mb-2">
+                                            <label class="form-label fw-semibold">
+                                                c) Reporte y acuerdos
+                                            </label>
 
-                                        <option value="calificaciones">
-                                            Listas de calificaciones
-                                        </option>
+                                            <div class="d-flex gap-2 align-items-center">
+                                                <input type="file" name="doc_c" class="form-control" accept=".pdf" required>
 
-                                        <option value="reportes">
-                                            Reportes y Acuerdos.
-                                        </option>
+                                                <button type="button" class="btn btn-danger btn-sm action-btn">
+                                                    <i class="fa-solid fa-file-circle-minus"></i>
+                                                </button>
 
-                                    </optgroup>
+                                                <button type="button" class="btn btn-primary btn-sm action-btn">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                            </div>
 
-                                    <optgroup label="Evidencias">
+                                            <small class="helper-text">
+                                                Solo PDF • Máximo 1 MB
+                                            </small>
+                                        </div>
+                                    </div>
 
-                                        <option value="tareas">
-                                            Muestra de tareas y/o trabajos complementarios.
-                                        </option>
+                                </div>
 
-                                        <option value="rubricas">
-                                            Rúbricas utilizadas para tareas y trabajos por asignatura.
-                                        </option>
+                                <div class="col-md-6">
 
-                                        <option value="examen">
-                                            Examen diagnóstico y análisis de este.
-                                        </option>
+                                    <div class="section-box">
+                                        <h4 class="section-title">
+                                            <i class="bi bi-journal-check me-2"></i>
+                                            Evidencias
+                                        </h4>
 
-                                    </optgroup>
+                                        <div class="mb-4">
+                                            <label class="form-label fw-semibold">
+                                                a) Muestra de tareas y/o trabajos complementarios
+                                            </label>
 
-                                </select>
+                                            <div class="d-flex gap-2 align-items-center">
+                                                <input type="file" name="evi_a" class="form-control" accept=".pdf" required>
 
-                            </div>
+                                                <button type="button" class="btn btn-danger btn-sm action-btn">
+                                                    <i class="fa-solid fa-file-circle-minus"></i>
+                                                </button>
 
+                                                <button type="button" class="btn btn-primary btn-sm action-btn">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                            </div>
 
-                            <div class="col-12 mt-5 border-top pt-4 d-flex justify-content-between align-items-center gap-2">
+                                            <small class="helper-text">
+                                                Solo PDF • Máximo 1 MB
+                                            </small>
+                                        </div>
 
-                                <a href="" class="btn btn-outline-secondary px-4">
-                                    <i class="bi bi-arrow-left me-1"></i> Regresar
-                                </a>
+                                        <div class="mb-4">
+                                            <label class="form-label fw-semibold">
+                                                b) Rúbricas utilizadas para tareas y trabajos por asignatura
+                                            </label>
 
-                                <div class="d-flex gap-2">
+                                            <div class="d-flex gap-2 align-items-center">
+                                                <input type="file" name="evi_b" class="form-control" accept=".pdf" required>
 
-                                    <button type="reset" class="btn btn-light px-4">
-                                        <i class="bi bi-arrow-counterclockwise me-1"></i> Limpiar
-                                    </button>
+                                                <button type="button" class="btn btn-danger btn-sm action-btn">
+                                                    <i class="fa-solid fa-file-circle-minus"></i>
+                                                </button>
 
-                                    <button type="submit" class="btn btn-primary px-5 shadow-sm">
-                                        <i class="bi bi-cloud-upload me-2"></i>Subir Evidencia
-                                    </button>
+                                                <button type="button" class="btn btn-primary btn-sm action-btn">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                            </div>
+
+                                            <small class="helper-text">
+                                                Solo PDF • Máximo 1 MB
+                                            </small>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label class="form-label fw-semibold">
+                                                c) Examen diagnóstico y análisis de este
+                                            </label>
+
+                                            <div class="d-flex gap-2 align-items-center">
+                                                <input type="file" name="evi_c" class="form-control" accept=".pdf" required>
+
+                                                <button type="button" class="btn btn-danger btn-sm action-btn">
+                                                    <i class="fa-solid fa-file-circle-minus"></i>
+                                                </button>
+
+                                                <button type="button" class="btn btn-primary btn-sm action-btn">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                            </div>
+
+                                            <small class="helper-text">
+                                                Solo PDF • Máximo 1 MB
+                                            </small>
+                                        </div>
+                                    </div>
 
                                 </div>
 
                             </div>
 
-                        </form>
+                            <div class="text-center mt-5">
+                                <button type="submit" class="btn btn-success px-5 py-2 fw-semibold submit-btn">
+                                    <i class="fa-solid fa-floppy-disk me-2"></i>
+                                    Subir Evidencia
+                                </button>
+                            </div>
 
+                        </form>
 
                     </div>
                 </div>
@@ -173,33 +259,78 @@
 </main>
 
 
-@push('scripts')
+<style>
+    .evidencia-card {
+        border-radius: 18px;
+        overflow: hidden;
+        background: #ffffff;
+    }
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
+    .evidencia-header {
+        background: linear-gradient(135deg, #f8fbff, #eef5ff);
+        border-bottom: 1px solid #e8eef7;
+        padding: 25px;
+    }
 
-        const tipoEvidencia = document.getElementById('tipo_evidencia');
+    .icon-box {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #0d6efd, #4da3ff);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 20px rgba(13, 110, 253, 0.18);
+    }
 
-        const contenedorRubrica = document.getElementById('contenedorRubrica');
+    .section-box {
+        background: #fafcff;
+        border: 1px solid #e9f0fa;
+        border-radius: 16px;
+        padding: 25px;
+        height: 100%;
+    }
 
+    .section-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #0d6efd;
+        margin-bottom: 25px;
+    }
 
-        tipoEvidencia.addEventListener('change', function() {
+    .helper-text {
+        color: #6c757d;
+        font-size: 13px;
+    }
 
-            if (this.value === 'instrumentacion') {
+    .form-control,
+    .input-group-text,
+    select {
+        border-radius: 10px !important;
+        min-height: 45px;
+    }
 
-                contenedorRubrica.style.display = 'none';
+    .form-control:focus,
+    select:focus {
+        box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.15);
+        border-color: #86b7fe;
+    }
 
-            } else {
+    .action-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+    }
 
-                contenedorRubrica.style.display = 'block';
+    .submit-btn {
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(25, 135, 84, 0.18);
+        transition: 0.3s;
+    }
 
-            }
-
-        });
-
-    });
-</script>
-
-@endpush
+    .submit-btn:hover {
+        transform: translateY(-2px);
+    }
+</style>
 
 @endsection

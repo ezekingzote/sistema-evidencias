@@ -1,58 +1,70 @@
 @forelse ($items as $item)
-    <tr>
+<tr>
 
-        <td>
+    <td>
+        <span class="fw-semibold text-dark">
             {{ $item->semestre->nombre }}
-        </td>
+        </span>
+    </td>
 
-        <td>
+    <td>
+        <span class="fw-semibold">
             {{ $item->materia->nombre }}
-        </td>
+        </span>
+    </td>
 
-        <td>
-            {{ $item->docente->name }}
-        </td>
+    <td>
+        {{ $item->docente->name }}
+    </td>
 
-        <td>
+    <td>
+        <span class="badge bg-light text-dark border px-3 py-2">
             {{ $item->grupo }}
-        </td>
-        <td>
+        </span>
+    </td>
+
+    <td>
+        <span class="fw-bold text-primary">
             {{ $item->alumnos }}
-        </td>
+        </span>
+    </td>
 
-        <td>
+    <td>
+        <div class="form-check form-switch d-flex justify-content-center">
+            <input
+                class="form-check-input chkToggle"
+                type="checkbox"
+                data-id="{{ $item->id }}"
+                {{ $item->activo ? 'checked' : '' }}>
+        </div>
+    </td>
 
-            <div class="form-check form-switch d-flex justify-content-center">
-
-                <input class="form-check-input chkToggle" type="checkbox" data-id="{{ $item->id }}"
-                    {{ $item->activo ? 'checked' : '' }}>
-
-            </div>
-
-        </td>
-
-        <td>
-
-            <a href="{{ route('asignar-materias.edit', $item->id) }}" class="btn btn-outline-warning btn-sm">
+    <td>
+        <div class="d-flex justify-content-center gap-2">
+            <a href="{{ route('asignar-materias.edit', $item->id) }}"
+                class="btn btn-outline-warning btn-sm"
+                style="border-radius: 8px;">
                 <i class="bi bi-pencil"></i>
             </a>
-            <a href="{{ route('asignar-materias.show', $item->id) }}" class="btn btn-outline-danger btn-sm">
+
+            <a href="{{ route('asignar-materias.show', $item->id) }}"
+                class="btn btn-outline-danger btn-sm"
+                style="border-radius: 8px;">
                 <i class="fa-solid fa-trash-can"></i>
             </a>
+        </div>
+    </td>
 
-        </td>
-
-    </tr>
+</tr>
 
 @empty
 
-    <tr>
-
-        <td colspan="6">
-
+<tr>
+    <td colspan="7" class="text-center py-5">
+        <div class="text-muted fw-bold">
             No hay asignaciones registradas
+        </div>
+    </td>
+</tr>
 
-        </td>
-
-    </tr>
 @endforelse

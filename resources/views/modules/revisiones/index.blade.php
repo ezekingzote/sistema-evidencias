@@ -5,8 +5,8 @@
 @section('contenido')
 <main id="main" class="main">
 
-    <div class="pagetitle">
-        <h1>Revisiones</h1>
+    <div class="pagetitle mb-4">
+        <h1>Gestión de Revisiones</h1>
         <nav>
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
@@ -21,23 +21,33 @@
 
     <section class="section">
 
-        <div class="card">
-            <div class="card-body">
-
-                {{-- Si no hay semestre activo --}}
-                @if(!$semestreActivo)
-
-                <div class="alert alert-warning text-center mt-3">
-                    No hay semestre activo.
-                    Debes activar uno para habilitar las revisiones.
+        <div class="card shadow-sm border-0" style="border-radius: 16px;">
+            <div class="card-header bg-white py-4 border-bottom">
+                <div class="d-flex align-items-center">
+                    <div class="p-3 bg-primary-light rounded-3 me-3">
+                        <i class="bi bi-journal-check text-primary fs-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold">Control de Revisiones</h4>
+                        <p class="text-muted mb-0">
+                            Administra el estado de cada revisión académica del semestre activo.
+                        </p>
+                    </div>
                 </div>
+            </div>
 
+            <div class="card-body p-4">
+
+                @if(!$semestreActivo)
+                    <div class="alert alert-warning text-center shadow-sm border-0">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        No hay semestre activo configurado.
+                        Debes activar uno para habilitar las revisiones.
+                    </div>
                 @endif
 
                 <div class="row g-4">
-
                     @include('modules.revisiones.cards')
-
                 </div>
 
             </div>
@@ -46,7 +56,42 @@
     </section>
 
 </main>
+
+<style>
+    .bg-primary-light {
+        background-color: rgba(13, 110, 253, 0.10);
+    }
+
+    .bg-success-light {
+        background-color: rgba(25, 135, 84, 0.10);
+    }
+
+    .card {
+        border-radius: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 14px rgba(25, 135, 84, 0.15);
+    }
+
+    .btn-outline-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 14px rgba(13, 110, 253, 0.15);
+    }
+</style>
 @endsection
+
 
 @push('scripts')
 <script>
@@ -94,11 +139,9 @@
                                 .then(response => {
 
                                     if (!response.ok) {
-
                                         return response.json().then(data => {
                                             throw new Error(data.error || 'Contraseña incorrecta')
                                         });
-
                                     }
 
                                     return response.json();

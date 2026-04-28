@@ -3,151 +3,281 @@
 @section('titulo', $titulo)
 
 @section('contenido')
-    <main id="main" class="main">
-        <div class="card mt-4 mb-4">
-            <div class="card-body">
-                <div class="pagetitle">
-                    <h1>Crear Nuevo semestre</h1>
-                    <nav>
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
-                            <li class="breadcrumb-item active">Registrar nuevo semestre</li>
+<main id="main" class="main">
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+
+            <div class="card border-0 shadow-lg semestre-card mt-4 mb-4">
+
+                <div class="card-header semestre-header">
+
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+                        <div>
+                            <h2 class="fw-bold text-primary mb-1">
+                                Crear Nuevo Semestre
+                            </h2>
+
+                            <p class="text-muted mb-0">
+                                Registra un nuevo periodo académico dentro del sistema
+                            </p>
+                        </div>
+
+                        <div class="header-icon">
+                            <i class="bi bi-calendar-plus-fill"></i>
+                        </div>
+
+                    </div>
+
+                    <nav class="mt-3">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('home') }}"
+                                   class="text-decoration-none text-secondary">
+                                    Home
+                                </a>
+                            </li>
+
+                            <li class="breadcrumb-item active text-primary fw-semibold">
+                                Registrar nuevo semestre
+                            </li>
                         </ol>
                     </nav>
+
                 </div>
 
-                <section class="section">
-                    <form action="{{ route('semestre.store') }}" id="formSemestre" method="POST">
-                        @csrf
-                        <div class="row g-3">
-                            <div class="col-md-8">
-                                <label class="form-label fw-bold">Nombre del Semestre</label>
-                                <input name="nombre" id="nombre" type="text" class="form-control bg-light" readonly>
+                <div class="card-body p-4 p-lg-5">
+
+                    <section class="section">
+
+                        <form action="{{ route('semestre.store') }}"
+                              id="formSemestre"
+                              method="POST">
+
+                            @csrf
+
+                            <div class="row g-4">
+
+                                {{-- NOMBRE --}}
+                                <div class="col-md-8">
+
+                                    <label class="form-label fw-bold">
+                                        Nombre del Semestre
+                                    </label>
+
+                                    <div class="input-group custom-input">
+
+                                        <span class="input-group-text bg-white">
+                                            <i class="bi bi-journal-bookmark-fill text-primary"></i>
+                                        </span>
+
+                                        <input
+                                            name="nombre"
+                                            id="nombre"
+                                            type="text"
+                                            class="form-control bg-light"
+                                            readonly
+                                        >
+
+                                    </div>
+
+                                </div>
+
+                                {{-- AÑO --}}
+                                <div class="col-md-4">
+
+                                    <label class="form-label fw-bold">
+                                        Año
+                                    </label>
+
+                                    <div class="input-group custom-input">
+
+                                        <span class="input-group-text bg-white">
+                                            <i class="bi bi-calendar-event-fill text-primary"></i>
+                                        </span>
+
+                                        <input
+                                            type="number"
+                                            id="anio_manual"
+                                            name="anio"
+                                            class="form-control"
+                                            value="{{ date('Y') }}"
+                                            min="{{ date('Y') - 1 }}"
+                                            max="{{ date('Y') + 5 }}"
+                                        >
+
+                                    </div>
+
+                                </div>
+
+                                {{-- PERIODO --}}
+                                <div class="col-md-12">
+
+                                    <label class="form-label fw-bold">
+                                        Periodo
+                                    </label>
+
+                                    <select
+                                        id="periodo_select"
+                                        name="periodo"
+                                        class="form-select custom-select"
+                                        required
+                                    >
+                                        <option value="" selected disabled>
+                                            Seleccione el periodo...
+                                        </option>
+
+                                        <option value="1">
+                                            1 (ENERO - JUNIO)
+                                        </option>
+
+                                        <option value="2">
+                                            2 (JULIO - DICIEMBRE)
+                                        </option>
+                                    </select>
+
+                                    <small
+                                        id="error_duplicado"
+                                        class="text-danger fw-semibold"
+                                        style="display:none;"
+                                    >
+                                        Este periodo ya está registrado para este año.
+                                    </small>
+
+                                </div>
+
+                                {{-- FECHA INICIO --}}
+                                <div class="col-md-6">
+
+                                    <label class="form-label fw-bold">
+                                        Fecha Inicio
+                                    </label>
+
+                                    <input
+                                        type="date"
+                                        id="fecha_inicio"
+                                        name="fecha_inicio"
+                                        class="form-control custom-date"
+                                        required
+                                    >
+
+                                </div>
+
+                                {{-- FECHA FIN --}}
+                                <div class="col-md-6">
+
+                                    <label class="form-label fw-bold">
+                                        Fecha Fin
+                                    </label>
+
+                                    <input
+                                        type="date"
+                                        id="fecha_fin"
+                                        name="fecha_fin"
+                                        class="form-control custom-date"
+                                        required
+                                    >
+
+                                </div>
+
+                                {{-- BOTONES --}}
+                                <div class="col-12 mt-4 text-center">
+
+                                    <a href="{{ route('semestres') }}"
+                                       class="btn btn-outline-secondary px-4 rounded-pill me-2">
+
+                                        <i class="bi bi-x-circle me-2"></i>
+                                        Cancelar
+                                    </a>
+
+                                    <button
+                                        type="submit"
+                                        id="btnGuardar"
+                                        class="btn btn-primary px-5 rounded-pill shadow-sm"
+                                    >
+                                        <i class="fa-solid fa-floppy-disk me-2"></i>
+                                        Registrar Semestre
+                                    </button>
+
+                                </div>
+
                             </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Año</label>
-                                <input type="number" id="anio_manual" name="anio" class="form-control"
-                                    value="{{ date('Y') }}" min="{{ date('Y') - 1 }}" max="{{ date('Y') + 5 }}">
-                            </div>
+                        </form>
 
-                            <div class="col-md-12">
-                                <label class="form-label fw-bold">Periodo</label>
-                                <select id="periodo_select" name="periodo" class="form-select" required>
-                                    <option value="" selected disabled>Seleccione el periodo...</option>
-                                    <option value="1">1 (ENERO - JUNIO)</option>
-                                    <option value="2">2 (JULIO - DICIEMBRE)</option>
-                                </select>
-                                <small id="error_duplicado" class="text-danger" style="display:none;">Este periodo ya está
-                                    registrado para este año.</small>
-                            </div>
+                    </section>
 
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Fecha Inicio</label>
-                                <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control" required>
-                            </div>
+                </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Fecha Fin</label>
-                                <input type="date" id="fecha_fin" name="fecha_fin" class="form-control" required>
-                            </div>
-
-                            <div class="col-12 mt-4 text-center">
-                                <a href="{{ route('semestres') }}" class="btn btn-outline-info">
-                                    <i class="bi bi-x-circle me-2"></i> Cancelar
-                                </a>
-                                <button type="submit" id="btnGuardar" class="btn btn-outline-dark px-5">
-                                    <i class="fa-solid fa-floppy-disk"></i> Registrar Semestre</button>
-                            </div>
-                        </div>
-                    </form>
             </div>
+
         </div>
-        </section>
+    </div>
 
-    </main>
+</main>
+
+<style>
+    .semestre-card {
+        border-radius: 22px;
+        overflow: hidden;
+        background: #ffffff;
+    }
+
+    .semestre-header {
+        background: linear-gradient(135deg, #f8fbff, #eef5ff);
+        border-bottom: 1px solid #e8eef7;
+        padding: 30px;
+    }
+
+    .header-icon {
+        width: 68px;
+        height: 68px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #0d6efd, #4da3ff);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 28px;
+        box-shadow: 0 10px 25px rgba(13, 110, 253, 0.18);
+    }
+
+    .custom-input .input-group-text,
+    .custom-input .form-control,
+    .custom-select,
+    .custom-date {
+        min-height: 50px;
+        border-radius: 12px !important;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.15);
+    }
+
+    .custom-select {
+        border: 1px solid #dee2e6;
+    }
+
+    .custom-date {
+        padding-left: 15px;
+    }
+
+    .btn {
+        transition: 0.25s;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+
+    label {
+        color: #495057;
+        margin-bottom: 8px;
+    }
+</style>
+
 @endsection
-
-@push('scripts')
-    <script>
-
-        const semestresExistentes = @json($semestres->map(fn($s) => ['anio' => $s->anio, 'periodo' => $s->periodo]));
-
-        function generarNombre() {
-            const anio = document.getElementById('anio_manual').value;
-            const periodo = document.getElementById('periodo_select').value;
-
-            if (!anio || !periodo) return;
-
-            const inicio = document.getElementById('fecha_inicio');
-            const fin = document.getElementById('fecha_fin');
-            let textoPeriodo = '';
-
-            if (periodo == '1') {
-                textoPeriodo = 'ENE - JUN';
-                inicio.min = `${anio}-01-01`;
-                inicio.max = `${anio}-01-31`;
-                inicio.value = `${anio}-01-01`;
-                fin.min = `${anio}-06-01`;
-                fin.max = `${anio}-06-30`;
-                fin.value = `${anio}-06-30`;
-            }
-
-            if (periodo == '2') {
-                textoPeriodo = 'JUL - DIC';
-                inicio.min = `${anio}-07-01`;
-                inicio.max = `${anio}-07-31`;
-                inicio.value = `${anio}-07-01`;
-                fin.min = `${anio}-12-01`;
-                fin.max = `${anio}-12-31`;
-                fin.value = `${anio}-12-31`;
-            }
-
-            document.getElementById('nombre').value = `${anio}-${periodo} ${textoPeriodo}`;
-        }
-
-        function verificarDuplicado() {
-            const anio = document.getElementById('anio_manual').value;
-            const periodoSelect = document.getElementById('periodo_select');
-            const error = document.getElementById('error_duplicado');
-            const btn = document.getElementById('btnGuardar');
-
-            if (!anio) return;
-
-
-            for (const option of periodoSelect.options) {
-                if (option.value !== "") option.disabled = false;
-            }
-
-            const duplicados = semestresExistentes.filter(s => s.anio == anio);
-            duplicados.forEach(s => {
-                const opt = periodoSelect.querySelector(`option[value="${s.periodo}"]`);
-                if (opt) opt.disabled = true;
-            });
-
-            const periodoActual = periodoSelect.value;
-            if (duplicados.some(s => s.periodo == periodoActual)) {
-                error.style.display = 'block';
-                btn.disabled = true;
-            } else {
-                error.style.display = 'none';
-                btn.disabled = false;
-            }
-        }
-
-        document.getElementById('anio_manual').addEventListener('change', () => {
-            generarNombre();
-            verificarDuplicado();
-        });
-
-        document.getElementById('periodo_select').addEventListener('change', () => {
-            generarNombre();
-            verificarDuplicado();
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            generarNombre();
-            verificarDuplicado();
-        });
-    </script>
-@endpush

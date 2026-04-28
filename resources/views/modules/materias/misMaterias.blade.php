@@ -4,56 +4,336 @@
 
 @section('contenido')<main id="main" class="main">
 
-        <div class="pagetitle">
-            <h1>Evidencias de Docentes</h1>
-            <nav>
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-                    <li class="breadcrumb-item active">Administrar mis Materias</li>
-                </ol>
-            </nav>
-        </div><!-- End Page Title -->
-        <hr>
-        <section class="section">
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="card shadow-sm border-0">
-                        <div class="card-body pt-3">
-                            <table class="table datatable text-center align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>NOMBRE</th>
-                                        <th>CARRERA</th>
-                                        <th>SEMESTRE</th>
-                                        <th>CLAVE</th>
-                                        <th>N UNIDADES</th>
-                                        <th>Evidencias entregadas</th>
-                                        <th>Ver Evidencias</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Inteligencia Artificial</td>
-                                        <td>Ing. Sistemas</td>
-                                        <td>9no</td>
-                                        <td>IASIS9</td>
-                                        <td>5</td>
-                                        <td>2 / 5</td>
-                                        <td class="text-center">
-                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                                                data-bs-target="#modalVerEvidencias">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+    <div class="pagetitle">
+        <h1>Evidencias de Docentes</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                <li class="breadcrumb-item active">Administrar mis Materias</li>
+            </ol>
+        </nav>
+    </div><!-- End Page Title -->
+    <hr>
+    <section class="section">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body pt-3">
+                        <table class="table datatable text-center align-middle">
+                            <thead>
+                                <tr>
+                                    <th>NOMBRE</th>
+                                    <th>CARRERA</th>
+                                    <th>SEMESTRE</th>
+                                    <th>CLAVE</th>
+                                    <th>N UNIDADES</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Inteligencia Artificial</td>
+                                    <td>Ing. Sistemas</td>
+                                    <td>9no</td>
+                                    <td>IASIS9</td>
+                                    <td>5</td>
+
+                                </tr>@extends('layouts.main')
+
+                                @section('titulo', $titulo)
+
+                                @section('contenido')
+
+                                <main id="main" class="main">
+
+                                    <div class="pagetitle">
+                                        <h1 class="fw-bold text-primary">Evidencias de Docentes</h1>
+
+                                        <nav>
+                                            <ol class="breadcrumb">
+                                                <li class="breadcrumb-item">
+                                                    <a href="{{ route('dashboard') }}" class="text-decoration-none text-secondary">
+                                                        Home
+                                                    </a>
+                                                </li>
+                                                <li class="breadcrumb-item active text-primary fw-semibold">
+                                                    Administrar mis Materias
+                                                </li>
+                                            </ol>
+                                        </nav>
+                                    </div>
+
+                                    <section class="section">
+
+                                        <div class="row">
+                                            <div class="col-lg-12">
+
+                                                <div class="card border-0 shadow-lg materia-card">
+
+                                                    <div class="card-header materia-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+                                                        <div>
+                                                            <h4 class="mb-1 fw-bold">
+                                                                Gestión de Materias
+                                                            </h4>
+
+                                                            <p class="text-muted mb-0">
+                                                                Visualiza las asignaturas registradas y administra sus evidencias correspondientes.
+                                                            </p>
+                                                        </div>
+
+                                                        <div class="header-icon">
+                                                            <i class="bi bi-journal-richtext"></i>
+                                                        </div>
+
+                                                    </div>
+
+                                                    <div class="card-body p-4">
+
+                                                        <div class="table-responsive">
+
+                                                            <table class="table table-hover align-middle text-center materia-table">
+
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>NOMBRE</th>
+                                                                        <th>CARRERA</th>
+                                                                        <th>SEMESTRE</th>
+                                                                        <th>CLAVE</th>
+                                                                        <th>N° UNIDADES</th>
+                                                                        <th>ACCIONES</th>
+                                                                    </tr>
+                                                                </thead>
+
+                                                                <tbody>
+
+                                                                    <tr>
+
+                                                                        <td class="fw-semibold text-dark">
+                                                                            Inteligencia Artificial
+                                                                        </td>
+
+                                                                        <td>
+                                                                            Ingeniería en Sistemas
+                                                                        </td>
+
+                                                                        <td>
+                                                                            <span class="badge rounded-pill badge-semestre">
+                                                                                9no
+                                                                            </span>
+                                                                        </td>
+
+                                                                        <td>
+                                                                            <span class="badge rounded-pill badge-clave">
+                                                                                IASIS9
+                                                                            </span>
+                                                                        </td>
+
+                                                                        <td>
+                                                                            <span class="badge rounded-pill badge-unidades">
+                                                                                5 Unidades
+                                                                            </span>
+                                                                        </td>
+
+                                                                        <td>
+
+                                                                            <a href="#"
+                                                                                class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">
+
+                                                                                <i class="bi bi-folder2-open me-2"></i>
+                                                                                Ver Evidencias
+                                                                            </a>
+
+                                                                        </td>
+
+                                                                    </tr>
+
+                                                                    <tr>
+
+                                                                        <td class="fw-semibold text-dark">
+                                                                            Programación Web
+                                                                        </td>
+
+                                                                        <td>
+                                                                            Ingeniería en Sistemas
+                                                                        </td>
+
+                                                                        <td>
+                                                                            <span class="badge rounded-pill badge-semestre">
+                                                                                8vo
+                                                                            </span>
+                                                                        </td>
+
+                                                                        <td>
+                                                                            <span class="badge rounded-pill badge-clave">
+                                                                                PROWEB8
+                                                                            </span>
+                                                                        </td>
+
+                                                                        <td>
+                                                                            <span class="badge rounded-pill badge-unidades">
+                                                                                6 Unidades
+                                                                            </span>
+                                                                        </td>
+
+                                                                        <td>
+
+                                                                            <a href="#"
+                                                                                class="btn btn-outline-primary btn-sm px-4 rounded-pill">
+
+                                                                                <i class="bi bi-folder-check me-2"></i>
+                                                                                Administrar
+                                                                            </a>
+
+                                                                        </td>
+
+                                                                    </tr>
+
+                                                                    <tr>
+
+                                                                        <td class="fw-semibold text-dark">
+                                                                            Base de Datos
+                                                                        </td>
+
+                                                                        <td>
+                                                                            Ingeniería en Sistemas
+                                                                        </td>
+
+                                                                        <td>
+                                                                            <span class="badge rounded-pill badge-semestre">
+                                                                                6to
+                                                                            </span>
+                                                                        </td>
+
+                                                                        <td>
+                                                                            <span class="badge rounded-pill badge-clave">
+                                                                                BDD06
+                                                                            </span>
+                                                                        </td>
+
+                                                                        <td>
+                                                                            <span class="badge rounded-pill badge-unidades">
+                                                                                4 Unidades
+                                                                            </span>
+                                                                        </td>
+
+                                                                        <td>
+
+                                                                            <a href="#"
+                                                                                class="btn btn-outline-primary btn-sm px-4 rounded-pill">
+
+                                                                                <i class="bi bi-eye me-2"></i>
+                                                                                Revisar
+                                                                            </a>
+
+                                                                        </td>
+
+                                                                    </tr>
+
+                                                                </tbody>
+
+                                                            </table>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+
+                                    </section>
+
+                                </main>
+
+
+                                <style>
+                                    .materia-card {
+                                        border-radius: 20px;
+                                        overflow: hidden;
+                                        background: #ffffff;
+                                    }
+
+                                    .materia-header {
+                                        background: linear-gradient(135deg, #f8fbff, #eef5ff);
+                                        border-bottom: 1px solid #e8eef7;
+                                        padding: 28px;
+                                    }
+
+                                    .header-icon {
+                                        width: 65px;
+                                        height: 65px;
+                                        border-radius: 18px;
+                                        background: linear-gradient(135deg, #0d6efd, #4da3ff);
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        color: white;
+                                        font-size: 28px;
+                                        box-shadow: 0 10px 25px rgba(13, 110, 253, 0.18);
+                                    }
+
+                                    .materia-table thead th {
+                                        background: #f8fbff;
+                                        border-bottom: 1px solid #e8eef7;
+                                        font-size: 14px;
+                                        font-weight: 700;
+                                        color: #495057;
+                                        padding: 18px;
+                                        white-space: nowrap;
+                                    }
+
+                                    .materia-table tbody td {
+                                        padding: 20px 14px;
+                                        vertical-align: middle;
+                                    }
+
+                                    .materia-table tbody tr:hover {
+                                        background: #fcfdff;
+                                    }
+
+                                    .badge-semestre {
+                                        background: #eaf4ff;
+                                        color: #0d6efd;
+                                        border: 1px solid #d3e7ff;
+                                        padding: 8px 16px;
+                                        font-weight: 600;
+                                    }
+
+                                    .badge-clave {
+                                        background: #f5f3ff;
+                                        color: #6f42c1;
+                                        border: 1px solid #e4dcff;
+                                        padding: 8px 16px;
+                                        font-weight: 600;
+                                    }
+
+                                    .badge-unidades {
+                                        background: #ecfff5;
+                                        color: #198754;
+                                        border: 1px solid #d1f7e1;
+                                        padding: 8px 16px;
+                                        font-weight: 600;
+                                    }
+
+                                    .btn {
+                                        transition: 0.25s;
+                                    }
+
+                                    .btn:hover {
+                                        transform: translateY(-2px);
+                                    }
+                                </style>
+
+                                @endsection
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
 
-    </main>
+</main>
 @endsection

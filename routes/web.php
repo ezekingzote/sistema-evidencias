@@ -10,6 +10,7 @@ use App\Http\Controllers\Pdfs;
 use App\Http\Controllers\PlanesEstudio;
 use App\Http\Controllers\SeguimientoDocentes;
 use App\Http\Controllers\Revisiones;
+use App\Http\Controllers\SeguimientoAcademico;
 use App\Http\Controllers\Semestres;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -86,12 +87,17 @@ Route::middleware('auth')->group(function () {
             Route::post('/estado', [Materias::class, 'estado'])->name('materias.estado.ajax');
         });
 
-
         Route::prefix('revisiones')->group(function () {
             Route::get('/', [Revisiones::class, 'index'])->name('revisiones');
             Route::post('/cambiar-estado/{id}', [Revisiones::class, 'cambiarEstado']);
             Route::post('/cambiar-estado-confirmar/{id}', [Revisiones::class, 'cambiarEstadoConfirmar']);
         });
+
+        Route::prefix('seguimiento-academico')->group(function () {
+            Route::get('/', [SeguimientoAcademico::class, 'index'])->name('seguimiento.academico');
+        });
+
+
     });
 
     // ==========================================
@@ -114,6 +120,8 @@ Route::middleware('auth')->group(function () {
         Route::prefix('evidencias')->group(function () {
             Route::get('/', [Evidencias::class, 'index'])->name('evidencias');
             Route::get('/create', [Evidencias::class, 'create'])->name('evidencias.create');
+            Route::get('/show', [Evidencias::class, 'show'])->name('evidencias.show');
+            Route::get('/edit', [Evidencias::class, 'edit'])->name('evidencias.edit');
         });
     });
 });
