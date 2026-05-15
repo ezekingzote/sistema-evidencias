@@ -100,6 +100,7 @@ class Docentes extends Controller
             $user = new User();
             $user->name = $nombreCompleto;
             $user->email = $emailCompleto;
+            $user->celular = $request->celular;
             $user->password = Hash::make($passwordTemporal);
             $user->rol = $request->rol;
             $user->departamento = $request->dpto;

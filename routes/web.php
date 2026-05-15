@@ -94,7 +94,7 @@ Route::middleware('auth')->group(function () {
         });
 
         Route::prefix('seguimiento-academico')->group(function () {
-            Route::get('/', [SeguimientoAcademico::class, 'index'])->name('seguimiento.academico');
+            Route::get('/', [SeguimientoAcademico::class, 'index'])->name('seguimiento-academico');
         });
 
 

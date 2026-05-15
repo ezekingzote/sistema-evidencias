@@ -218,6 +218,7 @@
 </main>
 
 <style>
+
     .semestre-card {
         border-radius: 22px;
         overflow: hidden;
@@ -278,6 +279,39 @@
         color: #495057;
         margin-bottom: 8px;
     }
+
 </style>
+
+<script>
+
+    function actualizarNombreSemestre() {
+
+        const anio = document.getElementById('anio_manual').value;
+        const periodo = document.getElementById('periodo_select').value;
+
+        let texto = '';
+
+        if (periodo == '1') {
+            texto = 'ENERO - JUNIO ' + anio;
+        }
+
+        if (periodo == '2') {
+            texto = 'JULIO - DICIEMBRE ' + anio;
+        }
+
+        document.getElementById('nombre').value = texto;
+    }
+
+    document
+        .getElementById('anio_manual')
+        .addEventListener('input', actualizarNombreSemestre);
+
+    document
+        .getElementById('periodo_select')
+        .addEventListener('change', actualizarNombreSemestre);
+
+    window.addEventListener('load', actualizarNombreSemestre);
+
+</script>
 
 @endsection

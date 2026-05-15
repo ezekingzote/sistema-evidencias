@@ -46,6 +46,13 @@
                 <span>Revisiones</span>
             </a>
         </li>
+
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="{{ route('seguimiento-academico') }}">
+                <i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i>
+                <span>Seguimiento Academico</span>
+            </a>
+        </li>
         @endif
 
 

@@ -92,7 +92,7 @@
 
                 <div class="mt-auto">
 
-                    <a href="{{ route('seguimiento.academico') }}"
+                    <a href="{{ route('seguimiento-academico') }}"
                        class="btn btn-outline-success w-100 py-2 shadow-sm"
                        style="border-radius: 12px;">
                         <i class="bi bi-graph-up-arrow me-2"></i>
