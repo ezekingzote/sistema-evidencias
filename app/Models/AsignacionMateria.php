@@ -49,15 +49,16 @@ class AsignacionMateria extends Model
         'activo'
     ];
 
-    /**
-     * RELACIONES: Esto es lo más importante para mostrar nombres 
-     * en lugar de solo IDs en tu lista (Index).
-     */
 
 
     public function materia()
     {
         return $this->belongsTo(Materia::class, 'materia_id');
+    }
+
+    public function materias()
+    {
+        return $this->belongsToMany(Materia::class, 'asignacion_materias', 'docente_id', 'materia_id');
     }
 
     public function docente()

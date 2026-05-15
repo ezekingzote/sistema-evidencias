@@ -63,4 +63,9 @@ class User extends Authenticatable
             'activo' => 'integer',
         ];
     }
+    public function materias()
+    {
+        return $this->belongsToMany(Materia::class, 'asignacion_materias', 'docente_id', 'materia_id')
+            ->withPivot('grupo', 'alumnos', 'activo');
+    }
 }

@@ -15,9 +15,10 @@ class Evidencias extends Controller
     {
         $titulo = "Gestión de Evidencias";
 
-        return view('modules.evidencias.index', compact(
-            'titulo'
-        ));
+        // Traemos exclusivamente las materias asignadas al docente logueado
+        $materias = Auth::user()->materias;
+
+        return view('modules.evidencias.index', compact('titulo', 'materias'));
     }
 
     public function edit()
@@ -44,5 +45,4 @@ class Evidencias extends Controller
         $revisiones = Revision::where('activo', 1)->orderBy('nombre', 'asc')->get();
         return view('modules.evidencias.create', compact('titulo', 'revisiones'));
     }
-
 }

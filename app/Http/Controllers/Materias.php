@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use App\Models\Materia;
 use App\Models\Semestre;
 use Exception;
@@ -91,10 +92,7 @@ class Materias extends Controller
         try {
 
             $item = Materia::findOrFail($id);
-
-            // eliminar también del pivote
             $item->semestres()->detach();
-
             $item->delete();
 
             return to_route('materias')
@@ -116,8 +114,8 @@ class Materias extends Controller
     public function misMaterias()
     {
         $titulo = 'Mis Materias';
-
-        return view('modules.materias.misMaterias', compact('titulo'));
+        $materias = Auth::user()->materias;
+        return view('modules.materias.misMaterias', compact('titulo', 'materias'));
     }
 
     public function estado(Request $request)
@@ -145,9 +143,7 @@ class Materias extends Controller
                 $semestreActivo
                     ->materias()
                     ->syncWithoutDetaching([$materia->id]);
-            }
-
-            else {
+            } else {
 
                 $materia->activo = 0;
                 $materia->save();

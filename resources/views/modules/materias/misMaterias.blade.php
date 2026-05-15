@@ -51,9 +51,7 @@
                         <div class="card-body p-4">
 
                             <div class="table-responsive">
-
                                 <table class="table table-hover align-middle text-center materia-table">
-
                                     <thead>
                                         <tr>
                                             <th>NOMBRE</th>
@@ -64,134 +62,53 @@
                                             <th>ACCIONES</th>
                                         </tr>
                                     </thead>
-
                                     <tbody>
+                                        @forelse ($materias as $materia)
+                                            <tr>
+                                                <td class="fw-semibold text-dark">
+                                                    {{-- Acceso directo al nombre de la materia --}}
+                                                    {{ $materia->nombre }}
+                                                </td>
 
-                                        <tr>
+                                                <td>
+                                                    {{ $materia->carrera }}
+                                                </td>
 
-                                            <td class="fw-semibold text-dark">
-                                                Inteligencia Artificial
-                                            </td>
+                                                <td>
+                                                    <span class="badge rounded-pill badge-semestre">
+                                                        {{ $materia->semestre }}
+                                                    </span>
+                                                </td>
 
-                                            <td>
-                                                Ingeniería en Sistemas
-                                            </td>
+                                                <td>
+                                                    <span class="badge rounded-pill badge-clave">
+                                                        {{ $materia->clave }}
+                                                    </span>
+                                                </td>
 
-                                            <td>
-                                                <span class="badge rounded-pill badge-semestre">
-                                                    9no
-                                                </span>
-                                            </td>
+                                                <td>
+                                                    <span class="text-muted">
+                                                        {{ $materia->unidades }}
+                                                    </span>
+                                                </td>
 
-                                            <td>
-                                                <span class="badge rounded-pill badge-clave">
-                                                    IASIS9
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                <span class="badge rounded-pill badge-unidades">
-                                                    5 Unidades
-                                                </span>
-                                            </td>
-
-                                            <td>
-
-                                                <a href="#"
-                                                    class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">
-
-                                                    <i class="bi bi-folder2-open me-2"></i>
-                                                    Ver Evidencias
-                                                </a>
-
-                                            </td>
-
-                                        </tr>
-
-                                        <tr>
-
-                                            <td class="fw-semibold text-dark">
-                                                Programación Web
-                                            </td>
-
-                                            <td>
-                                                Ingeniería en Sistemas
-                                            </td>
-
-                                            <td>
-                                                <span class="badge rounded-pill badge-semestre">
-                                                    8vo
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                <span class="badge rounded-pill badge-clave">
-                                                    PROWEB8
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                <span class="badge rounded-pill badge-unidades">
-                                                    6 Unidades
-                                                </span>
-                                            </td>
-
-                                            <td>
-
-                                                <a href="#" class="btn btn-outline-primary btn-sm px-4 rounded-pill">
-
-                                                    <i class="bi bi-folder-check me-2"></i>
-                                                    Administrar
-                                                </a>
-
-                                            </td>
-
-                                        </tr>
-
-                                        <tr>
-
-                                            <td class="fw-semibold text-dark">
-                                                Base de Datos
-                                            </td>
-
-                                            <td>
-                                                Ingeniería en Sistemas
-                                            </td>
-
-                                            <td>
-                                                <span class="badge rounded-pill badge-semestre">
-                                                    6to
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                <span class="badge rounded-pill badge-clave">
-                                                    BDD06
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                <span class="badge rounded-pill badge-unidades">
-                                                    4 Unidades
-                                                </span>
-                                            </td>
-
-                                            <td>
-
-                                                <a href="#" class="btn btn-outline-primary btn-sm px-4 rounded-pill">
-
-                                                    <i class="bi bi-eye me-2"></i>
-                                                    Revisar
-                                                </a>
-
-                                            </td>
-
-                                        </tr>
-
+                                                <td>
+                                                    <a href="#"
+                                                        class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">
+                                                        <i class="bi bi-folder2-open me-2"></i>
+                                                        Ver Evidencias
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="6" class="text-muted py-4">
+                                                    No tienes materias asignadas en este momento.
+                                                </td>
+                                            </tr>
+                                        @endforelse
                                     </tbody>
-
                                 </table>
-
                             </div>
 
                         </div>

@@ -96,8 +96,6 @@ Route::middleware('auth')->group(function () {
         Route::prefix('seguimiento-academico')->group(function () {
             Route::get('/', [SeguimientoAcademico::class, 'index'])->name('seguimiento-academico');
         });
-
-
     });
 
     // ==========================================
@@ -114,7 +112,7 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('planes-estudio')->group(function () {
             Route::get('/', [PlanesEstudio::class, 'index'])->name('planes-estudio');
-            Route::get('/agregar', [PlanesEstudio::class, 'agregar'])->name('agregar-plan-estudio');
+            Route::get('/planes-estudio/agregar/{materia_id}/{unidad}', [PlanesEstudio::class, 'agregar'])->name('agregar-plan-estudio');
         });
 
         Route::prefix('evidencias')->group(function () {
