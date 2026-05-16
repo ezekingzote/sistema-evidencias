@@ -112,18 +112,20 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('planes-estudio')->group(function () {
             Route::get('/', [PlanesEstudio::class, 'index'])->name('planes-estudio');
-            Route::get('/planes-estudio/agregar/{materia_id}/{unidad}', [PlanesEstudio::class, 'agregar'])->name('agregar-plan-estudio');
-            Route::post('/planes-estudio/guardar', [PlanesEstudio::class, 'store'])->name('planes-estudio.store');
-            Route::get('/planes-estudio/ver/{materia_id}/{unidad}', [PlanesEstudio::class, 'show'])->name('ver-plan-estudio');
-            Route::get('/planes-estudio/editar/{materia_id}/{unidad}', [PlanesEstudio::class, 'edit'])->name('editar-plan-estudio');
-            Route::put('/planes-estudio/actualizar', [PlanesEstudio::class, 'update'])->name('planes-estudio.update');
+            Route::get('/agregar/{materia_id}/{unidad}', [PlanesEstudio::class, 'agregar'])->name('agregar-plan-estudio');
+            Route::post('/guardar', [PlanesEstudio::class, 'store'])->name('planes-estudio.store');
+            Route::get('/ver/{materia_id}/{unidad}', [PlanesEstudio::class, 'show'])->name('ver-plan-estudio');
+            Route::get('/editar/{materia_id}/{unidad}', [PlanesEstudio::class, 'edit'])->name('editar-plan-estudio');
+            Route::put('/actualizar', [PlanesEstudio::class, 'update'])->name('planes-estudio.update');
         });
 
         Route::prefix('evidencias')->group(function () {
             Route::get('/', [Evidencias::class, 'index'])->name('evidencias');
             Route::get('/create', [Evidencias::class, 'create'])->name('evidencias.create');
-            Route::get('/show', [Evidencias::class, 'show'])->name('evidencias.show');
-            Route::get('/edit', [Evidencias::class, 'edit'])->name('evidencias.edit');
+            Route::post('/guardar', [Evidencias::class, 'store'])->name('evidencias.store');
+            Route::get('/ver-detalle/{materia_id}', [Evidencias::class, 'show'])->name('evidencias.show');
+            Route::get('/edit/{materia_id}', [Evidencias::class, 'edit'])->name('evidencias.edit');
+            Route::put('/update/{materia_id}', [Evidencias::class, 'update'])->name('evidencias.update');
         });
     });
 });

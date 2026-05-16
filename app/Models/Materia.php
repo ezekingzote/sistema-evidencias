@@ -48,4 +48,9 @@ class Materia extends Model
     {
         return $this->hasMany(AsignacionMateria::class, 'materia_id');
     }
+    
+    public function evidencias()
+    {
+        return $this->hasMany(Evidencia::class, 'materia_id');
+    }
 }

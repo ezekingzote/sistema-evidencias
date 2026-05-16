@@ -110,6 +110,16 @@
 
                                     <tbody>
                                         @forelse ($materias as $materia)
+                                            @php
+                                                // Obtenemos las evidencias que ya subió para esta materia específica
+                                                $evidenciasSubidas = $materia->evidencias;
+
+                                                // Calculamos el avance (asumiendo que son 4 revisiones en total)
+                                                $totalRevisiones = 4;
+                                                $cantidadSubidas = $evidenciasSubidas->count();
+                                                $porcentaje = ($cantidadSubidas / $totalRevisiones) * 100;
+                                            @endphp
+
                                             <tr>
                                                 <td class="fw-semibold">
                                                     {{ $materia->nombre }}
@@ -119,34 +129,34 @@
                                                     {{ Auth::user()->name }} {{ Auth::user()->last_name ?? '' }}
                                                 </td>
 
-                                                <td class="text-center">
-                                                    <span class="status empty" title="Sin asignar">
-                                                        <i class="bi bi-dash-circle-fill"></i>
-                                                    </span>
-                                                </td>
+                                                @for ($i = 1; $i <= 4; $i++)
+                                                    @php
+                                                        // Buscamos si existe la evidencia para la revisión actual ($i)
+                                                        $evidenciaActual = $evidenciasSubidas
+                                                            ->where('revision_id', $i)
+                                                            ->first();
+                                                    @endphp
 
-                                                <td class="text-center">
-                                                    <span class="status empty" title="Sin asignar">
-                                                        <i class="bi bi-dash-circle-fill"></i>
-                                                    </span>
-                                                </td>
+                                                    <td class="text-center">
+                                                        @if ($evidenciaActual)
+                                                            <span class="status pending" title="Pendiente (Editar)">
+                                                                <i class="bi bi-clock-fill text-warning"></i>
+                                                            </span>
+                                                        @else
+                                                            <span class="status empty" title="Sin asignar">
+                                                                <i class="bi bi-dash-circle-fill text-secondary"></i>
+                                                            </span>
+                                                        @endif
+                                                    </td>
+                                                @endfor
 
-                                                <td class="text-center">
-                                                    <span class="status empty" title="Sin asignar">
-                                                        <i class="bi bi-dash-circle-fill"></i>
-                                                    </span>
-                                                </td>
-
-                                                <td class="text-center">
-                                                    <span class="status empty" title="Sin asignar">
-                                                        <i class="bi bi-dash-circle-fill"></i>
-                                                    </span>
-                                                </td>
-
-                                                <td class="text-center">
-                                                    <div class="progress progress-custom">
-                                                        <div class="progress-bar bg-secondary" style="width: 0%">
-                                                            0%
+                                                <td class="text-center align-middle">
+                                                    <div class="progress progress-custom" style="height: 15px;">
+                                                        <div class="progress-bar {{ $porcentaje == 100 ? 'bg-success' : 'bg-primary' }}"
+                                                            role="progressbar" style="width: {{ $porcentaje }}%"
+                                                            aria-valuenow="{{ $porcentaje }}" aria-valuemin="0"
+                                                            aria-valuemax="100">
+                                                            {{ round($porcentaje) }}%
                                                         </div>
                                                     </div>
                                                 </td>
@@ -165,7 +175,7 @@
                                                                 </a>
                                                             </li>
                                                             <li>
-                                                                <a class="dropdown-item"
+                                                                <a class="dropdown-item {{ $cantidadSubidas == 0 ? 'disabled' : '' }}"
                                                                     href="{{ route('evidencias.edit', $materia->id) }}">
                                                                     <i class="bi bi-pencil-square me-2 text-warning"></i>
                                                                     Editar

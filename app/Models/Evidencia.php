@@ -2,16 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Evidencia extends Model
 {
-
+    use HasFactory;
     protected $fillable = [
-        'docente_id',
+        'materia_id',
         'revision_id',
-        'carpeta_documentos',
-        'carpeta_evidencias'
+        'doc_a',
+        'doc_b',
+        'doc_c',
+        'evi_a',
+        'evi_b',
+        'evi_c',
     ];
-
 }
