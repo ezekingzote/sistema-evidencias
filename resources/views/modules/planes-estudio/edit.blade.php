@@ -6,20 +6,22 @@
     <main id="main" class="main">
 
         <div class="pagetitle">
-            <h1>Crear Nueva Ponderación</h1>
+            <h1>{{ $titulo }}</h1>
             <nav>
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ route('planes-estudio') }}">Home</a></li>
-                    <li class="breadcrumb-item active">Registrar una ponderacion nueva</li>
+                    <li class="breadcrumb-item active">Editar Ponderación</li>
                 </ol>
             </nav>
         </div>
+
         <section class="section">
             <div class="row">
                 <div class="col-12">
                     <div class="card border-0 shadow-sm">
-                        <form action="{{ route('planes-estudio.store') }}" method="POST" id="formPonderacion">
+                        <form action="{{ route('planes-estudio.update') }}" method="POST" id="formPonderacion">
                             @csrf
+                            @method('PUT')
                             <input type="hidden" name="materia_id" value="{{ $materia->id }}">
                             <input type="hidden" name="unidad" value="{{ $unidad }}">
 
@@ -51,33 +53,40 @@
                                                 <th style="width: 10%;" class="text-center py-3">Acción</th>
                                             </tr>
                                         </thead>
+
                                         <tbody id="tbodyInstrumentacion">
-                                            <tr class="border-bottom fila-criterio">
-                                                <td class="ps-3">
-                                                    <input type="text" name="actividades[]"
-                                                        class="form-control form-control-sm border-0 bg-light"
-                                                        placeholder="Ej. Examen" required>
-                                                </td>
-                                                <td>
-                                                    <div class="input-group input-group-sm w-75 mx-auto">
-                                                        <input type="number" name="porcentajes[]"
-                                                            class="form-control border-0 bg-light text-center fw-bold input-porcentaje"
-                                                            min="1" max="100" value="0" required>
-                                                        <span class="input-group-text border-0 bg-light small">%</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <input type="text" name="instrumentos[]"
-                                                        class="form-control form-control-sm border-0 bg-light"
-                                                        placeholder="Ej. Rúbrica" required>
-                                                </td>
-                                                <td class="text-center">
-                                                    <button type="button" class="btn btn-link text-danger p-0 btn-eliminar"
-                                                        title="Eliminar criterio">
-                                                        <i class="bi bi-x-circle-fill fs-5"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
+
+                                            @foreach ($ponderaciones as $pond)
+                                                <tr class="border-bottom fila-criterio">
+                                                    <td class="ps-3">
+                                                        <input type="text" name="actividades[]"
+                                                            class="form-control form-control-sm border-0 bg-light"
+                                                            value="{{ $pond->actividad }}" required>
+                                                    </td>
+                                                    <td>
+                                                        <div class="input-group input-group-sm w-75 mx-auto">
+                                                            <input type="number" name="porcentajes[]"
+                                                                class="form-control border-0 bg-light text-center fw-bold input-porcentaje"
+                                                                min="1" max="100"
+                                                                value="{{ $pond->porcentaje }}" required>
+                                                            <span class="input-group-text border-0 bg-light small">%</span>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <input type="text" name="instrumentos[]"
+                                                            class="form-control form-control-sm border-0 bg-light"
+                                                            value="{{ $pond->instrumento }}" required>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button type="button"
+                                                            class="btn btn-link text-danger p-0 btn-eliminar"
+                                                            title="Eliminar criterio">
+                                                            <i class="bi bi-x-circle-fill fs-5"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+
                                         </tbody>
                                     </table>
                                 </div>
@@ -108,12 +117,16 @@
                                             </div>
                                         </div>
                                     </div>
+
                                     <div class="col-md-6 text-md-end mt-3 mt-md-0">
                                         <a href="{{ route('planes-estudio') }}"
                                             class="btn btn-outline-danger me-2">Cancelar</a>
                                         <button type="submit" id="btnGuardar" class="btn btn-outline-success px-4 shadow"
-                                            disabled>Guardar Ponderación</button>
+                                            disabled>
+                                            Guardar Cambios
+                                        </button>
                                     </div>
+
                                 </div>
                             </div>
                         </form>
@@ -121,8 +134,8 @@
                 </div>
             </div>
         </section>
-
-</main>@endsection
+    </main>
+@endsection
 
 @push('scripts')
     <script>
@@ -133,6 +146,7 @@
             const barraProgreso = document.getElementById('barraProgreso');
             const mensajePorcentaje = document.getElementById('mensajePorcentaje');
             const btnGuardar = document.getElementById('btnGuardar');
+
             function recalcularTotal() {
                 let total = 0;
                 const inputs = document.querySelectorAll('.input-porcentaje');
@@ -141,6 +155,7 @@
                     const valor = parseFloat(input.value) || 0;
                     total += valor;
                 });
+
                 textoTotal.textContent = total + '%';
                 barraProgreso.style.width = total + '%';
 
@@ -148,8 +163,9 @@
                     textoTotal.classList.replace('text-danger', 'text-success');
                     barraProgreso.classList.replace('bg-danger', 'bg-success');
                     mensajePorcentaje.classList.replace('text-danger', 'text-success');
-                    mensajePorcentaje.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Total alcanzado (100%)';
-                    
+                    mensajePorcentaje.innerHTML =
+                        '<i class="bi bi-check-circle-fill me-1"></i> Total alcanzado (100%)';
+
                     btnGuardar.disabled = false;
                     btnGuardar.classList.replace('btn-outline-success', 'btn-success');
                     btnGuardar.classList.add('text-white');
@@ -158,8 +174,9 @@
                     barraProgreso.classList.replace('bg-success', 'bg-danger');
                     mensajePorcentaje.classList.replace('text-success', 'text-danger');
                     let falta = 100 - total;
-                    mensajePorcentaje.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i> Falta ${falta}% para el total`;
-                    
+                    mensajePorcentaje.innerHTML =
+                        `<i class="bi bi-exclamation-triangle-fill me-1"></i> Falta ${falta}% para el total`;
+
                     btnGuardar.disabled = true;
                     btnGuardar.classList.replace('btn-success', 'btn-outline-success');
                     btnGuardar.classList.remove('text-white');
@@ -171,24 +188,25 @@
                     let valorIngresado = parseFloat(inputActual.value) || 0;
                     let sumaDeLosDemas = 0;
                     const todosLosInputs = document.querySelectorAll('.input-porcentaje');
-                    
+
                     todosLosInputs.forEach(input => {
                         if (input !== inputActual) {
                             sumaDeLosDemas += (parseFloat(input.value) || 0);
                         }
                     });
+
                     let maximoPermitido = 100 - sumaDeLosDemas;
                     if (maximoPermitido < 0) maximoPermitido = 0;
+
                     if (valorIngresado > maximoPermitido) {
                         inputActual.value = maximoPermitido;
-                    } 
-                    else if (valorIngresado < 0) {
+                    } else if (valorIngresado < 0) {
                         inputActual.value = 0;
                     }
+
                     recalcularTotal();
                 }
             });
-
             tbody.addEventListener('click', function(e) {
                 const btnEliminar = e.target.closest('.btn-eliminar');
                 if (btnEliminar) {
@@ -196,7 +214,7 @@
                         btnEliminar.closest('.fila-criterio').remove();
                         recalcularTotal();
                     } else {
-                        alert('Debe existir al menos un criterio de evaluación.');
+                        alert('Debe existir al menos un criterio de evaluación en la ponderación.');
                     }
                 }
             });

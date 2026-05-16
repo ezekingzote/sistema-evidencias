@@ -120,8 +120,6 @@
             // Usamos el operador ternario de PHP para evitar que JS reciba un null
             const successMessage = "{{ session('success') }}";
             const errorMessage = "{{ session('error') }}";
-
-            // 2. Disparamos la alerta si la variable tiene contenido
             if (successMessage) {
                 Swal.fire({
                     title: '¡Éxito!',

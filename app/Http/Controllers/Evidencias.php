@@ -14,8 +14,6 @@ class Evidencias extends Controller
     public function index()
     {
         $titulo = "Gestión de Evidencias";
-
-        // Traemos exclusivamente las materias asignadas al docente logueado
         $materias = Auth::user()->materias;
 
         return view('modules.evidencias.index', compact('titulo', 'materias'));

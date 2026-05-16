@@ -30,7 +30,7 @@
 
                 @forelse ($materias as $materia)
                     <div class="col-12 col-md-6 col-xl-4">
-                        <div class="card border-0 shadow-lg plan-card h-100">
+                        <div class="card border-0 shadow-lg plan-card h-100 overflow-visible">
                             <div class="card-body p-4 d-flex flex-column">
 
                                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -68,19 +68,47 @@
                                 <div class="mt-auto pt-2">
                                     <div class="dropdown">
                                         <button class="btn btn-primary w-100 rounded-pill py-2 fw-semibold dropdown-toggle"
-                                            type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            type="button" data-bs-toggle="dropdown" data-bs-flip="false"
+                                            aria-expanded="false">
                                             <i class="bi bi-bar-chart-line-fill me-2"></i>
                                             Plan por Unidad
                                         </button>
 
-                                        <ul class="dropdown-menu w-100 shadow border-0 rounded-4 text-center">
+                                        <ul class="dropdown-menu w-100 shadow border-0 rounded-4">
                                             @for ($i = 1; $i <= $materia->unidades; $i++)
                                                 <li>
-                                                    <a class="dropdown-item py-2"
-                                                        href="{{ route('agregar-plan-estudio', ['materia_id' => $materia->id, 'unidad' => $i]) }}">
-                                                        Unidad {{ $i }}
-                                                    </a>
+                                                    <div
+                                                        class="dropdown-item py-2 d-flex justify-content-between align-items-center">
+
+                                                        <a href="{{ route('agregar-plan-estudio', ['materia_id' => $materia->id, 'unidad' => $i]) }}"
+                                                            class="fw-semibold text-dark text-decoration-none flex-grow-1 d-block py-1"
+                                                            title="Crear nueva ponderación">
+                                                            Unidad {{ $i }}
+                                                        </a>
+
+                                                        <div class="d-flex gap-2">
+
+                                                            <a href="{{ route('ver-plan-estudio', ['materia_id' => $materia->id, 'unidad' => $i]) }}"
+                                                                class="btn btn-light text-primary rounded-circle border shadow-sm d-inline-flex justify-content-center align-items-center"
+                                                                style="width: 32px; height: 32px;" title="Visualizar">
+                                                                <i class="bi bi-eye-fill m-0"></i>
+                                                            </a>
+
+                                                            <a href="{{ route('editar-plan-estudio', ['materia_id' => $materia->id, 'unidad' => $i]) }}"
+                                                                class="btn btn-light text-success rounded-circle border shadow-sm d-inline-flex justify-content-center align-items-center"
+                                                                style="width: 32px; height: 32px;" title="Editar">
+                                                                <i class="bi bi-pencil-fill m-0"></i>
+                                                            </a>
+
+                                                        </div>
+                                                    </div>
                                                 </li>
+
+                                                @if (!$loop->last)
+                                                    <li>
+                                                        <hr class="dropdown-divider my-1">
+                                                    </li>
+                                                @endif
                                             @endfor
                                         </ul>
                                     </div>
@@ -90,7 +118,6 @@
                         </div>
                     </div>
                 @empty
-                    {{-- Mensaje en caso de que el docente no tenga materias asignadas --}}
                     <div class="col-12 text-center py-5">
                         <i class="bi bi-journal-x display-1 text-muted mb-3 d-block"></i>
                         <h4 class="text-muted">Aún no tienes materias asignadas</h4>
