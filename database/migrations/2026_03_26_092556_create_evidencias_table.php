@@ -33,9 +33,9 @@ return new class extends Migration
             $table->string('evi_b')->nullable()->comment('Rúbricas utilizadas');
             $table->string('evi_c')->nullable()->comment('Examen diagnóstico');
 
-            $table->enum('estado', ['pendiente', 'aprobada', 'correccion'])
-                ->default('pendiente')
-                ->comment('Estado de revisión de la evidencia');
+            $table->tinyInteger('estado')
+                ->default(3)
+                ->comment('0=inactiva,1=asignada,2=aprobada,3=pendiente,4=rechazada');
 
             $table->text('observaciones')
                 ->nullable()

@@ -34,7 +34,7 @@
                         <ol class="breadcrumb mb-0">
                             <li class="breadcrumb-item">
                                 <a href="{{ route('home') }}"
-                                   class="text-decoration-none text-secondary">
+                                    class="text-decoration-none text-secondary">
                                     Home
                                 </a>
                             </li>
@@ -52,8 +52,8 @@
                     <section class="section">
 
                         <form action="{{ route('semestre.store') }}"
-                              id="formSemestre"
-                              method="POST">
+                            id="formSemestre"
+                            method="POST">
 
                             @csrf
 
@@ -77,8 +77,7 @@
                                             id="nombre"
                                             type="text"
                                             class="form-control bg-light"
-                                            readonly
-                                        >
+                                            readonly>
 
                                     </div>
 
@@ -103,9 +102,8 @@
                                             name="anio"
                                             class="form-control"
                                             value="{{ date('Y') }}"
-                                            min="{{ date('Y') - 1 }}"
-                                            max="{{ date('Y') + 5 }}"
-                                        >
+                                            min="{{ date('Y') }}"
+                                            max="{{ date('Y') + 5 }}">
 
                                     </div>
 
@@ -122,8 +120,7 @@
                                         id="periodo_select"
                                         name="periodo"
                                         class="form-select custom-select"
-                                        required
-                                    >
+                                        required>
                                         <option value="" selected disabled>
                                             Seleccione el periodo...
                                         </option>
@@ -140,8 +137,7 @@
                                     <small
                                         id="error_duplicado"
                                         class="text-danger fw-semibold"
-                                        style="display:none;"
-                                    >
+                                        style="display:none;">
                                         Este periodo ya está registrado para este año.
                                     </small>
 
@@ -159,8 +155,7 @@
                                         id="fecha_inicio"
                                         name="fecha_inicio"
                                         class="form-control custom-date"
-                                        required
-                                    >
+                                        required>
 
                                 </div>
 
@@ -176,8 +171,7 @@
                                         id="fecha_fin"
                                         name="fecha_fin"
                                         class="form-control custom-date"
-                                        required
-                                    >
+                                        required>
 
                                 </div>
 
@@ -185,7 +179,7 @@
                                 <div class="col-12 mt-4 text-center">
 
                                     <a href="{{ route('semestres') }}"
-                                       class="btn btn-outline-secondary px-4 rounded-pill me-2">
+                                        class="btn btn-outline-secondary px-4 rounded-pill me-2">
 
                                         <i class="bi bi-x-circle me-2"></i>
                                         Cancelar
@@ -194,8 +188,7 @@
                                     <button
                                         type="submit"
                                         id="btnGuardar"
-                                        class="btn btn-primary px-5 rounded-pill shadow-sm"
-                                    >
+                                        class="btn btn-primary px-5 rounded-pill shadow-sm">
                                         <i class="fa-solid fa-floppy-disk me-2"></i>
                                         Registrar Semestre
                                     </button>
@@ -218,7 +211,6 @@
 </main>
 
 <style>
-
     .semestre-card {
         border-radius: 22px;
         overflow: hidden;
@@ -279,24 +271,55 @@
         color: #495057;
         margin-bottom: 8px;
     }
-
 </style>
 
 <script>
-
     function actualizarNombreSemestre() {
 
         const anio = document.getElementById('anio_manual').value;
         const periodo = document.getElementById('periodo_select').value;
 
+        const fechaInicio = document.getElementById('fecha_inicio');
+        const fechaFin = document.getElementById('fecha_fin');
+
         let texto = '';
 
         if (periodo == '1') {
+
             texto = 'ENERO - JUNIO ' + anio;
+
+            fechaInicio.min = `${anio}-01-01`;
+            fechaInicio.max = `${anio}-01-31`;
+
+            fechaFin.min = `${anio}-06-01`;
+            fechaFin.max = `${anio}-06-30`;
+
+            if (!fechaInicio.value) {
+                fechaInicio.value = `${anio}-01-01`;
+            }
+
+            if (!fechaFin.value) {
+                fechaFin.value = `${anio}-06-30`;
+            }
         }
 
         if (periodo == '2') {
+
             texto = 'JULIO - DICIEMBRE ' + anio;
+
+            fechaInicio.min = `${anio}-07-01`;
+            fechaInicio.max = `${anio}-07-31`;
+
+            fechaFin.min = `${anio}-12-01`;
+            fechaFin.max = `${anio}-12-31`;
+
+            if (!fechaInicio.value) {
+                fechaInicio.value = `${anio}-07-01`;
+            }
+
+            if (!fechaFin.value) {
+                fechaFin.value = `${anio}-12-31`;
+            }
         }
 
         document.getElementById('nombre').value = texto;
@@ -304,14 +327,37 @@
 
     document
         .getElementById('anio_manual')
-        .addEventListener('input', actualizarNombreSemestre);
+        .addEventListener('input', () => {
+
+            const anioActual = new Date().getFullYear();
+            const inputAnio = document.getElementById('anio_manual');
+
+            if (inputAnio.value < anioActual) {
+                inputAnio.value = anioActual;
+            }
+
+            actualizarNombreSemestre();
+        });
 
     document
         .getElementById('periodo_select')
-        .addEventListener('change', actualizarNombreSemestre);
+        .addEventListener('change', () => {
 
-    window.addEventListener('load', actualizarNombreSemestre);
+            document.getElementById('fecha_inicio').value = '';
+            document.getElementById('fecha_fin').value = '';
 
+            actualizarNombreSemestre();
+        });
+
+    window.addEventListener('load', () => {
+
+        const anioActual = new Date().getFullYear();
+
+        document.getElementById('anio_manual').min = anioActual;
+        document.getElementById('anio_manual').value = anioActual;
+
+        actualizarNombreSemestre();
+    });
 </script>
 
 @endsection

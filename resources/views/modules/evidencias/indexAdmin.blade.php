@@ -9,7 +9,7 @@
     <div class="pagetitle">
 
         <h1 class="fw-bold text-primary">
-            Gestión de Evidencias
+            Administración de Evidencias
         </h1>
 
         <nav>
@@ -38,33 +38,24 @@
 
                 <div class="card border-0 shadow-lg evidencia-card">
 
-                    <div class="card-header evidencia-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="card-header evidencia-header">
 
                         <div>
 
                             <h4 class="mb-1 fw-bold">
-                                Evidencias Registradas
+                                Evidencias de Docentes
                             </h4>
 
                             <p class="text-muted mb-0">
-                                Visualiza el avance de revisiones por asignatura y el estado de cada evidencia.
+                                Consulta el estado de evidencias registradas por cada docente.
                             </p>
 
                         </div>
-
-                        <a href="{{ route('evidencias.create') }}"
-                            class="btn btn-primary px-4 py-2 rounded-pill shadow-sm">
-
-                            <i class="bi bi-plus-circle me-2"></i>
-                            Nueva Evidencia
-
-                        </a>
 
                     </div>
 
                     <div class="card-body p-4">
 
-                        {{-- LEYENDA --}}
                         <div class="estadoLegend mb-4">
 
                             <div class="estadoCard">
@@ -122,7 +113,7 @@
                             <div class="estadoCard">
 
                                 <div class="estadoIcon asignada">
-                                    <i class="bi bi-clock-history"></i>
+                                    <i class="bi bi-pause-circle-fill"></i>
                                 </div>
 
                                 <div>
@@ -134,7 +125,6 @@
 
                         </div>
 
-                        {{-- TABLA --}}
                         <div class="table-responsive">
 
                             <table class="table table-hover align-middle">
@@ -142,6 +132,10 @@
                                 <thead>
 
                                     <tr>
+
+                                        <th class="text-center">
+                                            Docente
+                                        </th>
 
                                         <th class="text-center">
                                             Asignatura
@@ -171,17 +165,27 @@
 
                                     $evidenciasSubidas = $materia->evidencias;
 
-                                    $totalRevisiones = $revisiones->count();
+                                    $totalRevisiones = $revisiones
+                                        ->where('activo', 1)
+                                        ->count();
 
-                                    $cantidadSubidas = $evidenciasSubidas->count();
+                                    $cantidadSubidas = $evidenciasSubidas
+                                        ->whereIn('estado', [2,3,4])
+                                        ->count();
 
                                     $porcentaje = $totalRevisiones > 0
-                                    ? ($cantidadSubidas / $totalRevisiones) * 100
-                                    : 0;
+                                        ? ($cantidadSubidas / $totalRevisiones) * 100
+                                        : 0;
 
                                     @endphp
 
                                     <tr>
+
+                                        <td class="fw-semibold">
+
+                                            {{ $materia->asignaciones->first()?->docente?->name }}
+
+                                        </td>
 
                                         <td class="fw-semibold">
                                             {{ $materia->nombre }}
@@ -192,28 +196,20 @@
                                         @php
 
                                         $evidenciaActual = $evidenciasSubidas
-                                        ->where('revision_id', $revision->id)
-                                        ->first();
-
-                                        /*
-                                        0 = inactiva
-                                        1 = sin entregar
-                                        2 = aprobada
-                                        3 = pendiente
-                                        4 = rechazada
-                                        */
+                                            ->where('revision_id', $revision->id)
+                                            ->first();
 
                                         if (!$revision->activo) {
 
-                                        $estado = 0;
+                                            $estado = 0;
 
                                         } elseif (!$evidenciaActual) {
 
-                                        $estado = 1;
+                                            $estado = 1;
 
                                         } else {
 
-                                        $estado = $evidenciaActual->estado;
+                                            $estado = $evidenciaActual->estado;
                                         }
 
                                         @endphp
@@ -222,65 +218,60 @@
 
                                             @switch($estado)
 
-                                            {{-- REVISION INACTIVA --}}
-                                            @case(0)
+                                                @case(0)
 
-                                            <button class="estadoBtn asignada"
-                                                title="Revisión inactiva">
+                                                <button class="estadoBtn asignada"
+                                                    title="Revisión inactiva">
 
-                                                <i class="bi bi-clock-history"></i>
+                                                    <i class="bi bi-pause-circle-fill"></i>
 
-                                            </button>
+                                                </button>
 
-                                            @break
+                                                @break
 
-                                            {{-- SIN ENTREGAR --}}
-                                            @case(1)
+                                                @case(1)
 
-                                            <button class="estadoBtn vacio"
-                                                title="Sin evidencia">
+                                                <button class="estadoBtn vacio"
+                                                    title="Sin evidencia">
 
-                                                <i class="bi bi-dash-circle-fill"></i>
+                                                    <i class="bi bi-dash-circle-fill"></i>
 
-                                            </button>
+                                                </button>
 
-                                            @break
+                                                @break
 
-                                            {{-- APROBADA --}}
-                                            @case(2)
+                                                @case(2)
 
-                                            <button class="estadoBtn aprobado"
-                                                title="Aprobada">
+                                                <button class="estadoBtn aprobado"
+                                                    title="Aprobada">
 
-                                                <i class="bi bi-check-circle-fill"></i>
+                                                    <i class="bi bi-check-circle-fill"></i>
 
-                                            </button>
+                                                </button>
 
-                                            @break
+                                                @break
 
-                                            {{-- PENDIENTE --}}
-                                            @case(3)
+                                                @case(3)
 
-                                            <button class="estadoBtn pendiente"
-                                                title="Pendiente de revisión">
+                                                <button class="estadoBtn pendiente"
+                                                    title="Pendiente">
 
-                                                <i class="bi bi-clock-history"></i>
+                                                    <i class="bi bi-clock-history"></i>
 
-                                            </button>
+                                                </button>
 
-                                            @break
+                                                @break
 
-                                            {{-- RECHAZADA --}}
-                                            @case(4)
+                                                @case(4)
 
-                                            <button class="estadoBtn rechazada"
-                                                title="Rechazada">
+                                                <button class="estadoBtn rechazada"
+                                                    title="Rechazada">
 
-                                                <i class="bi bi-x-circle-fill"></i>
+                                                    <i class="bi bi-x-circle-fill"></i>
 
-                                            </button>
+                                                </button>
 
-                                            @break
+                                                @break
 
                                             @endswitch
 
@@ -290,12 +281,11 @@
 
                                         <td class="text-center align-middle">
 
+                                            @php
+                                                $porcentaje = round($porcentaje);
+                                            @endphp
+
                                             <div class="progress progress-custom">
-
-                                                @php
-                                                $barraWidth = "width: {$porcentaje}%";
-                                                @endphp
-
 
                                                 <div class="progress-bar {{ $porcentaje == 100 ? 'bg-success' : 'bg-primary' }}"
                                                     role="progressbar"
@@ -304,38 +294,38 @@
                                                     aria-valuemin="0"
                                                     aria-valuemax="100">
 
-                                                    {{ round($porcentaje) }}%
+                                                    {{ $porcentaje }}%
 
                                                 </div>
 
                                             </div>
 
+                                        </td>
+
+                                    </tr>
+
+                                    @empty
+
+                                    <tr>
+
+                                        <td colspan="{{ $revisiones->count() + 3 }}"
+                                            class="text-center py-5 text-muted">
+
+                                            <i class="bi bi-folder-x display-4 d-block mb-3"></i>
+
+                                            No existen evidencias registradas.
+
+                                        </td>
+
+                                    </tr>
+
+                                    @endforelse
+
+                                </tbody>
+
+                            </table>
+
                         </div>
-
-                        </td>
-
-                        </tr>
-
-                        @empty
-
-                        <tr>
-
-                            <td colspan="{{ $revisiones->count() + 2 }}"
-                                class="text-center py-5 text-muted">
-
-                                <i class="bi bi-folder-x display-4 d-block mb-3"></i>
-
-                                No tienes asignaturas registradas para gestionar evidencias.
-
-                            </td>
-
-                        </tr>
-
-                        @endforelse
-
-                        </tbody>
-
-                        </table>
 
                     </div>
 
@@ -345,13 +335,12 @@
 
         </div>
 
-        </div>
-
     </section>
 
 </main>
 
 <style>
+
     .evidencia-card {
 
         border-radius: 24px;
@@ -454,12 +443,6 @@
 
     }
 
-    .inactiva {
-
-        background: linear-gradient(135deg, #475569, #334155);
-
-    }
-
     table thead th {
 
         background: #0f172a;
@@ -511,10 +494,11 @@
 
     .progress-custom {
 
-        height: 20px;
+        height: 22px;
         border-radius: 30px;
         background: #edf2f7;
         min-width: 160px;
+        overflow: hidden;
 
     }
 
@@ -522,14 +506,13 @@
 
         border-radius: 30px;
         font-weight: 700;
-
         display: flex;
         align-items: center;
         justify-content: center;
-
         transition: width .6s ease;
 
     }
+
 </style>
 
 @endsection

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Archivos;
 use App\Http\Controllers\AsignarMaterias;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Dashboard;
@@ -72,9 +73,6 @@ Route::middleware('auth')->group(function () {
             Route::post('/estado', [AsignarMaterias::class, 'estado'])->name('asignar-materias.estado');
         });
 
-
-
-
         Route::prefix('materias')->group(function () {
             Route::get('/', [Materias::class, 'index'])->name('materias');
             Route::get('/create', [Materias::class, 'create'])->name('nueva-materia');
@@ -96,6 +94,11 @@ Route::middleware('auth')->group(function () {
         Route::prefix('seguimiento-academico')->group(function () {
             Route::get('/', [SeguimientoAcademico::class, 'index'])->name('seguimiento-academico');
         });
+
+        Route::prefix('archivos')->group(function () {
+            Route::get('/', [Archivos::class, 'index'])->name('archivos');
+        });
+
     });
 
     // ==========================================

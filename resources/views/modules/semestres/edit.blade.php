@@ -32,16 +32,17 @@
 
                     <nav class="mt-3">
                         <ol class="breadcrumb mb-0">
+
                             <li class="breadcrumb-item">
                                 <a href="{{ route('home') }}"
-                                    class="text-decoration-none text-secondary">
+                                   class="text-decoration-none text-secondary">
                                     Home
                                 </a>
                             </li>
 
                             <li class="breadcrumb-item">
                                 <a href="{{ route('semestres') }}"
-                                    class="text-decoration-none text-secondary">
+                                   class="text-decoration-none text-secondary">
                                     Semestres
                                 </a>
                             </li>
@@ -49,6 +50,7 @@
                             <li class="breadcrumb-item active text-primary fw-semibold">
                                 Editar
                             </li>
+
                         </ol>
                     </nav>
 
@@ -62,6 +64,7 @@
                             action="{{ route('semestres.update', $item->id) }}"
                             method="POST"
                             id="formSemestreEdit">
+
                             @csrf
                             @method('PUT')
 
@@ -111,7 +114,7 @@
                                             id="anio_manual"
                                             class="form-control"
                                             value="{{ $item->anio }}"
-                                            min="{{ date('Y') - 1 }}"
+                                            min="{{ date('Y') }}"
                                             max="{{ date('Y') + 5 }}">
 
                                     </div>
@@ -130,6 +133,7 @@
                                         id="periodo_select"
                                         class="form-select custom-select"
                                         required>
+
                                         <option value="" disabled>
                                             Seleccione el periodo...
                                         </option>
@@ -137,13 +141,13 @@
                                         <option
                                             value="1"
                                             {{ $item->periodo == 1 ? 'selected' : '' }}>
-                                            1 (ENE - JUN)
+                                            1 (ENERO - JUNIO)
                                         </option>
 
                                         <option
                                             value="2"
                                             {{ $item->periodo == 2 ? 'selected' : '' }}>
-                                            2 (JUL - DIC)
+                                            2 (JULIO - DICIEMBRE)
                                         </option>
 
                                     </select>
@@ -190,15 +194,19 @@
                                     <a
                                         href="{{ route('semestres') }}"
                                         class="btn btn-outline-secondary px-4 rounded-pill me-2">
+
                                         <i class="bi bi-x-circle me-2"></i>
                                         Cancelar
+
                                     </a>
 
                                     <button
                                         type="submit"
                                         class="btn btn-primary px-5 rounded-pill shadow-sm">
+
                                         <i class="fa-solid fa-floppy-disk me-2"></i>
                                         Guardar Cambios
+
                                     </button>
 
                                 </div>
@@ -217,10 +225,9 @@
     </div>
 
 </main>
-@endsection
-
 
 <style>
+
     .semestre-card {
         border-radius: 22px;
         overflow: hidden;
@@ -281,4 +288,99 @@
         color: #495057;
         margin-bottom: 8px;
     }
+
 </style>
+
+<script>
+
+    function actualizarRestricciones() {
+
+        const anio = document.getElementById('anio_manual').value;
+        const periodo = document.getElementById('periodo_select').value;
+
+        const fechaInicio = document.getElementById('fecha_inicio');
+        const fechaFin = document.getElementById('fecha_fin');
+
+        let texto = '';
+
+        if (periodo == '1') {
+
+            texto = 'ENERO - JUNIO ' + anio;
+
+            fechaInicio.min = `${anio}-01-01`;
+            fechaInicio.max = `${anio}-01-31`;
+
+            fechaFin.min = `${anio}-06-01`;
+            fechaFin.max = `${anio}-06-30`;
+        }
+
+        if (periodo == '2') {
+
+            texto = 'JULIO - DICIEMBRE ' + anio;
+
+            fechaInicio.min = `${anio}-07-01`;
+            fechaInicio.max = `${anio}-07-31`;
+
+            fechaFin.min = `${anio}-12-01`;
+            fechaFin.max = `${anio}-12-31`;
+        }
+
+        document.getElementById('nombre').value = texto;
+    }
+
+    function actualizarFechasAutomaticamente() {
+
+        const anio = document.getElementById('anio_manual').value;
+        const periodo = document.getElementById('periodo_select').value;
+
+        const fechaInicio = document.getElementById('fecha_inicio');
+        const fechaFin = document.getElementById('fecha_fin');
+
+        if (periodo == '1') {
+
+            fechaInicio.value = `${anio}-01-01`;
+            fechaFin.value = `${anio}-06-30`;
+        }
+
+        if (periodo == '2') {
+
+            fechaInicio.value = `${anio}-07-01`;
+            fechaFin.value = `${anio}-12-31`;
+        }
+    }
+
+    document
+        .getElementById('periodo_select')
+        .addEventListener('change', () => {
+
+            actualizarRestricciones();
+            actualizarFechasAutomaticamente();
+        });
+
+    document
+        .getElementById('anio_manual')
+        .addEventListener('input', () => {
+
+            const anioActual = new Date().getFullYear();
+            const inputAnio = document.getElementById('anio_manual');
+
+            if (parseInt(inputAnio.value) < anioActual) {
+                inputAnio.value = anioActual;
+            }
+
+            actualizarRestricciones();
+            actualizarFechasAutomaticamente();
+        });
+
+    window.addEventListener('load', () => {
+
+        const anioActual = new Date().getFullYear();
+
+        document.getElementById('anio_manual').min = anioActual;
+
+        actualizarRestricciones();
+    });
+
+</script>
+
+@endsection

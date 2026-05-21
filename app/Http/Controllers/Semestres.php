@@ -196,7 +196,7 @@ class Semestres extends Controller
     {
         $titulo = 'Editar Semestre';
         $item = Semestre::findOrFail($id);
-        $semestres = Semestre::all(); 
+        $semestres = Semestre::all();
 
         return view('modules.semestres.edit', compact('titulo', 'item', 'semestres'));
     }
@@ -205,20 +205,32 @@ class Semestres extends Controller
     {
         $semestre = Semestre::findOrFail($id);
 
+        // 1. Validamos los datos que vienen del formulario
+        $request->validate([
+            'nombre' => 'required|string',
+            'anio' => 'required|integer',
+            'periodo' => 'required|in:1,2',
+            'fecha_inicio' => 'required|date',
+            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
+        ]);
+
         DB::beginTransaction();
 
         try {
-
+            // 2. Asignamos todos los campos modificados
             $semestre->nombre = $request->nombre;
+            $semestre->anio = $request->anio;
+            $semestre->periodo = $request->periodo;
+            $semestre->fecha_inicio = $request->fecha_inicio;
+            $semestre->fecha_fin = $request->fecha_fin;
 
-            // Forzar booleano correcto
-            $semestre->activo = $request->has('activo') ? 1 : 0;
+            // Mantienes tu lógica para el campo activo si lo usas, 
+            // o si no viene en este formulario, conserva el valor que ya tenía
+            $semestre->activo = $request->has('activo') ? 1 : $semestre->activo;
 
             $semestre->save();
 
-            // 🔴 SI EL SEMESTRE QUEDA INACTIVO
             if ($semestre->activo == 0) {
-
                 DB::table('materias_semestres')
                     ->where('semestre_id', $semestre->id)
                     ->update([
@@ -233,10 +245,8 @@ class Semestres extends Controller
                 ->route('semestres')
                 ->with('success', 'Semestre actualizado correctamente');
         } catch (\Exception $e) {
-
             DB::rollBack();
-
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', 'Error al actualizar: ' . $e->getMessage());
         }
     }
 

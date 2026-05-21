@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Evidencia extends Model
 {
     use HasFactory;
+
     protected $fillable = [
+        'asignacion_materia_id',
         'materia_id',
         'revision_id',
         'doc_a',
@@ -17,5 +19,14 @@ class Evidencia extends Model
         'evi_a',
         'evi_b',
         'evi_c',
+        'estado',
+        'observaciones',
+        'admin_id',
+        'fecha_revision',
     ];
+
+    public function revision()
+    {
+        return $this->belongsTo(Revision::class);
+    }
 }

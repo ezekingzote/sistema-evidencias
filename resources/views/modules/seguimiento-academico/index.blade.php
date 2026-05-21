@@ -1,24 +1,30 @@
 @extends('layouts.main')
 
-@section('titulo', 'Seguimiento Académico')
+@section('titulo', $titulo)
 
 @section('contenido')
 
 <main id="main" class="main">
 
-    <div class="pagetitle mb-4">
+    <div class="pagetitle">
 
-        <h1>Seguimiento Académico</h1>
+        <h1 class="fw-bold text-primary">
+            Administración de Evidencias
+        </h1>
 
         <nav>
             <ol class="breadcrumb">
+
                 <li class="breadcrumb-item">
-                    <a href="{{ route('home') }}">Home</a>
+                    <a href="" class="text-decoration-none text-secondary">
+                        Home
+                    </a>
                 </li>
 
-                <li class="breadcrumb-item active">
-                    Seguimiento Académico
+                <li class="breadcrumb-item active text-primary fw-semibold">
+                    Evidencias
                 </li>
+
             </ol>
         </nav>
 
@@ -26,359 +32,308 @@
 
     <section class="section">
 
-        <div class="card border-0 shadow-lg overflow-hidden mb-4 seguimientoHeader">
+        <div class="row">
 
-            <div class="card-body p-4">
+            <div class="col-lg-12">
 
-                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center">
+                <div class="card border-0 shadow-lg evidencia-card">
 
-                    <div>
+                    <div class="card-header evidencia-header">
 
-                        <h2 class="fw-bold text-white mb-2">
-                            Panel de Seguimiento
-                        </h2>
+                        <div>
 
-                        <p class="text-light opacity-75 mb-0">
-                            Monitoreo inteligente de revisiones académicas y entregas docentes.
-                        </p>
+                            <h4 class="mb-1 fw-bold">
+                                Evidencias de Docentes
+                            </h4>
 
-                    </div>
+                            <p class="text-muted mb-0">
+                                Consulta el estado de evidencias registradas por cada docente.
+                            </p>
 
-                    <div class="mt-4 mt-lg-0 d-flex flex-wrap gap-3">
-
-                        <div class="miniStat">
-                            <h3>25</h3>
-                            <span>Aprobadas</span>
-                        </div>
-
-                        <div class="miniStat">
-                            <h3>8</h3>
-                            <span>Pendientes</span>
-                        </div>
-
-                        <div class="miniStat">
-                            <h3>3</h3>
-                            <span>Demoradas</span>
                         </div>
 
                     </div>
 
-                </div>
+                    <div class="card-body p-4">
 
-            </div>
+                        <div class="estadoLegend mb-4">
 
-        </div>
+                            <div class="estadoCard">
 
-        <div class="card border-0 shadow-lg seguimientoCard">
+                                <div class="estadoIcon aprobado">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
 
-            <div class="card-header bg-white border-0 py-4 px-4">
+                                <div>
+                                    <h6>Aprobada</h6>
+                                    <small>Validada por administración</small>
+                                </div>
 
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            </div>
 
-                    <div>
+                            <div class="estadoCard">
 
-                        <h4 class="fw-bold mb-1">
-                            Estado General de Revisiones
-                        </h4>
+                                <div class="estadoIcon pendiente">
+                                    <i class="bi bi-clock-history"></i>
+                                </div>
 
-                        <p class="text-muted mb-0">
-                            Seguimiento visual del desempeño académico.
-                        </p>
+                                <div>
+                                    <h6>Pendiente</h6>
+                                    <small>En espera de revisión</small>
+                                </div>
 
-                    </div>
+                            </div>
 
-                    <button class="btn btn-dark rounded-pill px-4 shadow-sm">
+                            <div class="estadoCard">
 
-                        <i class="bi bi-download me-2"></i>
-                        Exportar Reporte
+                                <div class="estadoIcon rechazada">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                </div>
 
-                    </button>
+                                <div>
+                                    <h6>Rechazada</h6>
+                                    <small>Requiere corrección</small>
+                                </div>
 
-                </div>
+                            </div>
 
-            </div>
+                            <div class="estadoCard">
 
-            <div class="card-body p-0">
+                                <div class="estadoIcon vacio">
+                                    <i class="bi bi-dash-circle-fill"></i>
+                                </div>
 
-                <div class="table-responsive">
+                                <div>
+                                    <h6>Sin evidencia</h6>
+                                    <small>No entregada</small>
+                                </div>
 
-                    <table class="table align-middle mb-0">
+                            </div>
 
-                        <thead>
+                            <div class="estadoCard">
 
-                            <tr>
+                                <div class="estadoIcon asignada">
+                                    <i class="bi bi-pause-circle-fill"></i>
+                                </div>
 
-                                <th class="ps-4 py-4">
-                                    Docente
-                                </th>
+                                <div>
+                                    <h6>Revisión inactiva</h6>
+                                    <small>Actualmente deshabilitada</small>
+                                </div>
 
-                                <th class="py-4">
-                                    Asignatura
-                                </th>
+                            </div>
 
-                                <th class="py-4 text-center">
-                                    Evidencias
-                                </th>
+                        </div>
 
-                                <th class="py-4 text-center">
-                                    Rendimiento
-                                </th>
+                        <div class="table-responsive">
 
-                                <th class="py-4 text-center">
-                                    Acción
-                                </th>
+                            <table class="table table-hover align-middle">
 
-                            </tr>
+                                <thead>
 
-                        </thead>
+                                    <tr>
 
-                        <tbody>
+                                        <th class="text-center">
+                                            Docente
+                                        </th>
 
-                            <tr>
+                                        <th class="text-center">
+                                            Asignatura
+                                        </th>
 
-                                <td class="ps-4 py-4">
+                                        @foreach ($revisiones as $revision)
 
-                                    <div class="d-flex align-items-center">
+                                        <th class="text-center">
+                                            {{ $revision->nombre }}
+                                        </th>
 
-                                        <div class="avatarDocente bg-primary-gradient">
-                                            JP
-                                        </div>
+                                        @endforeach
 
-                                        <div>
+                                        <th class="text-center">
+                                            Avance
+                                        </th>
 
-                                            <h6 class="mb-0 fw-bold">
-                                                Juan Pérez
-                                            </h6>
+                                    </tr>
 
-                                            <small class="text-muted">
-                                                Ingeniería en Sistemas
-                                            </small>
+                                </thead>
 
-                                        </div>
+                                <tbody class="text-center">
 
-                                    </div>
+                                    @forelse ($materias as $materia)
 
-                                </td>
+                                    @php
 
-                                <td>
+                                    $evidenciasSubidas = $materia->evidencias;
 
-                                    <span class="fw-semibold">
-                                        Base de Datos
-                                    </span>
+                                    $totalRevisiones = $revisiones
+                                    ->where('activo', 1)
+                                    ->count();
 
-                                </td>
+                                    $cantidadSubidas = $evidenciasSubidas
+                                    ->whereIn('estado', [2,3,4])
+                                    ->count();
 
-                                <td>
+                                    $porcentaje = $totalRevisiones > 0
+                                    ? ($cantidadSubidas / $totalRevisiones) * 100
+                                    : 0;
 
-                                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                                    @endphp
 
-                                        <div class="estadoWrap">
+                                    <tr>
 
-                                            <button class="estadoBtn bg-secondary-custom">
+                                        <td class="fw-semibold">
 
-                                                <i class="bi bi-person-x-fill"></i>
+                                            {{ $materia->asignaciones->first()?->docente?->name }}
+
+                                        </td>
+
+                                        <td class="fw-semibold">
+                                            {{ $materia->nombre }}
+                                        </td>
+
+                                        @foreach ($revisiones as $revision)
+
+                                        @php
+
+                                        $evidenciaActual = $evidenciasSubidas
+                                        ->where('revision_id', $revision->id)
+                                        ->first();
+
+                                        if (!$revision->activo) {
+
+                                        $estado = 0;
+
+                                        } elseif (!$evidenciaActual) {
+
+                                        $estado = 1;
+
+                                        } else {
+
+                                        $estado = $evidenciaActual->estado;
+                                        }
+
+                                        @endphp
+
+                                        <td>
+
+                                            @switch($estado)
+
+                                            @case(0)
+
+                                            <button class="estadoBtn asignada"
+                                                title="Revisión inactiva">
+
+                                                <i class="bi bi-pause-circle-fill"></i>
 
                                             </button>
 
-                                            <span class="estadoBadge">
-                                                1
-                                            </span>
+                                            @break
 
-                                        </div>
+                                            @case(1)
 
-                                        <div class="estadoWrap">
+                                            <button class="estadoBtn vacio"
+                                                title="Sin evidencia">
 
-                                            <button class="estadoBtn bg-warning-custom">
-
-                                                <i class="bi bi-clock-history"></i>
+                                                <i class="bi bi-dash-circle-fill"></i>
 
                                             </button>
 
-                                            <span class="estadoBadge">
-                                                4
-                                            </span>
+                                            @break
 
-                                        </div>
+                                            @case(2)
 
-                                        <div class="estadoWrap">
-
-                                            <button class="estadoBtn bg-success-custom">
+                                            <button class="estadoBtn aprobado"
+                                                title="Aprobada">
 
                                                 <i class="bi bi-check-circle-fill"></i>
 
                                             </button>
 
-                                            <span class="estadoBadge">
-                                                12
-                                            </span>
+                                            @break
 
-                                        </div>
+                                            @case(3)
 
-                                        <div class="estadoWrap">
-
-                                            <button class="estadoBtn bg-danger-custom">
-
-                                                <i class="bi bi-exclamation-triangle-fill"></i>
-
-                                            </button>
-
-                                            <span class="estadoBadge">
-                                                2
-                                            </span>
-
-                                        </div>
-
-                                    </div>
-
-                                </td>
-
-                                <td class="text-center">
-
-                                    <span class="estadoTexto success">
-
-                                        Excelente
-
-                                    </span>
-
-                                </td>
-
-                                <td class="text-center">
-
-                                    <button class="btn btn-success rounded-pill px-4 shadow-sm">
-
-                                        <i class="bi bi-whatsapp me-2"></i>
-                                        Recordar
-
-                                    </button>
-
-                                </td>
-
-                            </tr>
-
-                            <tr>
-
-                                <td class="ps-4 py-4">
-
-                                    <div class="d-flex align-items-center">
-
-                                        <div class="avatarDocente bg-danger-gradient">
-                                            MG
-                                        </div>
-
-                                        <div>
-
-                                            <h6 class="mb-0 fw-bold">
-                                                María González
-                                            </h6>
-
-                                            <small class="text-muted">
-                                                Ingeniería en Sistemas
-                                            </small>
-
-                                        </div>
-
-                                    </div>
-
-                                </td>
-
-                                <td>
-
-                                    <span class="fw-semibold">
-                                        Programación Web
-                                    </span>
-
-                                </td>
-
-                                <td>
-
-                                    <div class="d-flex justify-content-center gap-3 flex-wrap">
-
-                                        <div class="estadoWrap">
-
-                                            <button class="estadoBtn bg-secondary-custom">
-
-                                                <i class="bi bi-person-x-fill"></i>
-
-                                            </button>
-
-                                            <span class="estadoBadge">
-                                                0
-                                            </span>
-
-                                        </div>
-
-                                        <div class="estadoWrap">
-
-                                            <button class="estadoBtn bg-warning-custom">
+                                            <button class="estadoBtn pendiente"
+                                                title="Pendiente">
 
                                                 <i class="bi bi-clock-history"></i>
 
                                             </button>
 
-                                            <span class="estadoBadge">
-                                                8
-                                            </span>
+                                            @break
 
-                                        </div>
+                                            @case(4)
 
-                                        <div class="estadoWrap">
+                                            <button class="estadoBtn rechazada"
+                                                title="Rechazada">
 
-                                            <button class="estadoBtn bg-success-custom">
-
-                                                <i class="bi bi-check-circle-fill"></i>
+                                                <i class="bi bi-x-circle-fill"></i>
 
                                             </button>
 
-                                            <span class="estadoBadge">
-                                                5
-                                            </span>
+                                            @break
 
-                                        </div>
+                                            @endswitch
 
-                                        <div class="estadoWrap">
+                                        </td>
 
-                                            <button class="estadoBtn bg-danger-custom">
+                                        @endforeach
 
-                                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                        <td class="text-center align-middle">
 
-                                            </button>
+                                            @php
+                                            $porcentaje = (int) round($porcentaje);
+                                            $colorBarra = $porcentaje >= 100 ? 'bg-success' : 'bg-primary';
+                                            @endphp
 
-                                            <span class="estadoBadge">
-                                                6
-                                            </span>
+                                            <div class="d-flex align-items-center gap-2">
 
-                                        </div>
+                                                <div class="progress progress-custom flex-grow-1">
 
-                                    </div>
+                                                    <div class="progress-bar {{ $colorBarra }}"
+                                                        role="progressbar"
+                                                        style="width: {{ $porcentaje }}%; min-width: 35px;"
+                                                        aria-valuenow="{{ $porcentaje }}"
+                                                        aria-valuemin="0"
+                                                        aria-valuemax="100">
+                                                    </div>
 
-                                </td>
+                                                </div>
 
-                                <td class="text-center">
+                                                <span class="fw-bold text-dark">
+                                                    {{ $porcentaje }}%
+                                                </span>
 
-                                    <span class="estadoTexto danger">
+                                            </div>
 
-                                        Atención requerida
+                                        </td>
 
-                                    </span>
+                                    </tr>
 
-                                </td>
+                                    @empty
 
-                                <td class="text-center">
+                                    <tr>
 
-                                    <button class="btn btn-danger rounded-pill px-4 shadow-sm">
+                                        <td colspan="{{ $revisiones->count() + 3 }}"
+                                            class="text-center py-5 text-muted">
 
-                                        <i class="bi bi-bell-fill me-2"></i>
-                                        Urgente
+                                            <i class="bi bi-folder-x display-4 d-block mb-3"></i>
 
-                                    </button>
+                                            No existen evidencias registradas.
 
-                                </td>
+                                        </td>
 
-                            </tr>
+                                    </tr>
 
-                        </tbody>
+                                    @endforelse
 
-                    </table>
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
 
                 </div>
 
@@ -391,103 +346,135 @@
 </main>
 
 <style>
-
-    .seguimientoHeader {
-
-        border-radius: 24px;
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-
-    }
-
-    .miniStat {
-
-        background: rgba(255,255,255,0.08);
-        backdrop-filter: blur(10px);
-        border-radius: 18px;
-        padding: 16px 28px;
-        text-align: center;
-
-    }
-
-    .miniStat h3 {
-
-        color: white;
-        font-weight: 800;
-        margin-bottom: 2px;
-
-    }
-
-    .miniStat span {
-
-        color: rgba(255,255,255,0.7);
-        font-size: 13px;
-
-    }
-
-    .seguimientoCard {
+    .evidencia-card {
 
         border-radius: 24px;
         overflow: hidden;
+        background: white;
 
     }
 
-    .table thead tr {
+    .evidencia-header {
 
-        background: #0f172a;
-
-    }
-
-    .table thead th {
-
-        border: none;
-        font-size: 14px;
-        font-weight: 600;
+        background: linear-gradient(135deg, #f8fbff, #eef5ff);
+        border-bottom: 1px solid #e8eef7;
+        padding: 25px;
 
     }
 
-    .table tbody tr {
+    .estadoLegend {
 
-        transition: 0.3s ease;
-
-    }
-
-    .table tbody tr:hover {
-
-        background: rgba(15, 23, 42, 0.03);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
 
     }
 
-    .avatarDocente {
+    .estadoCard {
 
-        width: 58px;
-        height: 58px;
+        background: white;
+        border-radius: 18px;
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, .05);
+        transition: .3s ease;
+
+    }
+
+    .estadoCard:hover {
+
+        transform: translateY(-4px);
+
+    }
+
+    .estadoIcon {
+
+        width: 55px;
+        height: 55px;
         border-radius: 50%;
-        margin-right: 16px;
         display: flex;
         justify-content: center;
         align-items: center;
         color: white;
+        font-size: 22px;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, .12);
+
+    }
+
+    .estadoCard h6 {
+
+        margin: 0;
         font-weight: 700;
-        font-size: 18px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        font-size: 14px;
 
     }
 
-    .bg-primary-gradient {
+    .estadoCard small {
 
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
-
-    }
-
-    .bg-danger-gradient {
-
-        background: linear-gradient(135deg, #ef4444, #b91c1c);
+        color: #6b7280;
 
     }
 
-    .estadoWrap {
+    .aprobado {
 
-        position: relative;
+        background: linear-gradient(135deg, #10b981, #059669);
+
+    }
+
+    .asignada {
+
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+
+    }
+
+    .pendiente {
+
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+
+    }
+
+    .rechazada {
+
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+
+    }
+
+    .vacio {
+
+        background: linear-gradient(135deg, #9ca3af, #6b7280);
+
+    }
+
+    table thead th {
+
+        background: #0f172a;
+        color: white;
+        border: none;
+        font-size: 14px;
+        font-weight: 700;
+        padding: 18px;
+
+    }
+
+    table tbody tr {
+
+        transition: .3s ease;
+
+    }
+
+    table tbody tr:hover {
+
+        background: rgba(15, 23, 42, .03);
+
+    }
+
+    table tbody td {
+
+        padding: 18px 12px;
+        vertical-align: middle;
 
     }
 
@@ -499,8 +486,8 @@
         border: none;
         color: white;
         font-size: 20px;
-        box-shadow: 0 8px 18px rgba(0,0,0,0.12);
-        transition: 0.3s ease;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, .12);
+        transition: .3s ease;
 
     }
 
@@ -510,84 +497,26 @@
 
     }
 
-    .bg-secondary-custom {
+    .progress-custom {
 
-        background: linear-gradient(135deg, #6b7280, #4b5563);
-
-    }
-
-    .bg-warning-custom {
-
-        background: linear-gradient(135deg, #f59e0b, #d97706);
+        height: 22px;
+        border-radius: 30px;
+        background: #edf2f7;
+        min-width: 160px;
+        overflow: hidden;
 
     }
 
-    .bg-success-custom {
+    .progress-bar {
 
-        background: linear-gradient(135deg, #10b981, #059669);
-
-    }
-
-    .bg-danger-custom {
-
-        background: linear-gradient(135deg, #ef4444, #dc2626);
-
-    }
-
-    .estadoBadge {
-
-        position: absolute;
-        top: -6px;
-        right: -6px;
-        width: 24px;
-        height: 24px;
-        background: #111827;
-        border-radius: 50%;
-        color: white;
-        font-size: 11px;
+        border-radius: 30px;
         font-weight: 700;
         display: flex;
-        justify-content: center;
         align-items: center;
-        border: 2px solid white;
+        justify-content: center;
+        transition: width .6s ease;
 
     }
-
-    .estadoTexto {
-
-        padding: 10px 18px;
-        border-radius: 999px;
-        font-weight: 600;
-        font-size: 13px;
-
-    }
-
-    .estadoTexto.success {
-
-        background: rgba(16,185,129,.12);
-        color: #059669;
-
-    }
-
-    .estadoTexto.danger {
-
-        background: rgba(239,68,68,.12);
-        color: #dc2626;
-
-    }
-
-    .btn {
-
-        transition: .3s ease;
-
-    }
-
-    .btn:hover {
-
-        transform: translateY(-2px);
-
-    }
-
 </style>
 
 @endsection

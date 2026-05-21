@@ -53,6 +53,13 @@
                 <span>Seguimiento Academico</span>
             </a>
         </li>
+
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="{{ route('archivos') }}">
+                <i class="fa-solid fa-folder-closed"></i>
+                <span>Archivos</span>
+            </a>
+        </li>
         @endif
 
 
