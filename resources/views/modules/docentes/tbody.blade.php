@@ -14,6 +14,9 @@
         <td>
             {{ $item->email }}
         </td>
+        <td>
+            {{ $item->celular }}
+        </td>
         <td class="fw-bold text-uppercase">
             {{ $item->departamento }}
         </td>
@@ -63,7 +66,7 @@
 
     <tr>
 
-        <td colspan="7">
+        <td colspan="9">
 
             No hay docentes registrados
 

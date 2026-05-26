@@ -18,7 +18,11 @@
                         Home
                     </a>
                 </li>
-                <li class="breadcrumb-item">Usuarios</li>
+                <li class="breadcrumb-item">
+                    <a href="{{ route('docentes') }}" class="text-decoration-none text-secondary">
+                        Docentes
+                    </a>
+                </li>
                 <li class="breadcrumb-item active text-primary fw-semibold">
                     Editar Registro
                 </li>
@@ -66,8 +70,7 @@
                             action="{{ route('docentes.update', $item->id) }}"
                             id="formUsuario"
                             method="POST"
-                            class="needs-validation"
-                        >
+                            class="needs-validation">
                             @csrf
                             @method('PUT')
 
@@ -85,15 +88,14 @@
                                     class="form-control custom-input"
                                     oninput="this.value = this.value.toUpperCase();"
                                     value="{{ $item->name }}"
-                                    required
-                                >
+                                    required>
 
                             </div>
 
                             <div class="row g-4 mt-3">
 
                                 {{-- ROL --}}
-                                <div class="col-md-4">
+                                <div class="col-md-6">
 
                                     <label class="form-label fw-bold">
                                         <i class="bi bi-shield-lock me-1"></i>
@@ -104,19 +106,16 @@
                                         name="rol"
                                         id="rol_select"
                                         class="form-select custom-input"
-                                        required
-                                    >
+                                        required>
                                         <option
                                             value="docente"
-                                            {{ $item->rol == 'docente' ? 'selected' : '' }}
-                                        >
+                                            {{ $item->rol == 'docente' ? 'selected' : '' }}>
                                             DOCENTE
                                         </option>
 
                                         <option
                                             value="admin"
-                                            {{ $item->rol == 'admin' ? 'selected' : '' }}
-                                        >
+                                            {{ $item->rol == 'admin' ? 'selected' : '' }}>
                                             ADMINISTRADOR
                                         </option>
 
@@ -125,7 +124,7 @@
                                 </div>
 
                                 {{-- DEPARTAMENTO --}}
-                                <div class="col-md-4">
+                                <div class="col-md-6">
 
                                     <label class="form-label fw-bold">
                                         Departamento
@@ -135,8 +134,7 @@
                                         name="dpto"
                                         id="dpto"
                                         class="form-select custom-input"
-                                        required
-                                    >
+                                        required>
 
                                         <option value="" disabled>
                                             SELECCIONA UN DEPARTAMENTO
@@ -144,22 +142,19 @@
 
                                         <option
                                             value="Ciencias Económico-Administrativas"
-                                            {{ $item->departamento == 'Ciencias Económico-Administrativas' ? 'selected' : '' }}
-                                        >
+                                            {{ $item->departamento == 'Ciencias Económico-Administrativas' ? 'selected' : '' }}>
                                             CIENCIAS ECONÓMICO-ADMINISTRATIVAS
                                         </option>
 
                                         <option
                                             value="Ciencias Básicas y Sistemas"
-                                            {{ $item->departamento == 'Ciencias Básicas y Sistemas' ? 'selected' : '' }}
-                                        >
+                                            {{ $item->departamento == 'Ciencias Básicas y Sistemas' ? 'selected' : '' }}>
                                             CIENCIAS BÁSICAS Y SISTEMAS
                                         </option>
 
                                         <option
                                             value="Departamento de Ingenierías"
-                                            {{ $item->departamento == 'Departamento de Ingenierías' ? 'selected' : '' }}
-                                        >
+                                            {{ $item->departamento == 'Departamento de Ingenierías' ? 'selected' : '' }}>
                                             DEPARTAMENTO DE INGENIERÍAS
                                         </option>
 
@@ -168,7 +163,7 @@
                                 </div>
 
                                 {{-- EMAIL --}}
-                                <div class="col-md-4">
+                                <div class="col-md-6">
 
                                     <label class="form-label fw-bold">
                                         <i class="bi bi-envelope me-1"></i>
@@ -184,13 +179,11 @@
                                             class="form-control custom-input"
                                             autocomplete="off"
                                             value="{{ explode('@', $item->email)[0] }}"
-                                            required
-                                        >
+                                            required>
 
                                         <span
                                             class="input-group-text fw-bold text-primary bg-white"
-                                            id="email_domain"
-                                        >
+                                            id="email_domain">
                                             {{ str_contains($item->email, '@admin') ? '@admin.com' : '@docente.com' }}
                                         </span>
 
@@ -202,6 +195,28 @@
 
                                 </div>
 
+                                {{-- CELULAR --}}
+                                <div class="col-md-6">
+
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-phone me-1"></i>
+                                        Celular
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="celular"
+                                        id="celular"
+                                        class="form-control custom-input"
+                                        placeholder="5512345678"
+                                        maxlength="10"
+                                        autocomplete="off"
+                                        value="{{ $item->celular }}"
+                                        required>
+
+                                </div>
+
+
                                 {{-- BOTONES --}}
                                 <div class="col-12 mt-5">
 
@@ -209,16 +224,14 @@
 
                                         <a
                                             href="{{ route('docentes') }}"
-                                            class="btn btn-outline-secondary px-4 rounded-pill"
-                                        >
+                                            class="btn btn-outline-secondary px-4 rounded-pill">
                                             <i class="bi bi-x-circle me-1"></i>
                                             Cancelar
                                         </a>
 
                                         <button
                                             type="submit"
-                                            class="btn btn-warning px-5 rounded-pill shadow-sm fw-bold text-dark"
-                                        >
+                                            class="btn btn-warning px-5 rounded-pill shadow-sm fw-bold text-dark">
                                             <i class="bi bi-arrow-clockwise me-1"></i>
                                             Actualizar Registro
                                         </button>
@@ -304,33 +317,43 @@
 
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
 
-    const rolSelect = document.getElementById('rol_select');
-    const emailDomain = document.getElementById('email_domain');
-    const emailInput = document.getElementById('email_username');
+        const rolSelect = document.getElementById('rol_select');
+        const emailDomain = document.getElementById('email_domain');
+        const emailInput = document.getElementById('email_username');
 
-    rolSelect.addEventListener('change', function () {
-        emailDomain.textContent =
-            this.value === 'admin'
-                ? '@admin.com'
-                : '@docente.com';
+        rolSelect.addEventListener('change', function() {
+            emailDomain.textContent =
+                this.value === 'admin' ?
+                '@admin.com' :
+                '@docente.com';
+        });
+
+        emailInput.addEventListener('input', function() {
+
+            let valor = this.value
+                .toLowerCase()
+                .replace(/\s+/g, '');
+
+            if (valor.includes('@')) {
+                valor = valor.split('@')[0];
+            }
+
+            this.value = valor;
+        });
+
     });
 
-    emailInput.addEventListener('input', function () {
+    const celular = document.getElementById('celular');
 
-        let valor = this.value
-            .toLowerCase()
-            .replace(/\s+/g, '');
+    celular.addEventListener('input', function() {
 
-        if (valor.includes('@')) {
-            valor = valor.split('@')[0];
-        }
+        this.value = this.value
+            .replace(/\D/g, '')
+            .substring(0, 10);
 
-        this.value = valor;
     });
-
-});
 </script>
 
 @endsection

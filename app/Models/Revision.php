@@ -3,25 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
-/**
- * @property int $id
- * @property string $nombre
- * @property int $numero
- * @property int $activo
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Revision newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Revision newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Revision query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Revision whereActivo($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Revision whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Revision whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Revision whereNombre($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Revision whereNumero($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Revision whereUpdatedAt($value)
- * @mixin \Eloquent
- */
 class Revision extends Model
 {
     protected $table = 'revisiones';
@@ -29,11 +12,27 @@ class Revision extends Model
     protected $fillable = [
         'nombre',
         'numero',
-        'activo'
+        'activo',
+        'semestre_id',
+        'fecha_limite'
+    ];
+
+    protected $casts = [
+        'activo' => 'boolean',
+        'fecha_limite' => 'date'
     ];
 
     public function semestre()
     {
         return $this->belongsTo(Semestre::class);
+    }
+
+    public function haExpirado(): bool
+    {
+        if (!$this->fecha_limite) {
+            return false;
+        }
+
+        return Carbon::today()->gt($this->fecha_limite);
     }
 }

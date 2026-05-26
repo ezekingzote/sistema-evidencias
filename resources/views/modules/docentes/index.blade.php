@@ -29,7 +29,7 @@
             </div>
 
             <a href="{{ route('nuevo-docente') }}"
-               class="btn btn-primary rounded-pill px-4 shadow-sm">
+                class="btn btn-primary rounded-pill px-4 shadow-sm">
 
                 <i class="fa-solid fa-user-plus me-2"></i>
                 Nuevo Docente
@@ -75,19 +75,19 @@
 
                             <table
                                 id="tablaDocentes"
-                                class="table table-hover align-middle text-center custom-table"
-                            >
+                                class="table table-hover align-middle text-center custom-table">
 
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
-                                        <th>NOMBRE</th>
-                                        <th>CORREO</th>
-                                        <th>DEPARTAMENTO</th>
-                                        <th>ROL</th>
-                                        <th>CAMBIAR PASSWORD</th>
-                                        <th>ACTIVO</th>
-                                        <th>EDITAR</th>
+                                        <th class="text-center">ID</th>
+                                        <th class="text-center">NOMBRE</th>
+                                        <th class="text-center">CORREO</th>
+                                        <th class="text-center">CELULAR</th>
+                                        <th class="text-center">DEPARTAMENTO</th>
+                                        <th class="text-center">ROL</th>
+                                        <th class="text-center">CAMBIAR PASSWORD</th>
+                                        <th class="text-center">ACTIVO</th>
+                                        <th class="text-center">EDITAR</th>
                                     </tr>
                                 </thead>
 
@@ -212,8 +212,8 @@
 
 @if (session('pdf'))
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        setTimeout(function () {
+    document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(function() {
             window.open("{!! session('pdf') !!}", "_blank");
         }, 500);
     });
@@ -221,15 +221,14 @@
 @endif
 
 <script>
-    $(document).ready(function () {
+    $(document).ready(function() {
 
         let tabla = $('#tablaDocentes').DataTable({
             processing: true,
             serverSide: true,
             ajax: "{{ route('docentes.data') }}",
 
-            columns: [
-                {
+            columns: [{
                     data: 'id',
                     name: 'id'
                 },
@@ -240,6 +239,10 @@
                 {
                     data: 'email',
                     name: 'email'
+                },
+                {
+                    data: 'celular',
+                    name: 'celular'
                 },
                 {
                     data: 'departamento',
@@ -273,12 +276,12 @@
 
     });
 
-    $('#tablaDocentes').on('change', '.cambiar-estado', function () {
+    $('#tablaDocentes').on('change', '.cambiar-estado', function() {
 
         let id = $(this).data('id');
         let estado = $(this).is(':checked') ? 1 : 0;
 
-        $.get("{{ url('docentes/cambiar-estado') }}/" + id + "/" + estado, function (res) {
+        $.get("{{ url('docentes/cambiar-estado') }}/" + id + "/" + estado, function(res) {
 
             if (res == 1) {
                 $('#tablaDocentes').DataTable().ajax.reload(null, false);
@@ -289,7 +292,7 @@
 
     });
 
-    $('#tablaDocentes').on("click", ".reset-btn", function () {
+    $('#tablaDocentes').on("click", ".reset-btn", function() {
 
         let userId = $(this).data("id");
 
@@ -303,31 +306,31 @@
 
                 return fetch("{{ url('docentes/reset-password') }}/" + userId, {
 
-                    method: 'POST',
+                        method: 'POST',
 
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
 
-                    body: JSON.stringify({
-                        password: password
+                        body: JSON.stringify({
+                            password: password
+                        })
+
                     })
+                    .then(response => response.json())
+                    .then(data => {
 
-                })
-                .then(response => response.json())
-                .then(data => {
+                        if (!data.success) throw new Error(data.message);
 
-                    if (!data.success) throw new Error(data.message);
+                        return data;
 
-                    return data;
+                    })
+                    .catch(error => {
 
-                })
-                .catch(error => {
+                        Swal.showValidationMessage(error.message);
 
-                    Swal.showValidationMessage(error.message);
-
-                });
+                    });
 
             }
 

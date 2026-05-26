@@ -10,6 +10,40 @@
 
     </div><!-- End Logo -->
 
+    <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown">
+        <i class="bi bi-bell"></i>
+        @if(Auth::user()->unreadNotifications->count() > 0)
+        <span class="badge bg-primary badge-number">{{ Auth::user()->unreadNotifications->count() }}</span>
+        @endif
+    </a>
+
+    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow notifications">
+        <li class="dropdown-header">
+            Tienes {{ Auth::user()->unreadNotifications->count() }} notificaciones nuevas
+        </li>
+
+        @foreach(Auth::user()->unreadNotifications as $notificacion)
+        <li>
+            <hr class="dropdown-divider">
+        </li>
+        <li class="notification-item">
+            <i class="bi {{ $notificacion->data['icono'] }}"></i>
+            <div>
+                <h4>{{ $notificacion->data['mensaje'] }}</h4>
+                <a href="{{ $notificacion->data['url'] }}">Ver detalles</a>
+                <p>{{ $notificacion->created_at->diffForHumans() }}</p>
+            </div>
+        </li>
+        @endforeach
+
+        <li>
+            <hr class="dropdown-divider">
+        </li>
+        <li class="dropdown-footer">
+            <a href="{{ route('marcar-leidas') }}">Marcar todas como leídas</a>
+        </li>
+    </ul>
+
 
 
     <nav class="header-nav ms-auto">
@@ -25,10 +59,14 @@
             <li class="nav-item dropdown pe-3">
 
                 <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
-                    <img src="{{ asset('NiceAdmin/assets/img/profile-img.jpg') }}" alt="Profile"
-                        class="rounded-circle">
-                    <span class="d-none d-md-block dropdown-toggle ps-2">{{ Auth::user()->name }}</span>
-                </a><!-- End Profile Iamge Icon -->
+                    <span class="d-none d-md-block dropdown-toggle ps-2">
+                        {{ Auth::user()->name }}
+                    </span>
+
+                    <img src="{{ asset('NiceAdmin/assets/img/profile-img.jpg') }}"
+                        alt="Profile"
+                        class="rounded-circle ms-2">
+                </a>
 
                 <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
                     <li class="dropdown-header">

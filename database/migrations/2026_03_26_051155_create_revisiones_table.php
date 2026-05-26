@@ -12,16 +12,26 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('revisiones', function (Blueprint $table) {
+
             $table->id();
+
             $table->string('nombre');
+
             $table->integer('numero');
+
             $table->boolean('activo')->default(false);
+
             $table->foreignId('semestre_id')
                 ->nullable()
                 ->constrained('semestres')
                 ->nullOnDelete();
+
+            $table->date('fecha_limite')->nullable();
+
             $table->datetime('created_at')->nullable();
+
             $table->datetime('updated_at')->nullable();
+
         });
     }
 

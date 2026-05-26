@@ -3,7 +3,7 @@
 <div class="col-12 col-md-6 col-lg-4">
 
     <div class="card shadow-sm border-0 h-100 revision-card"
-         style="border-radius: 18px; overflow: hidden;">
+        style="border-radius: 18px; overflow: hidden;">
 
         <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
 
@@ -42,82 +42,133 @@
 
             @if($semestreActivo)
 
-                <div class="alert alert-light border small mb-4"
-                     style="border-radius: 12px;">
-                    <div class="fw-semibold text-dark mb-1">
-                        Semestre activo
-                    </div>
-                    <div class="text-primary fw-bold">
-                        {{ $semestreActivo->nombre }}
-                    </div>
+            <div class="alert alert-light border small mb-4"
+                style="border-radius: 12px;">
+                <div class="fw-semibold text-dark mb-1">
+                    Semestre activo
+                </div>
+                <div class="text-primary fw-bold">
+                    {{ $semestreActivo->nombre }}
+                </div>
+            </div>
+
+            <div class="mb-4">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">
+                        Materias activas
+                    </span>
+                    <span class="badge bg-success px-3 py-2">
+                        {{ $semestreActivo->materias->where('activo',1)->count() }}
+                    </span>
                 </div>
 
-                <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">
+                        Materias asignadas
+                    </span>
+                    <span class="badge bg-info text-dark px-3 py-2">
+                        {{ $semestreActivo->materias->where('pivot.asignada',1)->count() }}
+                    </span>
+                </div>
 
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-muted">
-                            Materias activas
-                        </span>
-                        <span class="badge bg-success px-3 py-2">
-                            {{ $semestreActivo->materias->where('activo',1)->count() }}
-                        </span>
-                    </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">
+                        Estado actual
+                    </span>
 
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-muted">
-                            Materias asignadas
-                        </span>
-                        <span class="badge bg-info text-dark px-3 py-2">
-                            {{ $semestreActivo->materias->where('pivot.asignada',1)->count() }}
-                        </span>
-                    </div>
+                    @if($revision->activo)
+                    <span class="badge bg-success px-3 py-2">
+                        Activa
+                    </span>
+                    @else
+                    <span class="badge bg-secondary px-3 py-2">
+                        Inactiva
+                    </span>
+                    @endif
+                </div>
 
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted">
-                            Estado actual
-                        </span>
+                @if($revision->fecha_limite)
 
-                        @if($revision->activo)
-                            <span class="badge bg-success px-3 py-2">
-                                Activa
-                            </span>
-                        @else
-                            <span class="badge bg-secondary px-3 py-2">
-                                Inactiva
-                            </span>
-                        @endif
-                    </div>
+                @php
+                    $diasRestantes = now()->startOfDay()->diffInDays(
+                    $revision->fecha_limite->startOfDay(),
+                    false
+                    );
+                @endphp
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">
+                        Fecha límite
+                    </span>
+
+                    <span class="badge {{ $diasRestantes < 0 ? 'bg-danger' : 'bg-warning text-dark' }} px-3 py-2">
+                        {{ \Carbon\Carbon::parse($revision->fecha_limite)->format('d/m/Y') }}
+                    </span>
+                </div>
+
+                <div class="text-end">
+
+                    @if($diasRestantes > 1)
+
+                    <small class="text-success fw-semibold">
+                        Faltan {{ $diasRestantes }} días
+                    </small>
+
+                    @elseif($diasRestantes == 1)
+
+                    <small class="text-warning fw-semibold">
+                        Falta 1 día
+                    </small>
+
+                    @elseif($diasRestantes == 0)
+
+                    <small class="text-warning fw-bold">
+                        Vence hoy
+                    </small>
+
+                    @else
+
+                    <small class="text-danger fw-bold">
+                        Vencida hace {{ abs($diasRestantes) }} días
+                    </small>
+
+                    @endif
 
                 </div>
 
-                <div class="mt-auto">
+                @endif
 
-                    <a href="{{ route('seguimiento-academico') }}"
-                       class="btn btn-outline-success w-100 py-2 shadow-sm"
-                       style="border-radius: 12px;">
-                        <i class="bi bi-graph-up-arrow me-2"></i>
-                        Ir a Seguimiento Académico
-                    </a>
+            </div>
 
-                </div>
+            <div class="mt-auto">
+
+                <a href="{{ route('seguimiento-academico') }}"
+                    class="btn btn-outline-success w-100 py-2 shadow-sm"
+                    style="border-radius: 12px;">
+                    <i class="bi bi-graph-up-arrow me-2"></i>
+                    Ir a Seguimiento Académico
+                </a>
+
+            </div>
 
             @else
 
-                <div class="text-center py-4">
+            <div class="text-center py-4">
 
-                    <div class="mb-3">
-                        <i class="bi bi-hourglass-split fs-1 text-secondary"></i>
-                    </div>
-
-                    <h6 class="fw-bold text-dark">
-                        Sin semestre activo
-                    </h6>
-
-                    <p class="text-muted small mb-0">
-                        Debes activar un semestre para habilitar el seguimiento académico.
-                    </p>
-
+                <div class="mb-3">
+                    <i class="bi bi-hourglass-split fs-1 text-secondary"></i>
                 </div>
+
+                <h6 class="fw-bold text-dark">
+                    Sin semestre activo
+                </h6>
+
+                <p class="text-muted small mb-0">
+                    Debes activar un semestre para habilitar el seguimiento académico.
+                </p>
+
+            </div>
 
             @endif
 
@@ -128,7 +179,6 @@
 </div>
 
 @endforeach
-
 
 <style>
     .revision-card {

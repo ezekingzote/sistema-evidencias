@@ -5,6 +5,7 @@ use App\Http\Controllers\AsignarMaterias;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Docentes;
+use App\Http\Controllers\Evaluaciones;
 use App\Http\Controllers\Evidencias;
 use App\Http\Controllers\Materias;
 use App\Http\Controllers\Pdfs;
@@ -20,18 +21,28 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [AuthController::class, 'index'])->name('login');
 Route::post('/logear', [AuthController::class, 'logear'])->name('logear');
 
-// Rutas Protegidas por Autenticación
+// Rutas Protegidas por Autenticación General
 Route::middleware('auth')->group(function () {
 
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::put('/update-password', [AuthController::class, 'updatePassword'])->name('password.update');
 
     // ==========================================
-    // RUTAS ADMIN
+    // RUTAS COMPARTIDAS (ADMIN Y DOCENTE)
+    // ==========================================
+    // Al dejarlas aquí, cualquier usuario logueado (Admin o Docente) podrá ver y descargar archivos
+    Route::prefix('archivos')->group(function () {
+        Route::get('/', [Archivos::class, 'index'])->name('archivos');
+        Route::get('/carpetas/download-zip', [Archivos::class, 'descargarCarpetaZip'])->name('carpetas.zip');
+        Route::get('/ver-archivo', [Archivos::class, 'verArchivo'])->name('archivos.ver');
+        Route::get('/descargar-archivo', [Archivos::class, 'descargarArchivo'])->name('archivos.descargar');
+    });
+
+    // ==========================================
+    // RUTAS ADMIN EXCLUSIVAS
     // ==========================================
     Route::middleware('Checkrol:admin')->group(function () {
         Route::get('/home', [Dashboard::class, 'index'])->name('home');
-
 
         Route::prefix('semestres')->group(function () {
             Route::get('/', [Semestres::class, 'index'])->name('semestres');
@@ -46,7 +57,6 @@ Route::middleware('auth')->group(function () {
             Route::get('/show/{id}', [Semestres::class, 'show'])->name('semestres.show');
             Route::delete('/destroy/{id}', [Semestres::class, 'destroy'])->name('semestres.destroy');
         });
-
 
         Route::prefix('docentes')->group(function () {
             Route::get('/', [Docentes::class, 'index'])->name('docentes');
@@ -95,19 +105,17 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [SeguimientoAcademico::class, 'index'])->name('seguimiento-academico');
         });
 
-        Route::prefix('archivos')->group(function () {
-            Route::get('/', [Archivos::class, 'index'])->name('archivos');
+        Route::prefix('evaluar')->group(function () {
+            Route::get('/{id}', [Evaluaciones::class, 'evaluar'])->name('evaluar-evidencias');
+            Route::put('/evaluar/{id}/guardar', [Evaluaciones::class, 'guardarEvaluacion'])->name('evidencias-guardar-evaluacion');
         });
-
     });
 
     // ==========================================
-    // RUTAS DOCENTE
+    // RUTAS DOCENTE EXCLUSIVAS
     // ==========================================
     Route::middleware('Checkrol:docente')->group(function () {
-        // Dashboard específico del docente
         Route::get('/dashboard', [Dashboard::class, 'indexDocente'])->name('dashboard');
-
 
         Route::prefix('mis-materias')->group(function () {
             Route::get('/', [Materias::class, 'misMaterias'])->name('mis-materias');
@@ -127,8 +135,14 @@ Route::middleware('auth')->group(function () {
             Route::get('/create', [Evidencias::class, 'create'])->name('evidencias.create');
             Route::post('/guardar', [Evidencias::class, 'store'])->name('evidencias.store');
             Route::get('/ver-detalle/{materia_id}', [Evidencias::class, 'show'])->name('evidencias.show');
-            Route::get('/edit/{materia_id}', [Evidencias::class, 'edit'])->name('evidencias.edit');
-            Route::put('/update/{materia_id}', [Evidencias::class, 'update'])->name('evidencias.update');
+            Route::get('/edit/{id}', [Evidencias::class, 'edit'])->name('evidencias.edit');
+            Route::put('/update/{id}', [Evidencias::class, 'update'])->name('evidencias.update');
+            Route::get('/cambiar-revision/{revisionId}', [Evidencias::class, 'cambiarRevision'])->name('evidencias.cambiarRevision');
         });
+
+        Route::get('/notificaciones/marcar-leidas', function () {
+            auth()->user()->unreadNotifications->markAsRead();
+            return back();
+        })->name('marcar-leidas');
     });
 });

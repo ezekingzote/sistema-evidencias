@@ -24,6 +24,10 @@ class Docentes extends Controller
 
         return DataTables::of($query)
 
+         ->editColumn('celular', function ($row) {
+        return $row->celular ?: 'Sin número';
+    })
+    
             ->addColumn('nombre', function ($row) {
                 return strtoupper($row->name);
             })
@@ -239,6 +243,12 @@ class Docentes extends Controller
             $item->email = $emailCompleto;
             $item->rol = $request->rol;
             $item->departamento = $request->dpto;
+            $item->celular = $request->celular;
+            if (!preg_match('/^[0-9]{10}$/', $request->celular)) {
+
+                return to_route('docentes.edit', $id)
+                    ->with('error', 'El número celular debe contener exactamente 10 dígitos');
+            }
 
             $item->save();
 
@@ -250,6 +260,4 @@ class Docentes extends Controller
                 ->with('error', 'No se pudo actualizar: ' . $e->getMessage());
         }
     }
-
-    
 }

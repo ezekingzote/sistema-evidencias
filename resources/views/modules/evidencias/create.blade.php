@@ -6,548 +6,215 @@
 
 <main id="main" class="main">
 
-    <div class="pagetitle">
-
-        <h1 class="fw-bold text-primary">
-            Crear Nueva Evidencia
-        </h1>
-
+    <div class="pagetitle mb-4">
+        <h1 class="fw-bold text-primary">Crear Nueva Evidencia</h1>
         <nav>
-
             <ol class="breadcrumb">
-
-                <li class="breadcrumb-item">
-                    <a href="" class="text-decoration-none text-secondary">
-                        Home
-                    </a>
-                </li>
-
-                <li class="breadcrumb-item">
-                    <a href="{{ route('evidencias') }}"
-                        class="text-decoration-none text-secondary">
-
-                        Evidencias
-
-                    </a>
-                </li>
-
-                <li class="breadcrumb-item active text-primary fw-semibold">
-                    Nueva
-                </li>
-
+                <li class="breadcrumb-item"><a href="#" class="text-decoration-none">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('evidencias') }}" class="text-decoration-none">Evidencias</a></li>
+                <li class="breadcrumb-item active fw-semibold">Nueva</li>
             </ol>
-
         </nav>
-
     </div>
 
     <section class="section">
+        <div class="row">
+            <div class="col-lg-12">
 
-        <div class="row justify-content-center">
+                {{-- PANEL DEL FORMULARIO --}}
+                <div class="card border-0 shadow-lg p-4" style="border-radius: 20px; background: white;">
+                    <div class="mb-4">
+                        <h5 class="fw-bold text-secondary mb-1">Carga de archivos</h5>
+                        <p class="text-muted small">Asegúrese de que todos los documentos sean en formato PDF y cumplan con los lineamientos.</p>
+                    </div>
 
-            <div class="col-lg-11">
 
-                <div class="card border-0 shadow-lg evidencia-card">
 
-                    <div class="card-header evidencia-header">
+                    <form action="{{ route('evidencias.store') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="row g-4 mb-4">
+                            {{-- MATERIA --}}
+                            <div class="col-md-6">
 
-                        <div class="d-flex align-items-center">
+                                <label class="form-label fw-bold text-uppercase text-secondary small">
 
-                            <div class="icon-box me-3">
+                                    Materia Académica
 
-                                <i class="bi bi-cloud-arrow-up-fill fs-3 text-white"></i>
+                                </label>
+
+                                <div class="input-group input-custom shadow-sm">
+
+                                    <span class="input-group-text bg-white border-end-0">
+
+                                        <i class="bi bi-book-half text-primary"></i>
+
+                                    </span>
+
+                                    <select name="materia_id"
+                                        id="materia_id"
+                                        class="form-control border-start-0"
+                                        required>
+
+                                        <option value="" selected disabled>
+                                            Seleccione materia
+                                        </option>
+
+                                        @foreach ($materias as $materia)
+
+                                        <option value="{{ $materia->id }}">
+
+                                            {{ $materia->nombre }}
+
+                                        </option>
+
+                                        @endforeach
+
+                                    </select>
+
+                                </div>
 
                             </div>
 
-                            <div>
+                            {{-- REVISION --}}
+                            <div class="col-md-6">
 
-                                <h4 class="mb-1 fw-bold text-dark">
-                                    Detalles de la Evidencia
-                                </h4>
+                                <label class="form-label fw-bold text-uppercase text-secondary small">
 
-                                <p class="mb-0 text-muted">
-                                    Complete todos los campos para registrar los archivos en el sistema.
-                                </p>
+                                    Revisión
+
+                                </label>
+
+                                <div class="input-group input-custom shadow-sm">
+
+                                    <span class="input-group-text bg-white border-end-0">
+
+                                        <i class="bi bi-journal-bookmark-fill text-primary"></i>
+
+                                    </span>
+
+                                    <select name="revision_id"
+                                        id="revision_id"
+                                        class="form-control border-start-0"
+                                        required
+                                        disabled>
+
+                                        <option value="" selected disabled>
+                                            Seleccione primero una materia
+                                        </option>
+
+                                        @foreach ($revisiones as $revision)
+
+                                        <option value="{{ $revision->id }}">
+
+                                            {{ $revision->nombre }}
+
+                                        </option>
+
+                                        @endforeach
+
+                                    </select>
+
+                                </div>
 
                             </div>
-
                         </div>
 
-                    </div>
 
-                    <div class="card-body p-4">
+                        {{-- DOCUMENTOS --}}
+                        <div class="mb-4">
+                            <h4 class="fw-bold text-primary border-bottom pb-2"><i class="bi bi-folder-fill me-2"></i> Documentos</h4>
+                        </div>
 
-                        <form action="{{ route('evidencias.store') }}"
-                            method="POST"
-                            enctype="multipart/form-data">
-
-                            @csrf
-
-                            <div class="row g-4 mb-4">
-
-                                {{-- MATERIA --}}
-                                <div class="col-md-6">
-
-                                    <label class="form-label fw-bold text-uppercase text-secondary small">
-
-                                        Materia Académica
-
-                                    </label>
-
-                                    <div class="input-group input-custom shadow-sm">
-
-                                        <span class="input-group-text bg-white border-end-0">
-
-                                            <i class="bi bi-book-half text-primary"></i>
-
-                                        </span>
-
-                                        <select name="materia_id"
-                                            id="materia_id"
-                                            class="form-control border-start-0"
-                                            required>
-
-                                            <option value="" selected disabled>
-                                                Seleccione materia
-                                            </option>
-
-                                            @foreach ($materias as $materia)
-
-                                            <option value="{{ $materia->id }}">
-
-                                                {{ $materia->nombre }}
-
-                                            </option>
-
-                                            @endforeach
-
-                                        </select>
-
-                                    </div>
-
+                        <div class="row g-4 mb-5">
+                            @foreach(['doc_a' => 'a) Instrumentación didáctica completa', 'doc_b' => 'b) Lista de calificaciones', 'doc_c' => 'c) Reporte y acuerdos'] as $campo => $label)
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded-3 bg-light-subtle h-100 row-file-card">
+                                    <label class="form-label fw-bold text-dark small text-uppercase mb-2 d-block">{{ $label }}</label>
+                                    <input type="file" class="form-control form-control-sm" name="{{ $campo }}" accept="application/pdf" required>
                                 </div>
-
-                                {{-- REVISION --}}
-                                <div class="col-md-6">
-
-                                    <label class="form-label fw-bold text-uppercase text-secondary small">
-
-                                        Revisión
-
-                                    </label>
-
-                                    <div class="input-group input-custom shadow-sm">
-
-                                        <span class="input-group-text bg-white border-end-0">
-
-                                            <i class="bi bi-journal-bookmark-fill text-primary"></i>
-
-                                        </span>
-
-                                        <select name="revision_id"
-                                            id="revision_id"
-                                            class="form-control border-start-0"
-                                            required
-                                            disabled>
-
-                                            <option value="" selected disabled>
-                                                Seleccione primero una materia
-                                            </option>
-
-                                            @foreach ($revisiones as $revision)
-
-                                            <option value="{{ $revision->id }}">
-
-                                                {{ $revision->nombre }}
-
-                                            </option>
-
-                                            @endforeach
-
-                                        </select>
-
-                                    </div>
-
-                                </div>
-
                             </div>
+                            @endforeach
+                        </div>
 
-                            <div class="row g-4">
+                        {{-- EVIDENCIAS --}}
+                        <div class="mb-4">
+                            <h4 class="fw-bold text-success border-bottom pb-2"><i class="bi bi-journal-check me-2"></i> Evidencias</h4>
+                        </div>
 
-                                {{-- DOCUMENTOS --}}
-                                <div class="col-md-6">
-
-                                    <div class="section-box">
-
-                                        <h4 class="section-title">
-
-                                            <i class="bi bi-folder2-open me-2"></i>
-
-                                            Documentos
-
-                                        </h4>
-
-                                        <div class="mb-4">
-
-                                            <label class="form-label fw-semibold">
-
-                                                a) Instrumentación didáctica completa, por asignatura
-
-                                            </label>
-
-                                            <input type="file"
-                                                name="doc_a"
-                                                class="form-control"
-                                                accept=".pdf"
-                                                required>
-
-                                            <small class="helper-text">
-                                                Solo PDF • Máximo 1 MB
-                                            </small>
-
-                                        </div>
-
-                                        <div class="mb-4">
-
-                                            <label class="form-label fw-semibold">
-
-                                                b) Lista de calificaciones
-
-                                            </label>
-
-                                            <input type="file"
-                                                name="doc_b"
-                                                class="form-control"
-                                                accept=".pdf"
-                                                required>
-
-                                            <small class="helper-text">
-                                                Solo PDF • Máximo 1 MB
-                                            </small>
-
-                                        </div>
-
-                                        <div class="mb-2">
-
-                                            <label class="form-label fw-semibold">
-
-                                                c) Reporte y acuerdos
-
-                                            </label>
-
-                                            <input type="file"
-                                                name="doc_c"
-                                                class="form-control"
-                                                accept=".pdf"
-                                                required>
-
-                                            <small class="helper-text">
-                                                Solo PDF • Máximo 1 MB
-                                            </small>
-
-                                        </div>
-
-                                    </div>
-
+                        <div class="row g-4">
+                            @foreach(['evi_a' => 'a) Muestra de tareas y trabajos complementarios', 'evi_b' => 'b) Rúbricas utilizadas para tareas y trabajos', 'evi_c' => 'c) Examen diagnóstico y análisis'] as $campo => $label)
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded-3 bg-light-subtle h-100 row-file-card">
+                                    <label class="form-label fw-bold text-dark small text-uppercase mb-2 d-block">{{ $label }}</label>
+                                    <input type="file" class="form-control form-control-sm" name="{{ $campo }}" accept="application/pdf" required>
                                 </div>
-
-                                {{-- EVIDENCIAS --}}
-                                <div class="col-md-6">
-
-                                    <div class="section-box">
-
-                                        <h4 class="section-title">
-
-                                            <i class="bi bi-journal-check me-2"></i>
-
-                                            Evidencias
-
-                                        </h4>
-
-                                        <div class="mb-4">
-
-                                            <label class="form-label fw-semibold">
-
-                                                a) Muestra de tareas y/o trabajos complementarios
-
-                                            </label>
-
-                                            <input type="file"
-                                                name="evi_a"
-                                                class="form-control"
-                                                accept=".pdf"
-                                                required>
-
-                                            <small class="helper-text">
-                                                Solo PDF • Máximo 1 MB
-                                            </small>
-
-                                        </div>
-
-                                        <div class="mb-4">
-
-                                            <label class="form-label fw-semibold">
-
-                                                b) Rúbricas utilizadas para tareas y trabajos por asignatura
-
-                                            </label>
-
-                                            <input type="file"
-                                                name="evi_b"
-                                                class="form-control"
-                                                accept=".pdf"
-                                                required>
-
-                                            <small class="helper-text">
-                                                Solo PDF • Máximo 1 MB
-                                            </small>
-
-                                        </div>
-
-                                        <div class="mb-2">
-
-                                            <label class="form-label fw-semibold">
-
-                                                c) Examen diagnóstico y análisis de este
-
-                                            </label>
-
-                                            <input type="file"
-                                                name="evi_c"
-                                                class="form-control"
-                                                accept=".pdf"
-                                                required>
-
-                                            <small class="helper-text">
-                                                Solo PDF • Máximo 1 MB
-                                            </small>
-
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
                             </div>
+                            @endforeach
+                        </div>
 
-                            <div class="text-center mt-5">
+                        <hr class="my-4 style-hr">
 
-                                <button type="submit"
-                                    class="btn btn-success px-5 py-2 fw-semibold submit-btn">
-
-                                    <i class="fa-solid fa-floppy-disk me-2"></i>
-
-                                    Subir Evidencia
-
-                                </button>
-
-                            </div>
-
-                        </form>
-
-                    </div>
-
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('evidencias') }}" class="btn btn-light px-4 py-2 rounded-pill border fw-semibold small"><i class="bi bi-arrow-left-short fs-5 align-middle"></i>Regresar</a>
+                            <button type="submit" class="btn btn-outline-primary px-4 py-2 rounded-pill shadow-sm fw-semibold small">
+                                <i class="bi bi-cloud-upload me-1"></i> Subir Evidencia
+                            </button>
+                        </div>
+                    </form>
                 </div>
-
             </div>
-
         </div>
-
     </section>
-
 </main>
 
 <script>
-    const combinacionesSubidas =
-        JSON.parse('{!! json_encode($subidasArray) !!}');
+    const combinacionesSubidas = JSON.parse('{!! json_encode($subidasArray) !!}');
+    const revisionesOriginales = JSON.parse('{!! json_encode($revisiones) !!}');
 
-    const revisionesOriginales =
-    JSON.parse('{!! json_encode($revisiones) !!}');
+    document.getElementById('materia_id').addEventListener('change', function() {
+        const materiaId = this.value;
+        const selectRevision = document.getElementById('revision_id');
+        selectRevision.innerHTML = '<option value="" selected disabled>Seleccione una revisión</option>';
 
-    document
-        .getElementById('materia_id')
-        .addEventListener('change', function() {
-
-            const materiaId = this.value;
-
-            const selectRevision =
-                document.getElementById('revision_id');
-
-            selectRevision.innerHTML = '';
-
-            if (!materiaId) {
-
-                selectRevision.disabled = true;
-
-                const opcion =
-                    document.createElement('option');
-
-                opcion.text =
-                    'Seleccione primero una materia';
-
-                opcion.selected = true;
-
-                selectRevision.appendChild(opcion);
-
-                return;
+        let disponibles = 0;
+        revisionesOriginales.forEach(revision => {
+            if (!combinacionesSubidas.includes(`${materiaId}-${revision.id}`)) {
+                const option = document.createElement('option');
+                option.value = revision.id;
+                option.text = revision.nombre;
+                selectRevision.appendChild(option);
+                disponibles++;
             }
-
-            let disponibles = 0;
-
-            revisionesOriginales.forEach(revision => {
-
-                const llaveCombinacion =
-                    `${materiaId}-${revision.id}`;
-
-                if (
-                    !combinacionesSubidas.includes(
-                        llaveCombinacion
-                    )
-                ) {
-
-                    const option =
-                        document.createElement('option');
-
-                    option.value = revision.id;
-
-                    option.text = revision.nombre;
-
-                    selectRevision.appendChild(option);
-
-                    disponibles++;
-                }
-
-            });
-
-            if (disponibles === 0) {
-
-                const opcion =
-                    document.createElement('option');
-
-                opcion.text =
-                    'No hay revisiones disponibles';
-
-                opcion.selected = true;
-
-                selectRevision.appendChild(opcion);
-
-                selectRevision.disabled = true;
-
-            } else {
-
-                selectRevision.disabled = false;
-
-            }
-
         });
+
+        selectRevision.disabled = (disponibles === 0);
+        if (disponibles === 0) selectRevision.innerHTML = '<option>No hay revisiones disponibles</option>';
+    });
 </script>
 
 <style>
-    .evidencia-card {
-
-        border-radius: 18px;
-        overflow: hidden;
-        background: #ffffff;
-
+    .row-file-card {
+        border: 1px solid #e2e8f0;
+        transition: transform .2s ease;
     }
 
-    .evidencia-header {
-
-        background: linear-gradient(135deg,
-                #f8fbff,
-                #eef5ff);
-
-        border-bottom: 1px solid #e8eef7;
-
-        padding: 25px;
-
-    }
-
-    .icon-box {
-
-        width: 60px;
-        height: 60px;
-        border-radius: 16px;
-
-        background: linear-gradient(135deg,
-                #0d6efd,
-                #4da3ff);
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        box-shadow:
-            0 8px 20px rgba(13, 110, 253, 0.18);
-
-    }
-
-    .section-box {
-
-        background: #fafcff;
-
-        border: 1px solid #e9f0fa;
-
-        border-radius: 16px;
-
-        padding: 25px;
-
-        height: 100%;
-
-    }
-
-    .section-title {
-
-        font-size: 20px;
-        font-weight: 700;
-        color: #0d6efd;
-
-        margin-bottom: 25px;
-
-    }
-
-    .helper-text {
-
-        color: #6c757d;
-        font-size: 13px;
-
-    }
-
-    .form-control,
-    .input-group-text,
-    select {
-
-        border-radius: 10px !important;
-
-        min-height: 45px;
-
-    }
-
-    .form-control:focus,
-    select:focus {
-
-        box-shadow:
-            0 0 0 0.15rem rgba(13, 110, 253, 0.15);
-
-        border-color: #86b7fe;
-
-    }
-
-    .submit-btn {
-
-        border-radius: 12px;
-
-        box-shadow:
-            0 8px 20px rgba(25, 135, 84, 0.18);
-
-        transition: 0.3s;
-
-    }
-
-    .submit-btn:hover {
-
+    .row-file-card:hover {
         transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
 
+    .style-hr {
+        opacity: 0.1;
+    }
+
+    .form-select {
+        background-color: #fff !important;
+        color: #000 !important;
+    }
+
+    .form-select option {
+        background-color: #fff !important;
+        color: #000 !important;
     }
 </style>
 

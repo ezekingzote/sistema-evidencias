@@ -29,4 +29,9 @@ class Evidencia extends Model
     {
         return $this->belongsTo(Revision::class);
     }
+
+    public function asignacion()
+    {
+        return $this->belongsTo(AsignacionMateria::class, 'asignacion_materia_id');
+    }
 }

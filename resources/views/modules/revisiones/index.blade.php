@@ -39,11 +39,11 @@
             <div class="card-body p-4">
 
                 @if(!$semestreActivo)
-                    <div class="alert alert-warning text-center shadow-sm border-0">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        No hay semestre activo configurado.
-                        Debes activar uno para habilitar las revisiones.
-                    </div>
+                <div class="alert alert-warning text-center shadow-sm border-0">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    No hay semestre activo configurado.
+                    Debes activar uno para habilitar las revisiones.
+                </div>
                 @endif
 
                 <div class="row g-4">
@@ -100,6 +100,7 @@
         let id = $(this).data("id");
         let $checkbox = $(this);
         let estadoOriginal = !$(this).is(":checked");
+        let activando = $checkbox.is(":checked");
 
         $.ajax({
             type: "POST",
@@ -107,50 +108,119 @@
             data: {
                 _token: '{{ csrf_token() }}'
             },
+
             success: function(res) {
 
                 if (res.confirmar) {
 
+                    let html = `
+                        <div class="text-start mb-3">
+                            <label class="form-label fw-bold">
+                                Contraseña
+                            </label>
+                            <input
+                                type="password"
+                                id="password"
+                                class="form-control"
+                                placeholder="Ingresa tu contraseña">
+                        </div>
+                    `;
+
+                    if (activando) {
+
+                        html += `
+                            <div class="text-start">
+                                <label class="form-label fw-bold">
+                                    Fecha límite de entrega
+                                </label>
+                                <input
+                                    type="date"
+                                    id="fecha_limite"
+                                    class="form-control"
+                                    min="${new Date().toISOString().split('T')[0]}">
+                            </div>
+                        `;
+                    }
+
                     Swal.fire({
-                        title: '¿Confirmar cambio?',
-                        text: res.message,
+                        title: activando ?
+                            'Activar revisión' :
+                            'Desactivar revisión',
+
                         icon: 'warning',
-                        input: 'password',
-                        inputAttributes: {
-                            placeholder: 'Ingresa tu contraseña'
-                        },
+
+                        html: html,
+
                         showCancelButton: true,
-                        confirmButtonText: 'Validar y Cambiar',
+                        confirmButtonText: 'Confirmar',
                         cancelButtonText: 'Cancelar',
                         showLoaderOnConfirm: true,
 
-                        preConfirm: (password) => {
+                        preConfirm: () => {
 
-                            return fetch(`/revisiones/cambiar-estado-confirmar/${res.revision_id}`, {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                    },
-                                    body: JSON.stringify({
-                                        password: password
-                                    })
-                                })
+                            const password =
+                                document.getElementById('password').value;
+
+                            const fechaLimite =
+                                document.getElementById('fecha_limite') ?
+                                document.getElementById('fecha_limite').value :
+                                null;
+
+                            if (!password) {
+
+                                Swal.showValidationMessage(
+                                    'Debes ingresar tu contraseña'
+                                );
+
+                                return false;
+                            }
+
+                            if (activando && !fechaLimite) {
+
+                                Swal.showValidationMessage(
+                                    'Debes seleccionar una fecha límite'
+                                );
+
+                                return false;
+                            }
+
+                            return fetch(
+                                    `/revisiones/cambiar-estado-confirmar/${res.revision_id}`, {
+                                        method: 'POST',
+
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                        },
+
+                                        body: JSON.stringify({
+                                            password: password,
+                                            fecha_limite: fechaLimite
+                                        })
+                                    }
+                                )
                                 .then(response => {
 
-                                    if (!response.ok) {
-                                        return response.json().then(data => {
-                                            throw new Error(data.error || 'Contraseña incorrecta')
-                                        });
-                                    }
+                                    return response.json().then(data => {
 
-                                    return response.json();
+                                        if (!response.ok) {
+                                            throw new Error(
+                                                data.error ||
+                                                'Error al procesar'
+                                            );
+                                        }
+
+                                        return data;
+                                    });
 
                                 })
                                 .catch(error => {
-                                    Swal.showValidationMessage(error.message)
-                                });
 
+                                    Swal.showValidationMessage(
+                                        error.message
+                                    );
+
+                                });
                         }
 
                     }).then((result) => {
@@ -159,13 +229,17 @@
 
                             Swal.fire(
                                 '¡Éxito!',
-                                result.value.message || 'Estado actualizado.',
+                                result.value.message ||
+                                'Estado actualizado correctamente',
                                 'success'
                             ).then(() => location.reload());
 
                         } else {
 
-                            $checkbox.prop('checked', estadoOriginal);
+                            $checkbox.prop(
+                                'checked',
+                                estadoOriginal
+                            );
 
                         }
 
@@ -179,15 +253,26 @@
 
                 if (err.status === 400 && err.responseJSON?.error) {
 
-                    Swal.fire('Error', err.responseJSON.error, 'error');
+                    Swal.fire(
+                        'Error',
+                        err.responseJSON.error,
+                        'error'
+                    );
 
                 } else {
 
-                    Swal.fire('Error', 'No se pudo procesar la solicitud', 'error');
+                    Swal.fire(
+                        'Error',
+                        'No se pudo procesar la solicitud',
+                        'error'
+                    );
 
                 }
 
-                $checkbox.prop('checked', estadoOriginal);
+                $checkbox.prop(
+                    'checked',
+                    estadoOriginal
+                );
 
             }
 

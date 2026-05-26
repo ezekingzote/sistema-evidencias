@@ -1,272 +1,255 @@
 @extends('layouts.main')
 
-@section('titulo', 'Editar Evidencias')
+@section('titulo', 'Editar Evidencia')
 
 @section('contenido')
-    <main id="main" class="main">
 
-        <div class="pagetitle">
-            <h1 class="fw-bold text-warning">Editar Evidencias</h1>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-            <nav>
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="#">Home</a></li>
-                    <li class="breadcrumb-item"><a href="{{ route('evidencias') }}">Evidencias</a></li>
-                    <li class="breadcrumb-item active">Editar</li>
-                </ol>
-            </nav>
-        </div>
+<main id="main" class="main">
 
-        <section class="section">
+    <div class="pagetitle mb-4">
+        <h1 class="fw-bold text-primary">Modificación de Entrega</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ route('dashboard') }}" class="text-decoration-none">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('evidencias') }}" class="text-decoration-none">Evidencias</a></li>
+                <li class="breadcrumb-item active fw-semibold">Editar</li>
+            </ol>
+        </nav>
+    </div>
 
-            <div class="card shadow-lg border-0" style="border-radius:18px;">
-                <div class="card-header bg-white p-4">
-                    <div class="row align-items-center">
-                        <div class="col-md-7">
-                            <h4 class="mb-1 fw-bold">{{ $materia->nombre }}</h4>
-                            <p class="text-muted mb-0">
-                                Modo Edición • Reemplaza solo los archivos necesarios
-                            </p>
-                        </div>
+    <section class="section">
+        <div class="row">
+            <div class="col-lg-12">
+
+
+                {{-- PANEL DEL FORMULARIO --}}
+                <div class="card border-0 shadow-lg p-4" style="border-radius: 20px; background: white;">
+                    <div class="mb-4">
+                        <h5 class="fw-bold text-secondary mb-1">Asignatura: <span class="text-dark">{{ $materia->nombre }}</span></h5>
+                        <p class="text-muted small">Los archivos guardados previamente mantendrán su validez si decides no reemplazarlos.</p>
                     </div>
-                </div>
 
-                <div class="card-body p-4">
-
-                    <form action="{{ route('evidencias.update', $materia->id) }}" method="POST"
-                        enctype="multipart/form-data">
+                    <form action="{{ route('evidencias.update', $evidencia->id) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold text-uppercase text-secondary small">Revisión a editar</label>
-                                <select name="revision_id" class="form-select border rounded shadow-sm" id="selectRevision"
-                                    onchange="recargarRevision(this.value)">
-                                    @foreach ($revisiones as $rev)
-                                        <option value="{{ $rev->id }}"
-                                            {{ $revisionSeleccionada->id == $rev->id ? 'selected' : '' }}>
-                                            {{ $rev->nombre }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                        @php
+                        $documentos = [
+                        'doc_a' => 'a) Instrumentación didáctica completa',
+                        'doc_b' => 'b) Lista de calificaciones',
+                        'doc_c' => 'c) Reporte y acuerdos'
+                        ];
+
+                        $evidenciasArchivos = [
+                        'evi_a' => 'a) Muestra de tareas y trabajos complementarios',
+                        'evi_b' => 'b) Rúbricas utilizadas para tareas y trabajos',
+                        'evi_c' => 'c) Examen diagnóstico y análisis'
+                        ];
+                        @endphp
+
+                        {{-- DOCUMENTOS --}}
+                        <div class="mb-4">
+                            <h4 class="fw-bold text-primary border-bottom pb-2">
+                                <i class="bi bi-folder-fill me-2"></i>
+                                Documentos
+                            </h4>
+                            <p class="text-muted small mb-0">
+                                Archivos administrativos y de seguimiento de la asignatura.
+                            </p>
+                        </div>
+
+                        <div class="row g-4 mb-5">
+                            @foreach($documentos as $campo => $label)
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded-3 bg-light-subtle h-100 d-flex flex-column justify-content-between row-file-card">
+
+                                    <div>
+                                        <label class="form-label fw-bold text-dark small text-uppercase mb-2 d-block">
+                                            {{ $label }}
+                                        </label>
+
+                                        @if($evidencia->$campo)
+                                        @php
+                                        $rutaSegura = base64_encode($evidencia->$campo);
+                                        $urlVerPdf = route('archivos.ver', ['ruta' => $rutaSegura]);
+                                        $nombreCorto = basename($evidencia->$campo);
+                                        @endphp
+
+                                        <div class="d-flex align-items-center justify-content-between bg-white border rounded p-2 mb-3 shadow-sm">
+                                            <div class="d-flex align-items-center text-truncate" style="min-width:0;">
+                                                <i class="bi bi-file-earmark-pdf-fill text-danger fs-4 me-2"></i>
+                                                <span class="small fw-semibold text-muted text-truncate"
+                                                    title="{{ $nombreCorto }}">
+                                                    {{ $nombreCorto }}
+                                                </span>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-primary rounded-pill px-3 btn-preview-pdf ms-2"
+                                                data-url="{{ $urlVerPdf }}"
+                                                data-name="{{ $nombreCorto }}">
+                                                <i class="bi bi-eye"></i> Ver
+                                            </button>
+                                        </div>
+                                        @else
+                                        <div class="alert alert-light py-1 px-2 small mb-3 border text-center rounded-2 text-muted">
+                                            <i class="bi bi-slash-circle me-1"></i>
+                                            Inhabilitada para previsualización
+                                        </div>
+                                        @endif
+                                    </div>
+
+                                    <input
+                                        type="file"
+                                        class="form-control form-control-sm"
+                                        name="{{ $campo }}"
+                                        accept="application/pdf">
+                                </div>
                             </div>
+                            @endforeach
+                        </div>
+
+                        {{-- EVIDENCIAS --}}
+                        <div class="mb-4">
+                            <h4 class="fw-bold text-success border-bottom pb-2">
+                                <i class="bi bi-journal-check me-2"></i>
+                                Evidencias
+                            </h4>
+                            <p class="text-muted small mb-0">
+                                Evidencias académicas utilizadas durante el proceso de evaluación.
+                            </p>
                         </div>
 
                         <div class="row g-4">
+                            @foreach($evidenciasArchivos as $campo => $label)
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded-3 bg-light-subtle h-100 d-flex flex-column justify-content-between row-file-card">
 
-                            <div class="col-md-6">
-                                <div class="border rounded-4 p-4 h-100">
-                                    <h5 class="fw-bold text-primary mb-4">
-                                        Documentos
-                                    </h5>
+                                    <div>
+                                        <label class="form-label fw-bold text-dark small text-uppercase mb-2 d-block">
+                                            {{ $label }}
+                                        </label>
 
-                                    <div class="mb-4">
-                                        <label class="mb-1">a) Instrumentación didáctica</label>
-                                        @if (optional($evidencia)->doc_a)
-                                            <div class="d-flex align-items-center gap-2 mb-2">
-                                                <div class="badge bg-success text-white px-2 py-1">
-                                                    <i class="bi bi-check-circle me-1"></i> Archivo actual guardado
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-outline-primary btn-ver-pdf"
-                                                    data-pdf="{{ asset('storage/' . $evidencia->doc_a) }}"
-                                                    data-titulo="a) Instrumentación didáctica">
-                                                    <i class="bi bi-eye"></i> Ver
-                                                </button>
+                                        @if($evidencia->$campo)
+                                        @php
+                                        $rutaSegura = base64_encode($evidencia->$campo);
+                                        $urlVerPdf = route('archivos.ver', ['ruta' => $rutaSegura]);
+                                        $nombreCorto = basename($evidencia->$campo);
+                                        @endphp
+
+                                        <div class="d-flex align-items-center justify-content-between bg-white border rounded p-2 mb-3 shadow-sm">
+                                            <div class="d-flex align-items-center text-truncate" style="min-width:0;">
+                                                <i class="bi bi-file-earmark-pdf-fill text-danger fs-4 me-2"></i>
+                                                <span class="small fw-semibold text-muted text-truncate"
+                                                    title="{{ $nombreCorto }}">
+                                                    {{ $nombreCorto }}
+                                                </span>
                                             </div>
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-primary rounded-pill px-3 btn-preview-pdf ms-2"
+                                                data-url="{{ $urlVerPdf }}"
+                                                data-name="{{ $nombreCorto }}">
+                                                <i class="bi bi-eye"></i> Ver
+                                            </button>
+                                        </div>
+                                        @else
+                                        <div class="alert alert-light py-1 px-2 small mb-3 border text-center rounded-2 text-muted">
+                                            <i class="bi bi-slash-circle me-1"></i>
+                                            Inhabilitada para previsualización
+                                        </div>
                                         @endif
-                                        <input type="file" name="doc_a" class="form-control" accept=".pdf"
-                                            {{ optional($evidencia)->doc_a ? '' : 'required' }}>
-                                        <small class="text-muted"
-                                            style="font-size: 12px;">{{ optional($evidencia)->doc_a ? 'Sube un archivo solo si deseas reemplazar el actual.' : 'Requerido.' }}</small>
                                     </div>
 
-                                    <div class="mb-4">
-                                        <label class="mb-1">b) Lista de calificaciones</label>
-                                        @if (optional($evidencia)->doc_b)
-                                            <div class="d-flex align-items-center gap-2 mb-2">
-                                                <div class="badge bg-success text-white px-2 py-1">
-                                                    <i class="bi bi-check-circle me-1"></i> Archivo actual guardado
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-outline-primary btn-ver-pdf"
-                                                    data-pdf="{{ asset('storage/' . $evidencia->doc_b) }}"
-                                                    data-titulo="b) Lista de calificaciones">
-                                                    <i class="bi bi-eye"></i> Ver
-                                                </button>
-                                            </div>
-                                        @endif
-                                        <input type="file" name="doc_b" class="form-control" accept=".pdf"
-                                            {{ optional($evidencia)->doc_b ? '' : 'required' }}>
-                                        <small class="text-muted"
-                                            style="font-size: 12px;">{{ optional($evidencia)->doc_b ? 'Sube un archivo solo si deseas reemplazar el actual.' : 'Requerido.' }}</small>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="mb-1">c) Reporte y acuerdos</label>
-                                        @if (optional($evidencia)->doc_c)
-                                            <div class="d-flex align-items-center gap-2 mb-2">
-                                                <div class="badge bg-success text-white px-2 py-1">
-                                                    <i class="bi bi-check-circle me-1"></i> Archivo actual guardado
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-outline-primary btn-ver-pdf"
-                                                    data-pdf="{{ asset('storage/' . $evidencia->doc_c) }}"
-                                                    data-titulo="c) Reporte y acuerdos">
-                                                    <i class="bi bi-eye"></i> Ver
-                                                </button>
-                                            </div>
-                                        @endif
-                                        <input type="file" name="doc_c" class="form-control" accept=".pdf"
-                                            {{ optional($evidencia)->doc_c ? '' : 'required' }}>
-                                        <small class="text-muted"
-                                            style="font-size: 12px;">{{ optional($evidencia)->doc_c ? 'Sube un archivo solo si deseas reemplazar el actual.' : 'Requerido.' }}</small>
-                                    </div>
-
+                                    <input
+                                        type="file"
+                                        class="form-control form-control-sm"
+                                        name="{{ $campo }}"
+                                        accept="application/pdf">
                                 </div>
                             </div>
-
-                            <div class="col-md-6">
-                                <div class="border rounded-4 p-4 h-100">
-                                    <h5 class="fw-bold text-success mb-4">
-                                        Evidencias
-                                    </h5>
-
-                                    <div class="mb-4">
-                                        <label class="mb-1">a) Tareas complementarias</label>
-                                        @if (optional($evidencia)->evi_a)
-                                            <div class="d-flex align-items-center gap-2 mb-2">
-                                                <div class="badge bg-success text-white px-2 py-1">
-                                                    <i class="bi bi-check-circle me-1"></i> Archivo actual guardado
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-outline-success btn-ver-pdf"
-                                                    data-pdf="{{ asset('storage/' . $evidencia->evi_a) }}"
-                                                    data-titulo="a) Tareas complementarias">
-                                                    <i class="bi bi-eye"></i> Ver
-                                                </button>
-                                            </div>
-                                        @endif
-                                        <input type="file" name="evi_a" class="form-control" accept=".pdf"
-                                            {{ optional($evidencia)->evi_a ? '' : 'required' }}>
-                                        <small class="text-muted"
-                                            style="font-size: 12px;">{{ optional($evidencia)->evi_a ? 'Sube un archivo solo si deseas reemplazar el actual.' : 'Requerido.' }}</small>
-                                    </div>
-
-                                    <div class="mb-4">
-                                        <label class="mb-1">b) Rúbricas</label>
-                                        @if (optional($evidencia)->evi_b)
-                                            <div class="d-flex align-items-center gap-2 mb-2">
-                                                <div class="badge bg-success text-white px-2 py-1">
-                                                    <i class="bi bi-check-circle me-1"></i> Archivo actual guardado
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-outline-success btn-ver-pdf"
-                                                    data-pdf="{{ asset('storage/' . $evidencia->evi_b) }}"
-                                                    data-titulo="b) Rúbricas">
-                                                    <i class="bi bi-eye"></i> Ver
-                                                </button>
-                                            </div>
-                                        @endif
-                                        <input type="file" name="evi_b" class="form-control" accept=".pdf"
-                                            {{ optional($evidencia)->evi_b ? '' : 'required' }}>
-                                        <small class="text-muted"
-                                            style="font-size: 12px;">{{ optional($evidencia)->evi_b ? 'Sube un archivo solo si deseas reemplazar el actual.' : 'Requerido.' }}</small>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="mb-1">c) Examen diagnóstico y análisis</label>
-                                        @if (optional($evidencia)->evi_c)
-                                            <div class="d-flex align-items-center gap-2 mb-2">
-                                                <div class="badge bg-success text-white px-2 py-1">
-                                                    <i class="bi bi-check-circle me-1"></i> Archivo actual guardado
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-outline-success btn-ver-pdf"
-                                                    data-pdf="{{ asset('storage/' . $evidencia->evi_c) }}"
-                                                    data-titulo="c) Examen diagnóstico">
-                                                    <i class="bi bi-eye"></i> Ver
-                                                </button>
-                                            </div>
-                                        @endif
-                                        <input type="file" name="evi_c" class="form-control" accept=".pdf"
-                                            {{ optional($evidencia)->evi_c ? '' : 'required' }}>
-                                        <small class="text-muted"
-                                            style="font-size: 12px;">{{ optional($evidencia)->evi_c ? 'Sube un archivo solo si deseas reemplazar el actual.' : 'Requerido.' }}</small>
-                                    </div>
-
-                                </div>
-                            </div>
-
+                            @endforeach
                         </div>
 
-                        <div class="text-center mt-5 d-flex gap-3 justify-content-center">
-                            <a href="{{ route('evidencias') }}" class="btn btn-secondary px-4">
-                                <i class="bi bi-x-circle me-2"></i> Cancelar
+                        <hr class="my-4 style-hr">
+
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('evidencias') }}"
+                                class="btn btn-light px-4 py-2 rounded-pill border fw-semibold small">
+                                <i class="bi bi-arrow-left-short fs-5 align-middle"></i>
+                                Regresar
                             </a>
-                            <button type="submit" class="btn btn-warning px-5 shadow-sm fw-bold">
-                                <i class="bi bi-save me-2"></i> Guardar Cambios
+
+                            <button type="submit"
+                                class="btn btn-outline-primary px-4 py-2 rounded-pill shadow-sm fw-semibold small">
+                                <i class="bi bi-check-lg me-1"></i>
+                                Aplicar Correcciones
                             </button>
                         </div>
-
                     </form>
-
                 </div>
-            </div>
 
-        </section>
-
-        <div class="modal fade" id="modalPdf" tabindex="-1" aria-labelledby="modalPdfLabel" aria-hidden="true">
-            <div class="modal-dialog modal-xl modal-dialog-centered">
-                <div class="modal-content border-0 shadow-lg">
-                    <div class="modal-header bg-light border-bottom-0">
-                        <h5 class="modal-title fw-bold text-primary" id="modalPdfLabel">
-                            <i class="bi bi-file-earmark-pdf-fill me-2 text-danger"></i> 
-                            <span id="tituloPdfVisualizador">Documento</span>
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body p-0 bg-dark">
-                        <iframe id="iframePdf" src="" width="100%" height="700px" style="border: none; display: block;">
-                            Este navegador no soporta visualización de PDFs. Intente descargarlo.
-                        </iframe>
-                    </div>
-                </div>
             </div>
         </div>
+    </section>
+</main>
 
-    </main>
-@endsection
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.btn-preview-pdf').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const pdfUrl = this.getAttribute('data-url');
+                const pdfName = this.getAttribute('data-name');
 
-@push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const botonesVerPdf = document.querySelectorAll('.btn-ver-pdf');
-            const iframePdf = document.getElementById('iframePdf');
-            const tituloPdf = document.getElementById('tituloPdfVisualizador');
-            
-            if (typeof bootstrap !== 'undefined') {
-                const modalVisualizador = new bootstrap.Modal(document.getElementById('modalPdf'));
-
-                botonesVerPdf.forEach(boton => {
-                    boton.addEventListener('click', function() {
-                        const rutaArchivo = this.getAttribute('data-pdf');
-                        const tituloAtributo = this.getAttribute('data-titulo');
-
-                        iframePdf.src = rutaArchivo;
-                        tituloPdf.textContent = tituloAtributo;
-
-                        modalVisualizador.show();
-                    });
+                Swal.fire({
+                    title: `<span class="fs-5 text-dark fw-bold text-truncate d-block px-3">${pdfName}</span>`,
+                    html: `
+                        <div style="width: 100%; height: 72vh; overflow: hidden; border-radius: 8px; border: 1px solid #dee2e6;">
+                            <iframe src="${pdfUrl}#toolbar=1" width="100%" height="100%" style="border: none;"></iframe>
+                        </div>
+                    `,
+                    width: '85%',
+                    showCloseButton: true,
+                    showConfirmButton: false,
+                    focusConfirm: false,
+                    customClass: {
+                        popup: 'rounded-4 shadow-lg'
+                    }
                 });
-
-                document.getElementById('modalPdf').addEventListener('hidden.bs.modal', function () {
-                    iframePdf.src = '';
-                });
-            } else {
-                console.error("Bootstrap no está cargado correctamente en la vista.");
-            }
+            });
         });
 
-        function recargarRevision(idRevisionSeleccionada) {
-            let url = new URL("{{ route('evidencias.edit', $materia->id) }}");
-            url.searchParams.set('revision_id', idRevisionSeleccionada);
-            window.location.href = url.href;
+        const selectRevision = document.getElementById('selectRevision');
+        if (selectRevision) {
+            selectRevision.addEventListener('change', function() {
+                const revisionId = this.value;
+                const materiaId = this.getAttribute('data-materia');
+                if (revisionId && materiaId) {
+                    window.location.href = `/evidencias/cambiar-revision/${revisionId}?materia_id=${materiaId}`;
+                }
+            });
         }
-    </script>
-@endpush
+    });
+</script>
+
+<style>
+    .row-file-card {
+        border: 1px solid #e2e8f0;
+        transition: transform .2s ease;
+    }
+
+    .row-file-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .style-hr {
+        opacity: 0.1;
+    }
+</style>
+
+@endsection

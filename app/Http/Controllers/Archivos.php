@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use ZipArchive;
 
 class Archivos extends Controller
 {
@@ -74,5 +75,87 @@ class Archivos extends Controller
             'porcentajeEstilo',
             'subidasArray'
         ));
+    }
+
+    public function descargarCarpetaZip(Request $request)
+    {
+        $rutaCarpeta = $request->get('ruta');
+
+        if (!$rutaCarpeta) {
+            return back()->with('error', 'Ruta inválida.');
+        }
+
+        $disco = Storage::disk('public');
+
+        if (!$disco->exists($rutaCarpeta)) {
+            return back()->with('error', 'La carpeta no existe.');
+        }
+
+        $archivos = $disco->allFiles($rutaCarpeta);
+
+        if (empty($archivos)) {
+            return back()->with('error', 'La carpeta está vacía.');
+        }
+
+        $nombreZip = basename($rutaCarpeta) . '.zip';
+        $zipPath = storage_path('app/public/' . $nombreZip);
+
+        $zip = new ZipArchive;
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
+            foreach ($archivos as $archivo) {
+                $realPath = storage_path('app/public/' . $archivo);
+                $nombreEnZip = str_replace($rutaCarpeta . '/', '', $archivo);
+                
+                if (file_exists($realPath)) {
+                    $zip->addFile($realPath, $nombreEnZip);
+                }
+            }
+            $zip->close();
+        }
+
+        return response()->download($zipPath)->deleteFileAfterSend(true);
+    }
+
+    // Retorna el archivo con los headers adecuados para evitar bloqueos del navegador
+    public function verArchivo(Request $request)
+    {
+        $rutaParam = $request->get('ruta');
+        
+        if (!$rutaParam) {
+            abort(404, 'Ruta no proporcionada.');
+        }
+
+        $ruta = base64_decode($rutaParam);
+        
+        if (!Storage::disk('public')->exists($ruta)) {
+            abort(404, 'El archivo no existe.');
+        }
+
+        $path = storage_path('app/public/' . $ruta);
+        
+        // Retornamos de forma binaria nativa para saltar restricciones perimetrales del Web Server
+        return response()->file($path, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
+        ]);
+    }
+
+    public function descargarArchivo(Request $request)
+    {
+        $rutaParam = $request->get('ruta');
+
+        if (!$rutaParam) {
+            abort(404, 'Ruta no proporcionada.');
+        }
+
+        $ruta = base64_decode($rutaParam);
+
+        if (!Storage::disk('public')->exists($ruta)) {
+            abort(404, 'El archivo no existe.');
+        }
+
+        $path = storage_path('app/public/' . $ruta);
+        
+        return response()->download($path, basename($path));
     }
 }

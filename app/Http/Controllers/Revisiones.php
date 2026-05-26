@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use App\Models\Revision;
 use App\Models\Semestre;
 use Illuminate\Http\Request;
@@ -45,32 +47,54 @@ class Revisiones extends Controller
 
             DB::beginTransaction();
 
+            if (!Hash::check($request->password, Auth::user()->password)) {
+
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Contraseña incorrecta'
+                ], 400);
+            }
+
             $revision = Revision::findOrFail($id);
 
             $nuevoEstado = $revision->activo ? 0 : 1;
 
-            if ($nuevoEstado == 1) {
+            if ($nuevoEstado) {
 
-                // 🔥 Buscar semestre activo
                 $semestreActivo = Semestre::where('activo', 1)->first();
 
                 if (!$semestreActivo) {
+
                     return response()->json([
                         'success' => false,
-                        'error' => 'No hay un semestre activo'
+                        'error' => 'No existe un semestre activo'
                     ], 400);
                 }
 
-                // Activar revisión y asignar semestre
-                $revision->activo = 1;
+                if (!$request->filled('fecha_limite')) {
+
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Debes seleccionar una fecha límite'
+                    ], 400);
+                }
+
+                if ($request->fecha_limite < now()->toDateString()) {
+
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'La fecha límite no puede ser anterior a hoy'
+                    ], 400);
+                }
+
+                $revision->activo = true;
                 $revision->semestre_id = $semestreActivo->id;
+                $revision->fecha_limite = $request->fecha_limite;
             } else {
 
-                // Desactivar revisión
-                $revision->activo = 0;
-
-                // (Opcional) quitar semestre
+                $revision->activo = false;
                 $revision->semestre_id = null;
+                $revision->fecha_limite = null;
             }
 
             $revision->save();
