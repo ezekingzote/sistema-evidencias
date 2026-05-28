@@ -51,7 +51,7 @@
                         <div class="card-body p-4">
 
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle text-center materia-table">
+                                <table class="table table-hover align-middle text-center materia-table datatable">
                                     <thead>
                                         <tr>
                                             <th>NOMBRE</th>

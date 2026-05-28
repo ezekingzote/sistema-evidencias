@@ -86,7 +86,7 @@
                 <div class="table-responsive">
 
                     <table
-                        class="table table-hover align-middle text-center custom-table"
+                        class="table table-hover align-middle text-center custom-table datatable"
                     >
 
                         <thead>
