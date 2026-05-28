@@ -1,76 +1,87 @@
 @forelse($items as $item)
-    <tr>
+<tr>
+    <td class="fw-bold text-uppercase">
+        {{ $item->name }}
+    </td>
 
-        <td>
-            <span class="badge bg-secondary">
-                {{ $item->id }}
-            </span>
-        </td>
+    <td>
+        {{ $item->email }}
+    </td>
+    <td>
+        {{ $item->celular }}
+    </td>
+    <td class="fw-bold text-uppercase">
+        {{ $item->departamento }}
+    </td>
 
-        <td class="fw-bold text-uppercase">
-            {{ $item->name }}
-        </td>
+    <td>
 
-        <td>
-            {{ $item->email }}
-        </td>
-        <td>
-            {{ $item->celular }}
-        </td>
-        <td class="fw-bold text-uppercase">
-            {{ $item->departamento }}
-        </td>
+        @if ($item->rol == 'admin')
+        <span class="badge bg-danger">
+            ADMIN
+        </span>
+        @else
+        <span class="badge bg-info text-dark">
+            DOCENTE
+        </span>
+        @endif
 
-        <td>
+    </td>
 
-            @if ($item->rol == 'admin')
-                <span class="badge bg-danger">
-                    ADMIN
-                </span>
-            @else
-                <span class="badge bg-info text-dark">
-                    DOCENTE
-                </span>
-            @endif
+    <td>
 
-        </td>
+        @if ($item->rol == 'admin')
 
-        <td>
+        <span class="badge bg-danger-subtle text-danger border border-danger">
+            {{ strtoupper($item->cargo) }}
+        </span>
 
-            <button type="button" class="btn btn-outline-secondary reset-btn" data-id="{{ $item->id }}">
-                <i class="fa-solid fa-user-lock"></i>
-            </button>
+        @else
 
-        </td>
+        <span class="badge bg-primary-subtle text-primary border border-primary">
+            DOCENTE
+        </span>
 
-        <td>
-            <div class="form-check form-switch d-flex justify-content-center">
-                <input class="form-check-input" type="checkbox" id="{{ $item->id }}"
-                    {{ $item->activo ? 'checked' : '' }}>
-            </div>
-        </td>
+        @endif
+
+    </td>
+
+    <td>
+
+        <button type="button" class="btn btn-outline-secondary reset-btn" data-id="{{ $item->id }}">
+            <i class="fa-solid fa-user-lock"></i>
+        </button>
+
+    </td>
+
+    <td>
+        <div class="form-check form-switch d-flex justify-content-center">
+            <input class="form-check-input" type="checkbox" id="{{ $item->id }}"
+                {{ $item->activo ? 'checked' : '' }}>
+        </div>
+    </td>
 
 
 
-        <td>
+    <td>
 
-            <a href="{{ route('docentes.edit', $item->id) }}" class="btn btn-outline-warning shadow-sm">
-                <i class="fa-solid fa-user-pen"></i>
-            </a>
+        <a href="{{ route('docentes.edit', $item->id) }}" class="btn btn-outline-warning shadow-sm">
+            <i class="fa-solid fa-user-pen"></i>
+        </a>
 
-        </td>
+    </td>
 
-    </tr>
+</tr>
 
 @empty
 
-    <tr>
+<tr>
 
-        <td colspan="9">
+    <td colspan="10">
 
-            No hay docentes registrados
+        No hay docentes registrados
 
-        </td>
+    </td>
 
-    </tr>
+</tr>
 @endforelse

@@ -20,14 +20,14 @@ class Docentes extends Controller
 
     public function data()
     {
-        $query = User::where('rol', 'docente');
+        $query = User::orderBy('id', 'ASC');
 
         return DataTables::of($query)
 
-         ->editColumn('celular', function ($row) {
-        return $row->celular ?: 'Sin número';
-    })
-    
+            ->editColumn('celular', function ($row) {
+                return $row->celular ?: 'Sin número';
+            })
+
             ->addColumn('nombre', function ($row) {
                 return strtoupper($row->name);
             })
@@ -56,6 +56,20 @@ class Docentes extends Controller
                     </a>';
             })
 
+            ->editColumn('cargo', function ($row) {
+
+                if ($row->rol === 'admin') {
+
+                    return '<span class="badge bg-danger-subtle text-danger border border-danger">
+                    ' . strtoupper($row->cargo) . '
+                </span>';
+                }
+
+                return '<span class="badge bg-primary-subtle text-primary border border-primary">
+                DOCENTE
+            </span>';
+            })
+
             ->editColumn('rol', function ($row) {
                 if ($row->rol === 'admin') {
                     return '<span class="badge bg-danger">ADMIN</span>';
@@ -64,7 +78,7 @@ class Docentes extends Controller
                 return '<span class="badge bg-info text-dark">DOCENTE</span>';
             })
 
-            ->rawColumns(['rol', 'password_btn', 'activo_switch', 'editar_btn'])
+            ->rawColumns(['cargo', 'rol', 'password_btn', 'activo_switch', 'editar_btn'])
             ->make(true);
     }
 
@@ -108,6 +122,9 @@ class Docentes extends Controller
             $user->password = Hash::make($passwordTemporal);
             $user->rol = $request->rol;
             $user->departamento = $request->dpto;
+            $user->cargo = $request->rol == 'admin'
+                ? strtoupper($request->cargo)
+                : 'DOCENTE';
             $user->activo = 1;
             $user->save();
 
@@ -244,6 +261,9 @@ class Docentes extends Controller
             $item->rol = $request->rol;
             $item->departamento = $request->dpto;
             $item->celular = $request->celular;
+            $item->cargo = $request->rol == 'admin'
+                ? strtoupper($request->cargo)
+                : 'DOCENTE';
             if (!preg_match('/^[0-9]{10}$/', $request->celular)) {
 
                 return to_route('docentes.edit', $id)

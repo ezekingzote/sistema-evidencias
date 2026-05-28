@@ -123,6 +123,27 @@
 
                                 </div>
 
+                                {{-- CARGO ADMIN --}}
+                                <div class="col-md-6"
+                                    id="cargo_container"
+                                    style="{{ $item->rol == 'admin' ? '' : 'display: none;' }}">
+
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-briefcase me-1"></i>
+                                        Cargo del Administrador
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="cargo"
+                                        id="cargo"
+                                        class="form-control custom-input"
+                                        placeholder="JEFE DEL DEPARTAMENTO DE CIENCIAS BÁSICAS"
+                                        value="{{ $item->rol == 'admin' ? $item->cargo : '' }}"
+                                        style="text-transform: uppercase;">
+
+                                </div>
+
                                 {{-- DEPARTAMENTO --}}
                                 <div class="col-md-6">
 
@@ -323,12 +344,43 @@
         const emailDomain = document.getElementById('email_domain');
         const emailInput = document.getElementById('email_username');
 
-        rolSelect.addEventListener('change', function() {
-            emailDomain.textContent =
-                this.value === 'admin' ?
-                '@admin.com' :
-                '@docente.com';
-        });
+        const cargoContainer = document.getElementById('cargo_container');
+        const cargoInput = document.getElementById('cargo');
+
+        const celular = document.getElementById('celular');
+
+        function actualizarRol() {
+
+            if (rolSelect.value === 'admin') {
+
+                emailDomain.textContent = '@admin.com';
+
+                cargoContainer.style.display = 'block';
+
+                cargoInput.required = true;
+
+                if (cargoInput.value === 'DOCENTE') {
+                    cargoInput.value = '';
+                }
+
+                cargoInput.placeholder =
+                    'JEFE DEL DEPARTAMENTO DE CIENCIAS BÁSICAS';
+
+            } else {
+
+                emailDomain.textContent = '@docente.com';
+
+                cargoContainer.style.display = 'none';
+
+                cargoInput.required = false;
+
+                cargoInput.value = 'DOCENTE';
+            }
+        }
+
+        actualizarRol();
+
+        rolSelect.addEventListener('change', actualizarRol);
 
         emailInput.addEventListener('input', function() {
 
@@ -343,15 +395,13 @@
             this.value = valor;
         });
 
-    });
+        celular.addEventListener('input', function() {
 
-    const celular = document.getElementById('celular');
+            this.value = this.value
+                .replace(/\D/g, '')
+                .substring(0, 10);
 
-    celular.addEventListener('input', function() {
-
-        this.value = this.value
-            .replace(/\D/g, '')
-            .substring(0, 10);
+        });
 
     });
 </script>

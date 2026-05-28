@@ -79,12 +79,12 @@
 
                                 <thead>
                                     <tr>
-                                        <th class="text-center">ID</th>
                                         <th class="text-center">NOMBRE</th>
                                         <th class="text-center">CORREO</th>
                                         <th class="text-center">CELULAR</th>
                                         <th class="text-center">DEPARTAMENTO</th>
                                         <th class="text-center">ROL</th>
+                                        <th class="text-center">CARGO</th>
                                         <th class="text-center">CAMBIAR PASSWORD</th>
                                         <th class="text-center">ACTIVO</th>
                                         <th class="text-center">EDITAR</th>
@@ -228,10 +228,7 @@
             serverSide: true,
             ajax: "{{ route('docentes.data') }}",
 
-            columns: [{
-                    data: 'id',
-                    name: 'id'
-                },
+            columns: [
                 {
                     data: 'nombre',
                     name: 'nombre'
@@ -247,6 +244,10 @@
                 {
                     data: 'departamento',
                     name: 'departamento'
+                },
+                {
+                    data: 'cargo',
+                    name: 'cargo'
                 },
                 {
                     data: 'rol',

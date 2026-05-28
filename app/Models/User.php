@@ -46,6 +46,7 @@ class User extends Authenticatable
         'email',
         'celular',
         'departamento',
+        'cargo',
         'password',
         'activo',
         'rol',
