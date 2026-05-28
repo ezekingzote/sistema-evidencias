@@ -55,7 +55,7 @@
         </li>
 
         <li class="nav-item">
-            <a class="nav-link collapsed" href="{{ route('seguimiento-academico') }}">
+            <a class="nav-link collapsed" href="{{ route('reportes') }}">
                 <i class="fa-solid fa-laptop-file"></i>
                 <span>Reportes de Seguimiento Academico</span>
             </a>

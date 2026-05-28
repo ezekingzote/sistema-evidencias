@@ -13,16 +13,18 @@ class Evidencia extends Model
         'asignacion_materia_id',
         'materia_id',
         'revision_id',
-        'doc_a',
-        'doc_b',
-        'doc_c',
-        'evi_a',
-        'evi_b',
-        'evi_c',
+        'documentos',
+        'evidencias',
         'estado',
         'observaciones',
         'admin_id',
         'fecha_revision',
+    ];
+
+    protected $casts = [
+        'documentos' => 'array',
+        'evidencias' => 'array',
+        'evaluacion' => 'array',
     ];
 
     public function revision()

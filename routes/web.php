@@ -10,6 +10,7 @@ use App\Http\Controllers\Evidencias;
 use App\Http\Controllers\Materias;
 use App\Http\Controllers\Pdfs;
 use App\Http\Controllers\PlanesEstudio;
+use App\Http\Controllers\Reportes;
 use App\Http\Controllers\SeguimientoDocentes;
 use App\Http\Controllers\Revisiones;
 use App\Http\Controllers\SeguimientoAcademico;
@@ -108,6 +109,12 @@ Route::middleware('auth')->group(function () {
         Route::prefix('evaluar')->group(function () {
             Route::get('/{id}', [Evaluaciones::class, 'evaluar'])->name('evaluar-evidencias');
             Route::put('/evaluar/{id}/guardar', [Evaluaciones::class, 'guardarEvaluacion'])->name('evidencias-guardar-evaluacion');
+        });
+
+        Route::prefix('Reportes')->group(function () {
+            Route::get('/', [Reportes::class, 'index'])->name('reportes');
+            Route::get('/pdf', [Reportes::class, 'pdf'])->name('reportes-pdf');
+           
         });
     });
 

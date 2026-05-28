@@ -70,4 +70,8 @@ class AsignacionMateria extends Model
     {
         return $this->belongsTo(Semestre::class, 'semestre_id');
     }
+    public function evidencias()
+    {
+        return $this->hasMany(Evidencia::class, 'asignacion_materia_id');
+    }
 }

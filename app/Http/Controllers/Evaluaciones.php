@@ -26,30 +26,36 @@ class Evaluaciones extends Controller
 
     public function guardarEvaluacion(Request $request, $id)
     {
-        $request->validate([
-            'estado' => 'required|in:2,4',
-            'observaciones' => 'nullable|string|max:2000',
-        ]);
-
+        // 1. Forzar la búsqueda estricta de la evidencia por su ID de la URL
         $evidencia = Evidencia::findOrFail($id);
 
-        $evidencia->estado = $request->input('estado');
-        $evidencia->observaciones = $request->input('observaciones');
-        $evidencia->admin_id = Auth::id();
-        $evidencia->fecha_revision = now();
-        $evidencia->save();
-        $docente = $evidencia->asignacion->docente;
+        $items = $request->input('items');
 
-        if ($docente) {
-            $estadoTexto = ($request->estado == 2) ? "ACEPTADA" : "RECHAZADA";
-            $mensaje = "Tu evidencia ha sido " . $estadoTexto . ".";
-            $url = route('evidencias.edit', $evidencia->id);
-            $icono = ($request->estado == 2) ? 'bi-check-circle text-success' : 'bi-x-circle text-danger';
-
-            $docente->notify(new \App\Notifications\EvidenciaNotificacion($mensaje, $url, $icono));
+        if (!$items || !is_array($items)) {
+            return back()->with('error', 'No llegaron los datos de evaluación');
         }
 
+        $rechazada = false;
+
+        foreach ($items as $key => $data) {
+            // Corrección: Validar si viene marcado el 'na' (ahora enviará 1 o 0)
+            $na = isset($data['na']) && ($data['na'] == 1 || $data['na'] == 'on');
+            $calificacion = $data['calificacion'] ?? null;
+
+            if (!$na && $calificacion !== null && $calificacion < 70) {
+                $rechazada = true;
+            }
+        }
+
+        // 2. Guardamos asegurando los datos correctos
+        $evidencia->evaluacion = $items;
+        $evidencia->estado = $rechazada ? 4 : 2;
+        $evidencia->admin_id = auth()->id();
+        $evidencia->fecha_revision = now();
+
+        $evidencia->save();
+
         return redirect()->route('seguimiento-academico')
-            ->with('success', 'La evaluación del registro ha sido guardada con éxito.');
+            ->with('success', 'Evaluación guardada correctamente para la evidencia ID: ' . $evidencia->id);
     }
 }
