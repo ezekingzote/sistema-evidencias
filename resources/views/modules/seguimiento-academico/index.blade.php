@@ -275,11 +275,7 @@
 
                                             </a>
 
-                                            @else
-
-                                            <span class="badge bg-secondary">
-                                                Sin teléfono
-                                            </span>
+                                            @else 
 
                                             @endif
 

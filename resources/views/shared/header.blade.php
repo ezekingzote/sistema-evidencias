@@ -63,7 +63,7 @@
                         {{ Auth::user()->name }}
                     </span>
 
-                    <img src="{{ asset('NiceAdmin/assets/img/profile-img.jpg') }}"
+                    <img src="{{ asset('NiceAdmin/assets/img/user.png') }}"
                         alt="Profile"
                         class="rounded-circle ms-2">
                 </a>
