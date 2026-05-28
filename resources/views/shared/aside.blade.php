@@ -55,6 +55,13 @@
         </li>
 
         <li class="nav-item">
+            <a class="nav-link collapsed" href="{{ route('seguimiento-academico') }}">
+                <i class="fa-solid fa-laptop-file"></i>
+                <span>Reportes de Seguimiento Academico</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
             <a class="nav-link collapsed" href="{{ route('archivos') }}">
                 <i class="fa-solid fa-folder-closed"></i>
                 <span>Archivos</span>
