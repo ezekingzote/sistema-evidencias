@@ -106,15 +106,14 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [SeguimientoAcademico::class, 'index'])->name('seguimiento-academico');
         });
 
-        Route::prefix('evaluar')->group(function () {
-            Route::get('/{id}', [Evaluaciones::class, 'evaluar'])->name('evaluar-evidencias');
-            Route::put('/evaluar/{id}/guardar', [Evaluaciones::class, 'guardarEvaluacion'])->name('evidencias-guardar-evaluacion');
+        Route::prefix('evaluar-evidencias')->group(function () {
+            Route::get('/{id}', [Evaluaciones::class, 'show'])->name('evaluaciones.show');
+            Route::put('/{id}', [Evaluaciones::class, 'update'])->name('evaluaciones.update');
         });
 
-        Route::prefix('Reportes')->group(function () {
+        Route::prefix('reportes')->group(function () {
             Route::get('/', [Reportes::class, 'index'])->name('reportes');
-            Route::get('/pdf', [Reportes::class, 'pdf'])->name('reportes-pdf');
-           
+            Route::get('/{id}',[Reportes::class, 'reportePdf'])->name('reportes-generar');
         });
     });
 
@@ -141,11 +140,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [Evidencias::class, 'index'])->name('evidencias');
             Route::get('/create', [Evidencias::class, 'create'])->name('evidencias.create');
             Route::post('/guardar', [Evidencias::class, 'store'])->name('evidencias.store');
-            Route::get('/ver-detalle/{materia_id}', [Evidencias::class, 'show'])->name('evidencias.show');
             Route::get('/edit/{id}', [Evidencias::class, 'edit'])->name('evidencias.edit');
             Route::put('/update/{id}', [Evidencias::class, 'update'])->name('evidencias.update');
-            Route::get('/cambiar-revision/{revisionId}', [Evidencias::class, 'cambiarRevision'])->name('evidencias.cambiarRevision');
         });
+
 
         Route::get('/notificaciones/marcar-leidas', function () {
             auth()->user()->unreadNotifications->markAsRead();

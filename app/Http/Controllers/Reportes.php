@@ -4,42 +4,96 @@ namespace App\Http\Controllers;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\AsignacionMateria;
+use App\Models\Evidencia;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Auth;
 
 class Reportes extends Controller
 {
     public function index()
     {
         $titulo = 'Reportes';
-        $asignaciones = AsignacionMateria::with(['docente', 'materia', 'evidencias'])->get();
 
-        return view('modules.reportes.index', compact('titulo', 'asignaciones'));
+        $evidencias = Evidencia::with([
+            'materia',
+            'revision',
+            'asignacion.docente'
+        ])
+            ->latest()
+            ->get();
+
+        return view(
+            'modules.reportes.index',
+            compact(
+                'titulo',
+                'evidencias'
+            )
+        );
     }
 
-    public function pdf(Request $request)
+    public function reportePdf($id)
     {
-        $revisionId = $request->revision_id;
+        $evidencia = Evidencia::with([
+            'materia',
+            'revision',
+            'asignacion.docente'
+        ])->findOrFail($id);
 
-        $asignaciones = AsignacionMateria::with(['docente', 'materia', 'evidencias'])->get();
+        $evaluacion = $evidencia->evaluacion ?? [];
 
-        $data = [];
+        $criterios = [
 
-        foreach ($asignaciones as $asignacion) {
+            'instrumentacion' => 'Instrumentación didáctica',
+            'reporte_inicio' => 'Reporte inicio de curso',
+            'examen_diagnostico' => 'Examen diagnóstico',
+            'analisis_diagnostico' => 'Análisis del diagnóstico',
+            'acuerdos' => 'Acuerdos de clase',
+            'instrumentos' => 'Evidencia de instrumentos de evaluación',
+            'rubricas' => 'Rúbricas del semestre',
+            'calificaciones' => 'Lista de calificaciones',
 
-            $ev = $asignacion->evidencias
-                ->where('revision_id', $revisionId)
-                ->first();
+            'rac' => 'Actividades de regularización',
 
-            $data[] = [
-                'docente' => $asignacion->docente->name ?? 'Sin Asignar',
-                'materia' => $asignacion->materia->nombre ?? 'Sin Materia',
-                'calificacion' => $ev->calificacion ?? 0
-            ];
+        ];
+
+        $promedio = 0;
+        $contador = 0;
+
+        foreach ($criterios as $key => $nombre) {
+
+            $calificacion =
+                $evaluacion[$key]['calificacion'] ?? null;
+
+            $na =
+                $evaluacion[$key]['na'] ?? false;
+
+            if (!$na && $calificacion !== null) {
+
+                $promedio += $calificacion;
+                $contador++;
+            }
         }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('modules.reportes.pdf', compact('data', 'revisionId'));
+        $promedioFinal =
+            $contador > 0
+            ? round($promedio / $contador, 2)
+            : 0;
 
-        return $pdf->download("reporte_revision_$revisionId.pdf");
+        $pdf = Pdf::loadView(
+            'modules.reportes.pdf',
+            [
+                'evidencia' => $evidencia,
+                'evaluacion' => $evaluacion,
+                'criterios' => $criterios,
+                'promedioFinal' => $promedioFinal,
+                'admin' => Auth::user(),
+            ]
+        );
+
+        $pdf->setPaper('letter');
+
+        return $pdf->stream(
+            'reporte-seguimiento.pdf'
+        );
     }
 }

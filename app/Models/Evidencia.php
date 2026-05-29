@@ -2,34 +2,58 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Evidencia extends Model
 {
-    use HasFactory;
+    protected $table = 'evidencias';
 
     protected $fillable = [
+
         'asignacion_materia_id',
         'materia_id',
         'revision_id',
+
         'documentos',
-        'evidencias',
+
         'estado',
         'observaciones',
+
         'admin_id',
         'fecha_revision',
+
+        'evaluacion',
+
     ];
 
     protected $casts = [
+
         'documentos' => 'array',
-        'evidencias' => 'array',
+
         'evaluacion' => 'array',
+
     ];
+
+    // =====================================
+    // RELACIONES
+    // =====================================
+
+    public function materia()
+    {
+        return $this->belongsTo(Materia::class);
+    }
 
     public function revision()
     {
         return $this->belongsTo(Revision::class);
+    }
+
+    public function asignacionMateria()
+    {
+        return $this->belongsTo(
+            AsignacionMateria::class,
+            'asignacion_materia_id'
+        );
     }
 
     public function asignacion()

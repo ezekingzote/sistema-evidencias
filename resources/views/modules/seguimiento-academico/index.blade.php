@@ -173,7 +173,7 @@
                                             @break
 
                                             @case(2)
-                                            <a href="{{ route('evaluar-evidencias', $evidenciaActual->id) }}" class="d-inline-block" title="Evidencia Aprobada. Clic para modificar dictamen.">
+                                            <a href="{{ route('evaluaciones.show', $evidenciaActual->id) }}" class="d-inline-block" title="Evidencia Aprobada. Clic para modificar dictamen.">
                                                 <button class="estadoBtn aprobado">
                                                     <i class="bi bi-check-circle-fill"></i>
                                                 </button>
@@ -181,7 +181,7 @@
                                             @break
 
                                             @case(3)
-                                            <a href="{{ route('evaluar-evidencias', $evidenciaActual->id) }}" class="d-inline-block" title="Evidencia Pendiente. Clic para evaluar de inmediato.">
+                                            <a href="{{ route('evaluaciones.show', $evidenciaActual->id) }}" class="d-inline-block" title="Evidencia Pendiente. Clic para evaluar de inmediato.">
                                                 <button class="estadoBtn pendiente">
                                                     <i class="bi bi-clock-history"></i>
                                                 </button>
@@ -189,7 +189,7 @@
                                             @break
 
                                             @case(4)
-                                            <a href="{{ route('evaluar-evidencias', $evidenciaActual->id) }}" class="d-inline-block" title="Evidencia $titulo. Clic para modificar observaciones.">
+                                            <a href="{{ route('evaluaciones.show', $evidenciaActual->id) }}" class="d-inline-block" title="Evidencia $titulo. Clic para modificar observaciones.">
                                                 <button class="estadoBtn rechazada">
                                                     <i class="bi bi-x-circle-fill"></i>
                                                 </button>

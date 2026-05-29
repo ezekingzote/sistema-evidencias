@@ -1,83 +1,240 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <title>Reporte PDF</title>
+
+    <meta charset="utf-8">
 
     <style>
         body {
-            font-family: Arial;
+            font-family: DejaVu Sans;
             font-size: 12px;
+            color: #000;
         }
 
-        h2 {
+        .center {
             text-align: center;
-            margin-bottom: 5px;
         }
 
-        .sub {
-            text-align: center;
-            margin-bottom: 15px;
-            color: #555;
+        .right {
+            text-align: right;
+        }
+
+        .bold {
+            font-weight: bold;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
 
-        table th {
-            background: #0a2342;
-            color: white;
-            padding: 8px;
-        }
-
+        table th,
         table td {
-            border: 1px solid #ddd;
+            border: 1px solid #000;
             padding: 6px;
+            font-size: 11px;
+        }
+
+        .firma {
+            margin-top: 80px;
             text-align: center;
         }
-
-        tbody tr:nth-child(even) {
-            background: #f5f5f5;
-        }
     </style>
+
 </head>
 
 <body>
 
-    <h2>Reporte de Seguimiento Académico</h2>
+    <div class="center">
 
-    <div class="sub">
-        Revisión {{ $revisionId }}
+        <h2>
+            Instituto Tecnológico de Milpa Alta II
+        </h2>
+
+        <h4>
+            Departamento de
+            {{ $admin->departamento }}
+        </h4>
+
     </div>
+
+    <div class="right">
+
+        Ciudad de México,
+        {{ now()->format('d/m/Y') }}
+
+    </div>
+
+    <br>
+
+    <b>
+        Asunto:
+    </b>
+
+    Reporte de seguimiento
+
+    <br><br>
+
+    <b>
+        {{ $evidencia->asignacion->docente->name }}
+    </b>
+
+    <br>
+
+    DOCENTE DEL INSTITUTO TECNOLÓGICO DE MILPA ALTA II
+
+    <br><br>
+
+    PRESENTE
+
+    <br><br>
+
+    Con base al procedimiento para la gestión del curso,
+    hago de su conocimiento el resultado del seguimiento
+    realizado.
+
+    <br><br>
+
+    <b>
+        Materia:
+    </b>
+
+    {{ $evidencia->materia->nombre }}
+
+    <br>
+
+    <b>
+        Revisión:
+    </b>
+
+    {{ $evidencia->revision->nombre }}
 
     <table>
 
         <thead>
+
             <tr>
-                <th>Docente</th>
-                <th>Materia</th>
-                <th>Calificación</th>
+
+                <th>
+                    CRITERIO
+                </th>
+
+                <th width="120">
+                    % CUMPLIMIENTO
+                </th>
+
+                <th width="70">
+                    N/A
+                </th>
+
+                <th>
+                    OBSERVACIONES
+                </th>
+
             </tr>
+
         </thead>
 
         <tbody>
 
-            @foreach($data as $row)
+            @foreach($criterios as $key => $nombre)
 
-                <tr>
-                    <td>{{ $row['docente'] }}</td>
-                    <td>{{ $row['materia'] }}</td>
-                    <td>{{ $row['calificacion'] }}</td>
-                </tr>
+            @php
+
+            $calificacion =
+            $evaluacion[$key]['calificacion'] ?? 0;
+
+            $na =
+            $evaluacion[$key]['na'] ?? false;
+
+            $observacion =
+            $evaluacion[$key]['observacion'] ?? '';
+
+            @endphp
+
+            <tr>
+
+                <td>
+                    {{ $nombre }}
+                </td>
+
+                <td class="center">
+
+                    @if(!$na)
+                    {{ $calificacion }}
+                    @endif
+
+                </td>
+
+                <td class="center">
+
+                    @if($na)
+                    X
+                    @endif
+
+                </td>
+
+                <td>
+                    {{ $observacion }}
+                </td>
+
+            </tr>
 
             @endforeach
+
+            <tr>
+
+                <td class="bold">
+                    TOTAL DE CUMPLIMIENTO
+                </td>
+
+                <td class="center bold">
+
+                    {{ $promedioFinal }}
+
+                </td>
+
+                <td></td>
+
+                <td></td>
+
+            </tr>
 
         </tbody>
 
     </table>
+
+    <p style="margin-top:30px;">
+
+        En función del resultado,
+        solicito solventar las observaciones reportadas.
+
+    </p>
+
+    <div class="firma">
+
+        <br><br><br>
+
+        ___________________________________
+
+        <br><br>
+
+        <b>
+            {{ $admin->name }}
+        </b>
+
+        <br>
+
+        {{ $admin->cargo }}
+
+        <br>
+
+        Departamento de
+        {{ $admin->departamento }}
+
+    </div>
 
 </body>
 

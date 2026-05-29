@@ -18,11 +18,7 @@ use App\Models\Semestre;
 
 class Evidencias extends Controller
 {
-    /*
-    |-----------------------------------
-    | 📄 INDEX (RESTAURADO)
-    |-----------------------------------
-    */
+
     public function index()
     {
         $titulo = "Gestión de evidencias";
@@ -40,11 +36,6 @@ class Evidencias extends Controller
         return view('modules.evidencias.index', compact('materias', 'titulo', 'revisiones'));
     }
 
-    /*
-    |-----------------------------------
-    | 🧠 CREATE
-    |-----------------------------------
-    */
     public function create()
     {
         $docente_id = Auth::id();
@@ -76,11 +67,7 @@ class Evidencias extends Controller
         ));
     }
 
-    /*
-    |-----------------------------------
-    | 🧠 HELPERS
-    |-----------------------------------
-    */
+
     private function cleanFolderName($text)
     {
         $text = strtolower($text);
@@ -88,77 +75,464 @@ class Evidencias extends Controller
         return trim($text, '_');
     }
 
-    /*
-    |-----------------------------------
-    | 💾 STORE (NUEVO JSON)
-    |-----------------------------------
-    */
     public function store(Request $request)
     {
         $request->validate([
-            'materia_id' => 'required|integer',
-            'revision_id' => 'required|integer',
+
+            'materia_id' => 'required|exists:materias,id',
+            'revision_id' => 'required|exists:revisiones,id',
+
+            'instrumentacion' => 'required|file|mimes:pdf',
+            'reporte_inicio' => 'required|file|mimes:pdf',
+            'acuerdos' => 'required|file|mimes:pdf',
+            'calificaciones' => 'required|file|mimes:pdf',
+
+            'examen_diagnostico' => 'required|file|mimes:pdf',
+            'analisis_diagnostico' => 'required|file|mimes:pdf',
+            'rubricas' => 'required|file|mimes:pdf',
+
+            'instrumentos.*' => 'nullable|file|mimes:pdf',
+
         ]);
 
+        // =========================
+        // RELACIONES
+        // =========================
+
         $materia = Materia::findOrFail($request->materia_id);
+
         $revision = Revision::findOrFail($request->revision_id);
 
         $asignacion = AsignacionMateria::where('materia_id', $materia->id)
             ->where('docente_id', Auth::id())
-            ->first();
+            ->firstOrFail();
 
-        if (!$asignacion) {
-            return back()->withErrors(['error' => 'Materia no asignada']);
-        }
+        // =========================
+        // NOMBRES LIMPIOS
+        // =========================
 
-        $semestre = $materia->semestre->nombre ?? 'SIN_SEMESTRE';
+        $semestreNombre = $asignacion->semestre->nombre ?? 'SIN_SEMESTRE';
 
-        // LIMPIAR STRINGS (IMPORTANTE)
-        $semestre = str_replace([' ', '/', '\\', ':'], '_', $semestre);
-        $materiaNombre = str_replace([' ', '/', '\\', ':'], '_', $materia->nombre);
-        $revisionNombre = str_replace([' ', '/', '\\', ':'], '_', $revision->nombre);
+        $semestreNombre = $this->limpiarNombre($semestreNombre);
 
-        $basePath = "evidencias_pdf/{$semestre}/{$materiaNombre}/{$revisionNombre}";
+        $materiaNombre = $this->limpiarNombre($materia->nombre);
+
+        $revisionNombre = $this->limpiarNombre($revision->nombre);
+
+        // =========================
+        // BASE PATH
+        // =========================
+
+        $basePath = "evidencias_pdf/{$semestreNombre}/{$materiaNombre}/{$revisionNombre}";
+
+        // =========================
+        // ARRAYS
+        // =========================
 
         $documentos = [];
+
         $evidencias = [];
 
-        $docFields = ['instrumentacion', 'reporte_inicio', 'acuerdos', 'calificaciones', 'rac'];
-        $eviFields = ['examen_diagnostico', 'analisis_diagnostico', 'rubricas'];
+        $instrumentos = [];
+
+        // =========================
+        // DOCUMENTOS
+        // =========================
+
+        $docFields = [
+
+            'instrumentacion',
+            'reporte_inicio',
+            'acuerdos',
+            'calificaciones',
+
+        ];
 
         foreach ($docFields as $field) {
-            if ($request->hasFile($field)) {
-                $documentos[$field] = $request->file($field)
-                    ->storeAs($basePath . '/documentos', $field . '.pdf', 'public');
-            } else {
-                $documentos[$field] = null;
-            }
+
+            $path = $request->file($field)->storeAs(
+                $basePath . '/documentos',
+                $field . '.pdf',
+                'public'
+            );
+
+            $documentos[$field] = $path;
         }
+
+        // =========================
+        // RAC
+        // =========================
+
+        if ($request->has('rac_na')) {
+
+            $documentos['rac'] = [
+                'na' => true,
+                'archivo' => null
+            ];
+        } else {
+
+            $path = $request->file('rac')->storeAs(
+                $basePath . '/documentos',
+                'rac.pdf',
+                'public'
+            );
+
+            $documentos['rac'] = [
+                'na' => false,
+                'archivo' => $path
+            ];
+        }
+
+        // =========================
+        // EVIDENCIAS
+        // =========================
+
+        $eviFields = [
+
+            'examen_diagnostico',
+            'analisis_diagnostico',
+            'rubricas',
+
+        ];
 
         foreach ($eviFields as $field) {
-            if ($request->hasFile($field)) {
-                $evidencias[$field] = $request->file($field)
-                    ->storeAs($basePath . '/evidencias', $field . '.pdf', 'public');
-            } else {
-                $evidencias[$field] = null;
+
+            $path = $request->file($field)->storeAs(
+                $basePath . '/evidencias',
+                $field . '.pdf',
+                'public'
+            );
+
+            $evidencias[$field] = $path;
+        }
+
+        // =========================
+        // INSTRUMENTOS (MAX 3)
+        // =========================
+
+        if ($request->hasFile('instrumentos')) {
+
+            foreach ($request->file('instrumentos') as $index => $file) {
+
+                if ($index >= 3) {
+                    break;
+                }
+
+                $nombre = 'instrumento_' . ($index + 1) . '.pdf';
+
+                $path = $file->storeAs(
+                    $basePath . '/instrumentos',
+                    $nombre,
+                    'public'
+                );
+
+                $instrumentos[] = $path;
             }
         }
 
+        // =========================
+        // JSON FINAL
+        // =========================
+
+        $json = [
+
+            'documentos' => $documentos,
+
+            'evidencias' => $evidencias,
+
+            'instrumentos' => $instrumentos,
+
+        ];
+
+        // =========================
+        // GUARDAR
+        // =========================
+
         Evidencia::updateOrCreate(
+
             [
                 'asignacion_materia_id' => $asignacion->id,
                 'revision_id' => $revision->id,
             ],
+
             [
                 'materia_id' => $materia->id,
-                'documentos' => $documentos,
-                'evidencias' => $evidencias,
+
+                'documentos' => $json,
+
                 'estado' => 3,
             ]
+
         );
 
-        return redirect()->route('evidencias')->with('success', 'Guardado correctamente');
+        return redirect()
+            ->route('evidencias')
+            ->with('success', 'Evidencia guardada correctamente');
     }
 
-    
+    public function edit($id)
+    {
+        $evidencia = Evidencia::findOrFail($id);
+
+        $data = $evidencia->documentos ?? [];
+
+        $documentos = $data['documentos'] ?? [];
+
+        $evidencias = $data['evidencias'] ?? [];
+
+        $instrumentos = $data['instrumentos'] ?? [];
+
+        $evaluacion = $evidencia->evaluacion ?? [];
+
+        return view('modules.evidencias.edit', compact(
+            'evidencia',
+            'documentos',
+            'evidencias',
+            'instrumentos',
+            'evaluacion'
+        ));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $evidencia = Evidencia::findOrFail($id);
+
+        $data = $evidencia->documentos ?? [];
+
+        $documentos = $data['documentos'] ?? [];
+
+        $evidencias = $data['evidencias'] ?? [];
+
+        $instrumentos = $data['instrumentos'] ?? [];
+
+        $evaluacion = $evidencia->evaluacion ?? [];
+
+        $materia = Materia::findOrFail($evidencia->materia_id);
+
+        $revision = Revision::findOrFail($evidencia->revision_id);
+
+        $asignacion = AsignacionMateria::findOrFail(
+            $evidencia->asignacion_materia_id
+        );
+
+        $semestreNombre = $asignacion->semestre->nombre ?? 'SIN_SEMESTRE';
+
+        $semestreNombre = $this->limpiarNombre($semestreNombre);
+
+        $materiaNombre = $this->limpiarNombre($materia->nombre);
+
+        $revisionNombre = $this->limpiarNombre($revision->nombre);
+
+        $basePath = "evidencias_pdf/{$semestreNombre}/{$materiaNombre}/{$revisionNombre}";
+
+        // =====================================
+        // DOCUMENTOS
+        // =====================================
+
+        $camposDocumentos = [
+
+            'instrumentacion',
+            'reporte_inicio',
+            'acuerdos',
+            'calificaciones',
+
+        ];
+
+        foreach ($camposDocumentos as $campo) {
+
+            $calificacion = $evaluacion[$campo]['calificacion'] ?? 0;
+
+            if ($calificacion >= 70) {
+                continue;
+            }
+
+            if ($request->hasFile($campo)) {
+
+                if (!empty($documentos[$campo])) {
+
+                    Storage::disk('public')->delete(
+                        $documentos[$campo]
+                    );
+                }
+
+                $path = $request->file($campo)->storeAs(
+                    $basePath . '/documentos',
+                    $campo . '.pdf',
+                    'public'
+                );
+
+                $documentos[$campo] = $path;
+            }
+        }
+
+        // =====================================
+        // RAC
+        // =====================================
+
+        $calificacionRac = $evaluacion['rac']['calificacion'] ?? 0;
+
+        if ($calificacionRac < 70) {
+
+            if ($request->has('rac_na')) {
+
+                if (!empty($documentos['rac']['archivo'])) {
+
+                    Storage::disk('public')->delete(
+                        $documentos['rac']['archivo']
+                    );
+                }
+
+                $documentos['rac'] = [
+
+                    'na' => true,
+                    'archivo' => null
+
+                ];
+            } elseif ($request->hasFile('rac')) {
+
+                if (!empty($documentos['rac']['archivo'])) {
+
+                    Storage::disk('public')->delete(
+                        $documentos['rac']['archivo']
+                    );
+                }
+
+                $path = $request->file('rac')->storeAs(
+                    $basePath . '/documentos',
+                    'rac.pdf',
+                    'public'
+                );
+
+                $documentos['rac'] = [
+
+                    'na' => false,
+                    'archivo' => $path
+
+                ];
+            }
+        }
+
+        // =====================================
+        // EVIDENCIAS
+        // =====================================
+
+        $camposEvidencias = [
+
+            'examen_diagnostico',
+            'analisis_diagnostico',
+            'rubricas',
+
+        ];
+
+        foreach ($camposEvidencias as $campo) {
+
+            $calificacion = $evaluacion[$campo]['calificacion'] ?? 0;
+
+            if ($calificacion >= 70) {
+                continue;
+            }
+
+            if ($request->hasFile($campo)) {
+
+                if (!empty($evidencias[$campo])) {
+
+                    Storage::disk('public')->delete(
+                        $evidencias[$campo]
+                    );
+                }
+
+                $path = $request->file($campo)->storeAs(
+                    $basePath . '/evidencias',
+                    $campo . '.pdf',
+                    'public'
+                );
+
+                $evidencias[$campo] = $path;
+            }
+        }
+
+        // =====================================
+        // INSTRUMENTOS
+        // =====================================
+
+        $calificacionInstrumentos = $evaluacion['instrumentos']['calificacion'] ?? 0;
+
+        if (
+            $calificacionInstrumentos < 70
+            &&
+            $request->hasFile('instrumentos')
+        ) {
+
+            foreach ($instrumentos as $archivo) {
+
+                Storage::disk('public')->delete($archivo);
+            }
+
+            $instrumentos = [];
+
+            foreach ($request->file('instrumentos') as $index => $file) {
+
+                if ($index >= 3) {
+                    break;
+                }
+
+                $nombre = 'instrumento_' . ($index + 1) . '.pdf';
+
+                $path = $file->storeAs(
+                    $basePath . '/instrumentos',
+                    $nombre,
+                    'public'
+                );
+
+                $instrumentos[] = $path;
+            }
+        }
+
+        // =====================================
+        // JSON FINAL
+        // =====================================
+
+        $json = [
+
+            'documentos' => $documentos,
+
+            'evidencias' => $evidencias,
+
+            'instrumentos' => $instrumentos,
+
+        ];
+
+        $evidencia->update([
+
+            'documentos' => $json,
+
+            'estado' => 3,
+
+        ]);
+
+        return redirect()
+            ->route('evidencias')
+            ->with(
+                'success',
+                'Evidencia actualizada correctamente'
+            );
+    }
+
+
+
+
+    private function limpiarNombre($texto)
+    {
+        $texto = trim($texto);
+
+        $texto = str_replace(
+            ['/', '\\', ':', '*', '?', '"', '<', '>', '|'],
+            '',
+            $texto
+        );
+
+        $texto = str_replace(' ', '_', $texto);
+
+        return $texto;
+    }
 }

@@ -3,59 +3,143 @@
 namespace App\Http\Controllers;
 
 use App\Models\Evidencia;
-use App\Models\Materia;
-use App\Models\Revision;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class Evaluaciones extends Controller
 {
-    public function evaluar($id)
+    /**
+     * Mostrar evaluación
+     */
+    public function show($id)
     {
-        $evidenciaActual = Evidencia::findOrFail($id);
+        $evidencia = Evidencia::with([
+            'materia',
+            'revision',
+            'asignacionMateria.semestre',
+            'asignacionMateria.docente'
+        ])->findOrFail($id);
 
-        $materia = Materia::with('asignaciones.docente')->findOrFail($evidenciaActual->materia_id);
-        $revision = Revision::findOrFail($evidenciaActual->revision_id);
+        $data = $evidencia->documentos ?? [];
+        $documentos = $data['documentos'] ?? [];
+        $evidencias = $data['evidencias'] ?? [];
+        $instrumentos = $data['instrumentos'] ?? [];
 
-        if (!in_array($evidenciaActual->estado, [2, 3, 4])) {
-            return back()->with('error', 'La evidencia seleccionada no se puede evaluar actualmente.');
-        }
+        // =====================================
+        // ITEMS VISUALES ESTRUCTURADOS
+        // =====================================
+        $items = [
+            [
+                'key' => 'instrumentacion',
+                'nombre' => 'Instrumentación didáctica',
+                'archivo' => $documentos['instrumentacion'] ?? null,
+            ],
+            [
+                'key' => 'reporte_inicio',
+                'nombre' => 'Reporte inicio de curso',
+                'archivo' => $documentos['reporte_inicio'] ?? null,
+            ],
+            [
+                'key' => 'examen_diagnostico',
+                'nombre' => 'Examen diagnóstico',
+                'archivo' => $evidencias['examen_diagnostico'] ?? null,
+            ],
+            [
+                'key' => 'analisis_diagnostico',
+                'nombre' => 'Análisis del diagnóstico',
+                'archivo' => $evidencias['analisis_diagnostico'] ?? null,
+            ],
+            [
+                'key' => 'acuerdos',
+                'nombre' => 'Acuerdos de clase',
+                'archivo' => $documentos['acuerdos'] ?? null,
+            ],
+            [
+                'key' => 'avance_programatico',
+                'nombre' => 'Avance programático',
+                'archivo' => $documentos['avance_programatico'] ?? null,
+            ],
+            [
+                'key' => 'instrumentos',
+                'nombre' => 'Evidencias de instrumentos de evaluación',
+                'archivo' => null,
+                'instrumentos' => $instrumentos
+            ],
+            [
+                'key' => 'rubricas',
+                'nombre' => 'Rúbricas del semestre',
+                'archivo' => $evidencias['rubricas'] ?? null,
+            ],
+            [
+                'key' => 'calificaciones',
+                'nombre' => 'Lista de calificaciones',
+                'archivo' => $documentos['calificaciones'] ?? null,
+            ],
+            [
+                'key' => 'rac',
+                'nombre' => 'Actividades de regularización',
+                'archivo' => $documentos['rac']['archivo'] ?? null,
+                'na' => $documentos['rac']['na'] ?? false,
+            ],
+            [
+                'key' => 'asiste_seguimiento',
+                'nombre' => 'Asiste de seguimiento',
+                'archivo' => $documentos['asiste_seguimiento'] ?? null,
+            ],
+        ];
 
-        return view('modules.evaluacion.index', compact('materia', 'revision', 'evidenciaActual'));
+        return view('modules.evaluacion.index', compact('evidencia', 'items'));
     }
 
-    public function guardarEvaluacion(Request $request, $id)
+    /**
+     * Guardar evaluación
+     */
+    public function update(Request $request, $id)
     {
-        // 1. Forzar la búsqueda estricta de la evidencia por su ID de la URL
         $evidencia = Evidencia::findOrFail($id);
+        $evaluacion = $request->evaluaciones ?? [];
 
-        $items = $request->input('items');
+        // Variable de control de estado
+        $todoAprobado = true;
 
-        if (!$items || !is_array($items)) {
-            return back()->with('error', 'No llegaron los datos de evaluación');
-        }
+        // Recorremos las evaluaciones enviadas desde el formulario
+        foreach ($evaluacion as $key => $item) {
+            $na = isset($item['na']);
+            $calificacion = $item['calificacion'] ?? null;
 
-        $rechazada = false;
+            // Si se marcó como N/A limpiamos la calificación del payload y saltamos
+            if ($na) {
+                $evaluacion[$key]['calificacion'] = null;
+                continue;
+            }
 
-        foreach ($items as $key => $data) {
-            // Corrección: Validar si viene marcado el 'na' (ahora enviará 1 o 0)
-            $na = isset($data['na']) && ($data['na'] == 1 || $data['na'] == 'on');
-            $calificacion = $data['calificacion'] ?? null;
-
-            if (!$na && $calificacion !== null && $calificacion < 70) {
-                $rechazada = true;
+            // Si no es N/A, validamos que cumpla el criterio de aprobación
+            if (
+                $calificacion === null ||
+                $calificacion === '' ||
+                $calificacion < 70
+            ) {
+                $todoAprobado = false;
             }
         }
 
-        // 2. Guardamos asegurando los datos correctos
-        $evidencia->evaluacion = $items;
-        $evidencia->estado = $rechazada ? 4 : 2;
-        $evidencia->admin_id = auth()->id();
-        $evidencia->fecha_revision = now();
+        // Determinar estado de la evidencia (2 = Aprobada, 4 = Rechazada)
+        $estadoFinal = $todoAprobado ? 2 : 4;
 
-        $evidencia->save();
+        // Guardar cambios directamente en el modelo
+        $evidencia->update([
+            'evaluacion'     => $evaluacion,
+            'estado'         => $estadoFinal,
+            'admin_id'       => Auth::id(),
+            'fecha_revision' => now(),
+        ]);
 
-        return redirect()->route('seguimiento-academico')
-            ->with('success', 'Evaluación guardada correctamente para la evidencia ID: ' . $evidencia->id);
+        return redirect()
+            ->route('seguimiento-academico')->with(
+            'success',
+            $estadoFinal == 2
+                ? 'Evidencia aprobada correctamente'
+                : 'Evidencia rechazada por documentos con calificación menor a 70'
+        );
     }
 }

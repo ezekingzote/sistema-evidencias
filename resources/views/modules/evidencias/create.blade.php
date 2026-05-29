@@ -133,7 +133,7 @@
                     <div class="row-file-card p-4 rounded-3 style-dropzone"
                         id="dropzone-instrumentos">
 
-                        <h6 class="fw-bold text-primary mb-1">
+                        <h6 class="fw-bold text-success mb-1">
                             Evidencias de instrumentos de evaluación
                         </h6>
 
@@ -141,7 +141,7 @@
                             Puedes agregar hasta 3 archivos PDF
                         </p>
 
-                        <div class="row align-items-center">
+                        <div class="row align-items-center text-center">
 
                             <div class="col-md-5">
 
@@ -152,7 +152,7 @@
                                     multiple>
 
                                 <button type="button"
-                                    class="btn btn-outline-primary rounded-pill fw-semibold small px-4 py-2 w-100"
+                                    class="btn btn-outline-success rounded-pill fw-semibold small px-4 py-2 w-100"
                                     id="btn-seleccionar">
 
                                     Seleccionar archivos
@@ -190,10 +190,12 @@
 
                     <a href="{{ route('evidencias') }}"
                         class="btn btn-light border px-4 rounded-pill">
+                        <i class="fa-solid fa-angle-left"></i>
                         Regresar
                     </a>
 
                     <button class="btn btn-primary px-4 rounded-pill">
+                        <i class="fa-solid fa-floppy-disk"></i>
                         Guardar Evidencia
                     </button>
 

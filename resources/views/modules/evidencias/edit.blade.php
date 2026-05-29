@@ -4,252 +4,831 @@
 
 @section('contenido')
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <main id="main" class="main">
 
     <div class="pagetitle mb-4">
-        <h1 class="fw-bold text-primary">Modificación de Entrega</h1>
-        <nav>
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ route('dashboard') }}" class="text-decoration-none">Home</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('evidencias') }}" class="text-decoration-none">Evidencias</a></li>
-                <li class="breadcrumb-item active fw-semibold">Editar</li>
-            </ol>
-        </nav>
+        <h1 class="fw-bold text-primary">
+            Editar Evidencia
+        </h1>
     </div>
 
     <section class="section">
-        <div class="row">
-            <div class="col-lg-12">
 
+        <div class="card border-0 shadow-lg p-4" style="border-radius:20px;">
 
-                {{-- PANEL DEL FORMULARIO --}}
-                <div class="card border-0 shadow-lg p-4" style="border-radius: 20px; background: white;">
-                    <div class="mb-4">
-                        <h5 class="fw-bold text-secondary mb-1">Asignatura: <span class="text-dark">{{ $materia->nombre }}</span></h5>
-                        <p class="text-muted small">Los archivos guardados previamente mantendrán su validez si decides no reemplazarlos.</p>
+            <form
+                action="{{ route('evidencias.update', $evidencia->id) }}"
+                method="POST"
+                enctype="multipart/form-data">
+
+                @csrf
+                @method('PUT')
+
+                @php
+
+                $documentos = $evidencia->documentos ?? [];
+
+                $evidencias = $evidencia->evidencias ?? [];
+
+                $evaluacion = $evidencia->evaluacion ?? [];
+
+                $instrumentos =
+                    $documentos['instrumentos'] ?? [];
+
+                $racNoAplica = false;
+
+                if(
+                    isset($documentos['rac']) &&
+                    is_array($documentos['rac']) &&
+                    ($documentos['rac']['na'] ?? false)
+                ){
+                    $racNoAplica = true;
+                }
+
+                $documentosCampos = [
+
+                    [
+                        'key' => 'instrumentacion',
+                        'nombre' => 'Instrumentación didáctica'
+                    ],
+
+                    [
+                        'key' => 'reporte_inicio',
+                        'nombre' => 'Reporte de inicio de curso'
+                    ],
+
+                    [
+                        'key' => 'acuerdos',
+                        'nombre' => 'Acuerdos de clase'
+                    ],
+
+                    [
+                        'key' => 'calificaciones',
+                        'nombre' => 'Lista de calificaciones'
+                    ],
+
+                    [
+                        'key' => 'rac',
+                        'nombre' => 'Actividades de regularización'
+                    ],
+
+                ];
+
+                $evidenciasCampos = [
+
+                    [
+                        'key' => 'examen_diagnostico',
+                        'nombre' => 'Examen diagnóstico'
+                    ],
+
+                    [
+                        'key' => 'analisis_diagnostico',
+                        'nombre' => 'Análisis diagnóstico'
+                    ],
+
+                    [
+                        'key' => 'rubricas',
+                        'nombre' => 'Rúbricas del semestre'
+                    ],
+
+                ];
+
+                @endphp
+
+                {{-- =========================================== --}}
+                {{-- DOCUMENTOS --}}
+                {{-- =========================================== --}}
+
+                <h4 class="fw-bold text-primary mb-4">
+
+                    DOCUMENTOS
+
+                </h4>
+
+                <div class="row g-4 mb-5">
+
+                    @foreach($documentosCampos as $campo)
+
+                    @php
+
+                    $key = $campo['key'];
+
+                    if($key == 'rac'){
+
+                        $ruta = $documentos['rac']['archivo'] ?? null;
+
+                    }else{
+
+                        $ruta = $documentos[$key] ?? null;
+
+                    }
+
+                    $calificacion =
+                        $evaluacion[$key]['calificacion'] ?? 0;
+
+                    $aprobado = $calificacion >= 70;
+
+                    @endphp
+
+                    <div class="col-md-4">
+
+                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
+
+                            {{-- HEADER --}}
+                            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+
+                                <div>
+
+                                    <h6 class="fw-bold mb-1">
+                                        {{ $campo['nombre'] }}
+                                    </h6>
+
+                                    @if($aprobado)
+
+                                    <small class="text-success fw-bold">
+
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        Aprobado
+
+                                    </small>
+
+                                    @else
+
+                                    <small class="text-danger fw-bold">
+
+                                        <i class="fa-solid fa-circle-xmark"></i>
+                                        Rechazado
+
+                                    </small>
+
+                                    @endif
+
+                                </div>
+
+                                @if($ruta)
+
+                                <a href="{{ asset('storage/' . $ruta) }}"
+                                    target="_blank"
+                                    class="btn btn-dark btn-sm rounded-circle d-flex align-items-center justify-content-center"
+                                    style="width:42px;height:42px;">
+
+                                    <i class="fa-solid fa-up-right-from-square"></i>
+
+                                </a>
+
+                                @endif
+
+                            </div>
+
+                            {{-- PDF --}}
+                            <div style="height:350px;background:#f8f9fa;">
+
+                                @if($ruta)
+
+                                <iframe
+                                    src="{{ asset('storage/' . $ruta) }}#toolbar=0"
+                                    width="100%"
+                                    height="100%"
+                                    style="border:none;">
+                                </iframe>
+
+                                @else
+
+                                <div class="h-100 d-flex align-items-center justify-content-center bg-light">
+
+                                    <div class="text-center text-muted">
+
+                                        <i class="fa-regular fa-file-pdf fa-3x mb-2 opacity-50"></i>
+
+                                        <div>
+                                            No existe documento
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                @endif
+
+                            </div>
+
+                            {{-- FOOTER --}}
+                            <div class="p-3">
+
+                                @if(!$aprobado)
+
+                                @if($key == 'rac')
+
+                                <div class="form-check form-switch mb-3">
+
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        id="rac_na"
+                                        name="rac_na"
+                                        {{ $racNoAplica ? 'checked' : '' }}>
+
+                                    <label class="form-check-label">
+
+                                        No aplica
+
+                                    </label>
+
+                                </div>
+
+                                @endif
+
+                                <input
+                                    type="file"
+                                    name="{{ $key }}"
+                                    id="{{ $key }}"
+                                    class="form-control"
+                                    {{ $key == 'rac' && $racNoAplica ? 'disabled' : '' }}>
+
+                                <small class="text-muted">
+
+                                    Puedes reemplazar este documento
+
+                                </small>
+
+                                @else
+
+                                <input
+                                    type="file"
+                                    class="form-control"
+                                    disabled>
+
+                                <small class="text-success fw-bold">
+
+                                    Documento bloqueado porque fue aprobado
+
+                                </small>
+
+                                @endif
+
+                            </div>
+
+                        </div>
+
                     </div>
 
-                    <form action="{{ route('evidencias.update', $evidencia->id) }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        @method('PUT')
+                    @endforeach
 
-                        @php
-                        $documentos = [
-                        'doc_a' => 'a) Instrumentación didáctica completa',
-                        'doc_b' => 'b) Lista de calificaciones',
-                        'doc_c' => 'c) Reporte y acuerdos'
-                        ];
-
-                        $evidenciasArchivos = [
-                        'evi_a' => 'a) Muestra de tareas y trabajos complementarios',
-                        'evi_b' => 'b) Rúbricas utilizadas para tareas y trabajos',
-                        'evi_c' => 'c) Examen diagnóstico y análisis'
-                        ];
-                        @endphp
-
-                        {{-- DOCUMENTOS --}}
-                        <div class="mb-4">
-                            <h4 class="fw-bold text-primary border-bottom pb-2">
-                                <i class="bi bi-folder-fill me-2"></i>
-                                Documentos
-                            </h4>
-                            <p class="text-muted small mb-0">
-                                Archivos administrativos y de seguimiento de la asignatura.
-                            </p>
-                        </div>
-
-                        <div class="row g-4 mb-5">
-                            @foreach($documentos as $campo => $label)
-                            <div class="col-md-4">
-                                <div class="p-3 border rounded-3 bg-light-subtle h-100 d-flex flex-column justify-content-between row-file-card">
-
-                                    <div>
-                                        <label class="form-label fw-bold text-dark small text-uppercase mb-2 d-block">
-                                            {{ $label }}
-                                        </label>
-
-                                        @if($evidencia->$campo)
-                                        @php
-                                        $rutaSegura = base64_encode($evidencia->$campo);
-                                        $urlVerPdf = route('archivos.ver', ['ruta' => $rutaSegura]);
-                                        $nombreCorto = basename($evidencia->$campo);
-                                        @endphp
-
-                                        <div class="d-flex align-items-center justify-content-between bg-white border rounded p-2 mb-3 shadow-sm">
-                                            <div class="d-flex align-items-center text-truncate" style="min-width:0;">
-                                                <i class="bi bi-file-earmark-pdf-fill text-danger fs-4 me-2"></i>
-                                                <span class="small fw-semibold text-muted text-truncate"
-                                                    title="{{ $nombreCorto }}">
-                                                    {{ $nombreCorto }}
-                                                </span>
-                                            </div>
-
-                                            <button
-                                                type="button"
-                                                class="btn btn-sm btn-outline-primary rounded-pill px-3 btn-preview-pdf ms-2"
-                                                data-url="{{ $urlVerPdf }}"
-                                                data-name="{{ $nombreCorto }}">
-                                                <i class="bi bi-eye"></i> Ver
-                                            </button>
-                                        </div>
-                                        @else
-                                        <div class="alert alert-light py-1 px-2 small mb-3 border text-center rounded-2 text-muted">
-                                            <i class="bi bi-slash-circle me-1"></i>
-                                            Inhabilitada para previsualización
-                                        </div>
-                                        @endif
-                                    </div>
-
-                                    <input
-                                        type="file"
-                                        class="form-control form-control-sm"
-                                        name="{{ $campo }}"
-                                        accept="application/pdf">
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-
-                        {{-- EVIDENCIAS --}}
-                        <div class="mb-4">
-                            <h4 class="fw-bold text-success border-bottom pb-2">
-                                <i class="bi bi-journal-check me-2"></i>
-                                Evidencias
-                            </h4>
-                            <p class="text-muted small mb-0">
-                                Evidencias académicas utilizadas durante el proceso de evaluación.
-                            </p>
-                        </div>
-
-                        <div class="row g-4">
-                            @foreach($evidenciasArchivos as $campo => $label)
-                            <div class="col-md-4">
-                                <div class="p-3 border rounded-3 bg-light-subtle h-100 d-flex flex-column justify-content-between row-file-card">
-
-                                    <div>
-                                        <label class="form-label fw-bold text-dark small text-uppercase mb-2 d-block">
-                                            {{ $label }}
-                                        </label>
-
-                                        @if($evidencia->$campo)
-                                        @php
-                                        $rutaSegura = base64_encode($evidencia->$campo);
-                                        $urlVerPdf = route('archivos.ver', ['ruta' => $rutaSegura]);
-                                        $nombreCorto = basename($evidencia->$campo);
-                                        @endphp
-
-                                        <div class="d-flex align-items-center justify-content-between bg-white border rounded p-2 mb-3 shadow-sm">
-                                            <div class="d-flex align-items-center text-truncate" style="min-width:0;">
-                                                <i class="bi bi-file-earmark-pdf-fill text-danger fs-4 me-2"></i>
-                                                <span class="small fw-semibold text-muted text-truncate"
-                                                    title="{{ $nombreCorto }}">
-                                                    {{ $nombreCorto }}
-                                                </span>
-                                            </div>
-
-                                            <button
-                                                type="button"
-                                                class="btn btn-sm btn-outline-primary rounded-pill px-3 btn-preview-pdf ms-2"
-                                                data-url="{{ $urlVerPdf }}"
-                                                data-name="{{ $nombreCorto }}">
-                                                <i class="bi bi-eye"></i> Ver
-                                            </button>
-                                        </div>
-                                        @else
-                                        <div class="alert alert-light py-1 px-2 small mb-3 border text-center rounded-2 text-muted">
-                                            <i class="bi bi-slash-circle me-1"></i>
-                                            Inhabilitada para previsualización
-                                        </div>
-                                        @endif
-                                    </div>
-
-                                    <input
-                                        type="file"
-                                        class="form-control form-control-sm"
-                                        name="{{ $campo }}"
-                                        accept="application/pdf">
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-
-                        <hr class="my-4 style-hr">
-
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('evidencias') }}"
-                                class="btn btn-light px-4 py-2 rounded-pill border fw-semibold small">
-                                <i class="bi bi-arrow-left-short fs-5 align-middle"></i>
-                                Regresar
-                            </a>
-
-                            <button type="submit"
-                                class="btn btn-outline-primary px-4 py-2 rounded-pill shadow-sm fw-semibold small">
-                                <i class="bi bi-check-lg me-1"></i>
-                                Aplicar Correcciones
-                            </button>
-                        </div>
-                    </form>
                 </div>
 
-            </div>
+                {{-- =========================================== --}}
+                {{-- EVIDENCIAS --}}
+                {{-- =========================================== --}}
+
+                <h4 class="fw-bold text-success mb-4">
+
+                    EVIDENCIAS
+
+                </h4>
+
+                <div class="row g-4">
+
+                    @foreach($evidenciasCampos as $campo)
+
+                    @php
+
+                    $key = $campo['key'];
+
+                    $ruta = $evidencias[$key] ?? null;
+
+                    $calificacion =
+                        $evaluacion[$key]['calificacion'] ?? 0;
+
+                    $aprobado = $calificacion >= 70;
+
+                    @endphp
+
+                    <div class="col-md-4">
+
+                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
+
+                            {{-- HEADER --}}
+                            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+
+                                <div>
+
+                                    <h6 class="fw-bold mb-1">
+                                        {{ $campo['nombre'] }}
+                                    </h6>
+
+                                    @if($aprobado)
+
+                                    <small class="text-success fw-bold">
+
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        Aprobado
+
+                                    </small>
+
+                                    @else
+
+                                    <small class="text-danger fw-bold">
+
+                                        <i class="fa-solid fa-circle-xmark"></i>
+                                        Rechazado
+
+                                    </small>
+
+                                    @endif
+
+                                </div>
+
+                                @if($ruta)
+
+                                <a href="{{ asset('storage/' . $ruta) }}"
+                                    target="_blank"
+                                    class="btn btn-dark btn-sm rounded-circle d-flex align-items-center justify-content-center"
+                                    style="width:42px;height:42px;">
+
+                                    <i class="fa-solid fa-up-right-from-square"></i>
+
+                                </a>
+
+                                @endif
+
+                            </div>
+
+                            {{-- PDF --}}
+                            <div style="height:350px;background:#f8f9fa;">
+
+                                @if($ruta)
+
+                                <iframe
+                                    src="{{ asset('storage/' . $ruta) }}#toolbar=0"
+                                    width="100%"
+                                    height="100%"
+                                    style="border:none;">
+                                </iframe>
+
+                                @else
+
+                                <div class="h-100 d-flex align-items-center justify-content-center bg-light">
+
+                                    <div class="text-center text-muted">
+
+                                        <i class="fa-regular fa-file-pdf fa-3x mb-2 opacity-50"></i>
+
+                                        <div>
+                                            No existe documento
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                @endif
+
+                            </div>
+
+                            {{-- FOOTER --}}
+                            <div class="p-3">
+
+                                @if(!$aprobado)
+
+                                <input
+                                    type="file"
+                                    name="{{ $key }}"
+                                    class="form-control">
+
+                                <small class="text-muted">
+
+                                    Puedes reemplazar este documento
+
+                                </small>
+
+                                @else
+
+                                <input
+                                    type="file"
+                                    class="form-control"
+                                    disabled>
+
+                                <small class="text-success fw-bold">
+
+                                    Documento bloqueado porque fue aprobado
+
+                                </small>
+
+                                @endif
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    @endforeach
+
+                </div>
+
+                {{-- =========================================== --}}
+                {{-- INSTRUMENTOS --}}
+                {{-- =========================================== --}}
+
+                @php
+
+                $calificacionInstrumentos =
+                $evaluacion['instrumentos']['calificacion'] ?? 0;
+
+                $instrumentosAprobados =
+                $calificacionInstrumentos >= 70;
+
+                @endphp
+
+                <div class="card border-0 shadow-sm rounded-4 mt-5">
+
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+
+                            <div>
+
+                                <h4 class="fw-bold text-success mb-1">
+
+                                    Evidencias de instrumentos de evaluación
+
+                                </h4>
+
+                                @if($instrumentosAprobados)
+
+                                <small class="text-success fw-bold">
+
+                                    <i class="fa-solid fa-circle-check"></i>
+                                    Instrumentos aprobados
+
+                                </small>
+
+                                @else
+
+                                <small class="text-danger fw-bold">
+
+                                    <i class="fa-solid fa-circle-xmark"></i>
+                                    Instrumentos rechazados
+
+                                </small>
+
+                                @endif
+
+                            </div>
+
+                        </div>
+
+                        {{-- GRID --}}
+                        <div class="row g-4 mb-4">
+
+                            @forelse($instrumentos as $i => $pdf)
+
+                            <div class="col-md-4" id="pdf-old-{{ $i }}">
+
+                                <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
+
+                                    {{-- HEADER --}}
+                                    <div class="p-2 border-bottom d-flex justify-content-between align-items-center">
+
+                                        <small class="fw-bold text-muted">
+
+                                            Instrumento {{ $i + 1 }}
+
+                                        </small>
+
+                                        <div class="d-flex gap-2">
+
+                                            <a href="{{ asset('storage/' . $pdf) }}"
+                                                target="_blank"
+                                                class="btn btn-dark btn-sm rounded-circle d-flex align-items-center justify-content-center"
+                                                style="width:38px;height:38px;">
+
+                                                <i class="fa-solid fa-up-right-from-square"></i>
+
+                                            </a>
+
+                                            @if(!$instrumentosAprobados)
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-danger btn-sm rounded-circle d-flex align-items-center justify-content-center"
+                                                style="width:38px;height:38px;"
+                                                onclick="eliminarViejo({{ $i }})">
+
+                                                <i class="fa-solid fa-xmark"></i>
+
+                                            </button>
+
+                                            @endif
+
+                                        </div>
+
+                                    </div>
+
+                                    {{-- PDF --}}
+                                    <div style="height:320px;">
+
+                                        <iframe
+                                            src="{{ asset('storage/' . $pdf) }}#toolbar=0"
+                                            width="100%"
+                                            height="100%"
+                                            style="border:none;">
+                                        </iframe>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            @empty
+
+                            <div class="col-12">
+
+                                <div class="alert alert-light border text-center">
+
+                                    No existen instrumentos cargados
+
+                                </div>
+
+                            </div>
+
+                            @endforelse
+
+                        </div>
+
+                        <div id="contenedor-eliminados"></div>
+
+                        {{-- DROPZONE --}}
+                        @if(!$instrumentosAprobados)
+
+                        <div class="mt-4">
+
+                            <div class="row-file-card p-4 rounded-4 border bg-light">
+
+                                <h6 class="fw-bold text-success mb-1">
+
+                                    Reemplazar instrumentos
+
+                                </h6>
+
+                                <p class="text-muted small mb-3">
+
+                                    Deben existir máximo 3 PDFs en total
+
+                                </p>
+
+                                <div class="row align-items-center text-center">
+
+                                    <div class="col-md-5">
+
+                                        <input
+                                            type="file"
+                                            id="file-input-helper"
+                                            class="d-none"
+                                            accept="application/pdf"
+                                            multiple>
+
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-success rounded-pill fw-semibold px-4 py-2 w-100"
+                                            id="btn-seleccionar">
+
+                                            Seleccionar archivos
+
+                                        </button>
+
+                                    </div>
+
+                                    <div class="col-md-7">
+
+                                        <div id="lista-archivos"
+                                            class="d-flex flex-column gap-2">
+
+                                            <span class="text-muted small">
+
+                                                Ningún archivo seleccionado
+
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                <div id="hidden-inputs-container"></div>
+
+                            </div>
+
+                        </div>
+
+                        @endif
+
+                    </div>
+
+                </div>
+
+                {{-- BOTONES --}}
+                <div class="d-flex gap-2 mt-4">
+
+                    <a href="{{ route('evidencias') }}"
+                        class="btn btn-light border rounded-pill px-4">
+
+                        <i class="fa-solid fa-arrow-left"></i>
+                        Regresar
+
+                    </a>
+
+                    <button class="btn btn-primary rounded-pill px-4">
+
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Guardar cambios
+
+                    </button>
+
+                </div>
+
+            </form>
+
         </div>
+
     </section>
+
 </main>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.btn-preview-pdf').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const pdfUrl = this.getAttribute('data-url');
-                const pdfName = this.getAttribute('data-name');
 
-                Swal.fire({
-                    title: `<span class="fs-5 text-dark fw-bold text-truncate d-block px-3">${pdfName}</span>`,
-                    html: `
-                        <div style="width: 100%; height: 72vh; overflow: hidden; border-radius: 8px; border: 1px solid #dee2e6;">
-                            <iframe src="${pdfUrl}#toolbar=1" width="100%" height="100%" style="border: none;"></iframe>
-                        </div>
-                    `,
-                    width: '85%',
-                    showCloseButton: true,
-                    showConfirmButton: false,
-                    focusConfirm: false,
-                    customClass: {
-                        popup: 'rounded-4 shadow-lg'
-                    }
-                });
-            });
+    const racCheck =
+        document.getElementById('rac_na');
+
+    const racInput =
+        document.getElementById('rac');
+
+    if(racCheck){
+
+        racCheck.addEventListener('change', function(){
+
+            if(this.checked){
+
+                racInput.disabled = true;
+
+                racInput.value = '';
+
+            }else{
+
+                racInput.disabled = false;
+
+            }
+
         });
 
-        const selectRevision = document.getElementById('selectRevision');
-        if (selectRevision) {
-            selectRevision.addEventListener('change', function() {
-                const revisionId = this.value;
-                const materiaId = this.getAttribute('data-materia');
-                if (revisionId && materiaId) {
-                    window.location.href = `/evidencias/cambiar-revision/${revisionId}?materia_id=${materiaId}`;
-                }
-            });
+    }
+
+    const helperInput =
+        document.getElementById('file-input-helper');
+
+    const btnSeleccionar =
+        document.getElementById('btn-seleccionar');
+
+    const listaArchivos =
+        document.getElementById('lista-archivos');
+
+    const hiddenContainer =
+        document.getElementById('hidden-inputs-container');
+
+    const contenedorEliminados =
+        document.getElementById('contenedor-eliminados');
+
+    let archivos = [];
+
+    let viejos = @json($instrumentos);
+
+    if(btnSeleccionar){
+
+        btnSeleccionar.addEventListener('click', () => {
+
+            helperInput.click();
+
+        });
+
+    }
+
+    if(helperInput){
+
+        helperInput.addEventListener('change', function(){
+
+            for(let file of this.files){
+
+                if(file.type !== 'application/pdf') continue;
+
+                if((viejos.length + archivos.length) >= 3) break;
+
+                archivos.push(file);
+
+            }
+
+            render();
+
+            this.value = '';
+
+        });
+
+    }
+
+    function render(){
+
+        listaArchivos.innerHTML = '';
+
+        hiddenContainer.innerHTML = '';
+
+        if(archivos.length === 0){
+
+            listaArchivos.innerHTML = `
+
+                <span class="text-muted small">
+
+                    Ningún archivo nuevo seleccionado
+
+                </span>
+
+            `;
+
+            return;
         }
-    });
+
+        archivos.forEach((file, i) => {
+
+            listaArchivos.innerHTML += `
+
+                <div class="d-flex justify-content-between align-items-center border rounded p-2 bg-white small">
+
+                    <span class="text-truncate">
+
+                        ${file.name}
+
+                    </span>
+
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-danger"
+                        onclick="removeFile(${i})">
+
+                        <i class="fa-solid fa-xmark"></i>
+
+                    </button>
+
+                </div>
+
+            `;
+
+        });
+
+        const dt = new DataTransfer();
+
+        archivos.forEach(f => dt.items.add(f));
+
+        const input = document.createElement('input');
+
+        input.type = 'file';
+
+        input.name = 'instrumentos[]';
+
+        input.multiple = true;
+
+        input.files = dt.files;
+
+        hiddenContainer.appendChild(input);
+
+    }
+
+    function removeFile(index){
+
+        archivos.splice(index, 1);
+
+        render();
+
+    }
+
+    function eliminarViejo(index){
+
+        viejos.splice(index, 1);
+
+        document.getElementById('pdf-old-' + index).remove();
+
+        const input = document.createElement('input');
+
+        input.type = 'hidden';
+
+        input.name = 'eliminar_instrumentos[]';
+
+        input.value = index;
+
+        contenedorEliminados.appendChild(input);
+
+    }
+
 </script>
 
-<style>
-    .row-file-card {
-        border: 1px solid #e2e8f0;
-        transition: transform .2s ease;
-    }
-
-    .row-file-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-    }
-
-    .style-hr {
-        opacity: 0.1;
-    }
-</style>
-
 @endsection
+
