@@ -5,13 +5,11 @@
     <meta charset="utf-8">
     <title>Reporte de Seguimiento</title>
     <style>
-        /* Configuración de la página física */
         @page {
             margin: 140px 50px 100px 50px;
-            /* Márgenes para dar espacio a header y footer */
+
         }
 
-        /* Estilos Generales */
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             font-size: 11px;
@@ -35,7 +33,6 @@
             text-align: justify;
         }
 
-        /* Encabezado fijo en todas las páginas */
         #header {
             position: fixed;
             top: -110px;
@@ -50,7 +47,6 @@
             height: auto;
         }
 
-        /* Pie de página fijo en todas las páginas */
         #footer {
             position: fixed;
             bottom: -10px;
@@ -70,7 +66,6 @@
             padding: 0;
         }
 
-        /* Datos de control (Oficio, Asunto, Fecha) */
         .meta-table {
             width: 100%;
             margin-bottom: 20px;
@@ -82,16 +77,14 @@
             vertical-align: top;
         }
 
-        /* Contenedor Principal */
         .content {
             width: 100%;
         }
 
-        /* Tabla de Criterios (Estilo oficial e idéntico) */
         table.criterios-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            margin-top: 25px;
             margin-bottom: 15px;
         }
 
@@ -99,7 +92,7 @@
             background-color: #f5f5f5;
             border: 1px solid #000;
             padding: 5px;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: bold;
             text-align: center;
         }
@@ -107,21 +100,19 @@
         table.criterios-table td {
             border: 1px solid #000;
             padding: 5px;
-            font-size: 10px;
+            font-size: 11px;
             vertical-align: middle;
+            word-wrap: break-word;
         }
 
-        /* Sección de firmas */
         .firma-container {
             margin-top: 50px;
             width: 100%;
             page-break-inside: avoid;
-            /* Evita que la firma se parta en dos páginas */
         }
 
         .docente {
-            background-color: #D9E2D0 !important;
-            /* verde claro */
+            background-color: #cfecbc !important;
             font-size: 16px;
             font-weight: bold;
             text-align: center;
@@ -130,7 +121,6 @@
 
         .seguimiento {
             background-color: #70AD47 !important;
-            /* verde fuerte */
             color: #000;
             font-size: 16px;
             font-weight: bold;
@@ -139,10 +129,14 @@
         }
 
         .encabezado-tabla {
-            background-color: #D9E2D0 !important;
-            font-size: 13px;
+            background-color: #cfecbc !important;
+            font-size: 15px;
             font-weight: bold;
             text-align: center;
+        }
+
+        .texto-oficio {
+            font-size: 14px;
         }
     </style>
 </head>
@@ -166,23 +160,29 @@
                 </td>
 
                 <td width="50%" class="right" style="padding-top: 45px;">
-                    <span>Ciudad de México,</span> {{ now()->format('d/m/Y') }}<br>
-                    <span>Oficio No.</span> ITMAII/CBAS/060/{{ now()->format('Y') }}<br>
-                    Asunto:<span class="bold">Reporde de {{ ($evidencia->revision->nombre) }}</span>
+                    <span>Ciudad de México,  <span
+                            style="display:inline-block; background-color:#000; color:#fff; padding:1px 4px;">
+                            {{ \Carbon\Carbon::now()->locale('es')->translatedFormat('d/F/Y') }}
+                        </span><br>
+                        <span>Oficio No.</span> ITMAII/CBAS/060/{{ now()->format('Y') }}<br>
+                        Asunto:<span class="bold">Reporde de {{ $evidencia->revision->nombre }}</span>
                 </td>
             </tr>
         </table>
 
         <div style="margin-bottom: 15px;">
-            <span class="bold" style="font-size: 12px; text-transform: uppercase;">{{ $evidencia->asignacion->docente->name }}</span><br>
+            <span class="bold"
+                style="font-size: 12px; text-transform: uppercase;">{{ $evidencia->asignacion->docente->name }}</span><br>
             <span class="bold" style="font-size: 12px;">DOCENTE DEL INSTITUTO TECNOLÓGICO DE MILPA ALTA II</span><br>
             <span class="bold" style="font-size: 12px;">PRESENTE</span>
         </div>
 
-        <p class="justify" style="font-size: 12px;">
+        <p class="justify texto-oficio">
             Con base al Procedimiento para la Gestión del Curso en Programas Educativos con Enfoque por Competencias
             del Sistema de Gestión de Calidad que certifica al Tecnológico Nacional de México, hago de su conocimiento
-            el resultado de la "<span class="bold">{{ $evidencia->revision->nombre }} a la gestión del curso</span>" realizado para la materia de <span class="bold">{{ $evidencia->materia->nombre }}</span> programado para el semestre <span class="bold">{{ $evidencia->asignacionMateria->semestre->nombre }}</span>.
+            el resultado de la "<span class="bold">{{ $evidencia->revision->nombre }} a la gestión del curso</span>"
+            realizado para la materia de <span class="bold">{{ $evidencia->materia->nombre }}</span> programado para
+            el semestre <span class="bold">{{ $evidencia->asignacionMateria->semestre->nombre }}</span>.
         </p>
 
         <table class="criterios-table">
@@ -194,82 +194,100 @@
                 </tr>
                 <tr>
                     <th colspan="4" class="seguimiento">
-                        {{ strtoupper($evidencia->revision->nombre) }} {{ $evidencia->asignacionMateria->semestre->nombre }}
+                        {{ strtoupper($evidencia->revision->nombre) }}
+                        {{ $evidencia->asignacionMateria->semestre->nombre }}
                     </th>
                 </tr>
                 <tr>
-                    <th class="encabezado-tabla">CRITERIO</th>
-                    <th class="encabezado-tabla" width="110">% CUMPLIMIENTO</th>
-                    <th class="encabezado-tabla" width="50">N/A</th>
-                    <th class="encabezado-tabla">OBSERVACIONES</th>
+                    <th class="encabezado-tabla" width="35%">CRITERIO</th>
+                    <th class="encabezado-tabla" width="15%">% CUMPLIMIENTO</th>
+                    <th class="encabezado-tabla" width="5%">N/A</th>
+                    <th class="encabezado-tabla" width="45%">OBSERVACIONES</th>
                 </tr>
             </thead>
-            <tbody>
-                @foreach($criterios as $key => $nombre)
-                @php
-                $item = $evaluacion[$key] ?? [];
+            <tbody class="texto-oficio">
 
-                $calificacion = $item['calificacion'] ?? '';
-                $na = !empty($item['na']);
-                $observacion = $item['observaciones'] ?? '';
-                @endphp
+                @foreach ($criterios as $key => $nombre)
+                    @php
 
-                <tr>
-                    <td>{{ $nombre }}</td>
+                        $item = $evaluacion[$key] ?? [];
 
-                    <td class="center">
-                        @if(!$na)
-                        {{ $calificacion }}
-                        @endif
-                    </td>
+                        $calificacion = $item['calificacion'] ?? '';
 
-                    <td class="center">
-                        @if($na)
-                        X
-                        @endif
-                    </td>
+                        $na = !empty($item['na']);
 
-                    <td>
-                        {{ strtoupper($observacion) }}
-                    </td>
-                </tr>
+                        $observacion = $item['observaciones'] ?? '';
+
+                    @endphp
+
+                    <tr>
+                        <td>
+                            {{ $nombre }}
+                        </td>
+
+                        <td class="center">
+                            @if (!$na)
+                                {{ $calificacion }}
+                            @endif
+                        </td>
+
+                        <td class="center">
+                            @if ($na)
+                                X
+                            @endif
+                        </td>
+
+                        <td>
+                            {{ strtoupper($observacion) }}
+                        </td>
+                    </tr>
                 @endforeach
 
-                <tr>
-                    <td class="bold encabezado-tabla">TOTAL DE CUMPLIMIENTO</td>
-                    <td class="center bold encabezado-tabla">
-                        {{ number_format($promedioFinal,2) }}
+                <tr class="texto-oficio">
+                    <td class="bold encabezado-tabla" style="text-align: right;"">
+                        TOTAL DE CUMPLIMIENTO
                     </td>
+
+                    <td class="center bold encabezado-tabla">
+                        {{ number_format($promedioFinal, 2) }}
+                    </td>
+
                     <td></td>
+
                     <td></td>
                 </tr>
+
             </tbody>
         </table>
 
-        <p class="justify" style="padding-top: 165px;">
-            En función del resultado, solicito de la manera más atenta solventar a la brevedad las observaciones reportadas, en caso de haberlas. Recordando el artículo IV y VII del Capítulo II de las obligaciones del Reglamento Interior de Trabajo del Personal Docente de los Institutos Tecnológicos, es obligación del docente cumplir con los puntos mencionados en el reporte de seguimiento a la gestión del curso.
+        <p class="justify texto-oficio" style="padding-top: 110px;">
+            En función del resultado, solicito de la manera más atenta solventar a la brevedad las observaciones
+            reportadas, en caso de haberlas.
+        </p>
+        <p class="justify texto-oficio">
+            Recordando el artículo IV y VII del Capítulo II de las obligaciones del Reglamento Interior de Trabajo del
+            Personal Docente de los Institutos Tecnológicos, es obligación del
+            docente cumplir con los puntos mencionados en el reporte de <b>seguimiento a la gestión del curso.</b>
         </p>
 
-        <p>Agradezco su atención y quedo atento.</p>
+        <p class="texto-oficio" style="margin-top: 35px;">Agradezco su atención y quedo atento.</p>
 
-        <div class="firma-container">
-            <p style="margin-bottom: 30px; text-transform: uppercase;"><span class="bold">Atentamente</span><br>
-                <span style="font-size: 8px; font-style: italic;" class="bold">
+        <div class="firma-container texto-oficio" style="margin-top: 35px;">
+            <p><span class="bold">ATENTAMENTE</span><br>
+                <span style="font-size: 12px; font-style: italic;" class="bold">
                     Excelencia en Educación Tecnológica®
                 </span>
             </p>
             <img src="{{ public_path('img/firma-cb.png') }}" style="width:35%;" alt="Firma">
-            <div style="text-align: right;">
-                <img src="{{ public_path('img/sello-cb.png') }}" style="width:35%;" alt="Firma">
-            </div>
+            <img src="{{ public_path('img/sello-cb.png') }}" style="width:35%; text-align: right;" alt="Firma">
 
-            <p style="margin-top: 5px; line-height: 1.2;">
+            <p class="texto-oficio" style="margin-top: 5px; line-height: 1.2;">
                 <span class="bold" style="text-transform: uppercase;">{{ $admin->name }}</span><br>
                 <span class="bold" style="text-transform: uppercase;">{{ $admin->cargo }}</span><br>
             </p>
         </div>
 
-        <div style="font-size: 9px; color: #777; margin-top: 5px;">
+        <div style="font-size: 11px; margin-top: 5px;">
             ccp. Archivo.
         </div>
 

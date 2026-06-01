@@ -323,12 +323,6 @@
 
                                         </a>
 
-                                        @else
-
-                                        <span class="badge bg-secondary">
-                                            Sin teléfono
-                                        </span>
-
                                         @endif
 
                                     </td>

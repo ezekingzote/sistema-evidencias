@@ -4,103 +4,153 @@
 
 @section('contenido')
 
-<main id="main" class="main">
+    <main id="main" class="main">
 
-    <div class="pagetitle">
-        <h1 class="fw-bold text-primary">
-            Reportes de Evaluación
-        </h1>
+        <div class="pagetitle">
+            <h1 class="fw-bold text-primary">
+                Reportes de Evaluación
+            </h1>
 
-        <nav>
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item">
-                    <a href="" class="text-decoration-none text-secondary">
-                        Home
-                    </a>
-                </li>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="" class="text-decoration-none text-secondary">
+                            Home
+                        </a>
+                    </li>
 
-                <li class="breadcrumb-item active text-primary fw-semibold">
-                    Reportes
-                </li>
-            </ol>
-        </nav>
-    </div>
+                    <li class="breadcrumb-item active text-primary fw-semibold">
+                        Reportes
+                    </li>
+                </ol>
+            </nav>
+        </div>
 
-    <section class="section">
+        <section class="section">
 
-        <div class="row">
+            <div class="row">
 
-            <div class="col-lg-12">
+                <div class="col-lg-12">
 
-                <div class="card border-0 shadow-lg reportes-card">
+                    <div class="card border-0 shadow-lg reportes-card">
 
-                    {{-- HEADER --}}
-                    <div class="card-header reportes-header">
+                        {{-- HEADER --}}
+                        <div class="card-header reportes-header">
 
-                        <div>
+                            <div>
 
-                            <h4 class="fw-bold mb-1">
-                                Reportes de Seguimiento Académico
-                            </h4>
+                                <h4 class="fw-bold mb-1">
+                                    Reportes de Seguimiento Académico
+                                </h4>
 
-                            <p class="text-muted mb-0">
-                                Genera reportes PDF con calificaciones,
-                                observaciones y promedio final de cada revisión.
-                            </p>
+                                <p class="text-muted mb-0">
+                                    Genera reportes PDF con calificaciones,
+                                    observaciones y promedio final de cada revisión.
+                                </p>
 
-                        </div>
-
-                    </div>
-
-                    <div class="card-body p-4">
-
-                        {{-- ALERTAS --}}
-                        @if(session('success'))
-
-                        <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4">
-
-                            <i class="bi bi-check-circle-fill me-2"></i>
-
-                            {{ session('success') }}
+                            </div>
 
                         </div>
 
-                        @endif
+                        <div class="card-body p-4">
 
-                        @if(session('error'))
+                            {{-- ALERTAS --}}
+                            @if (session('success'))
+                                <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4">
 
-                        <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4">
+                                    <i class="bi bi-check-circle-fill me-2"></i>
 
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    {{ session('success') }}
 
-                            {{ session('error') }}
+                                </div>
+                            @endif
 
-                        </div>
+                            @if (session('error'))
+                                <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4">
 
-                        @endif
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
 
-                        {{-- CARDS RESUMEN --}}
-                        <div class="row mb-4 g-3">
+                                    {{ session('error') }}
 
-                            <div class="col-md-4">
+                                </div>
+                            @endif
 
-                                <div class="infoCard shadow-sm">
+                            {{-- CARDS RESUMEN --}}
+                            <div class="row mb-4 g-3">
 
-                                    <div class="infoIcon bg-primary">
+                                <div class="col-md-4">
 
-                                        <i class="bi bi-file-earmark-pdf-fill"></i>
+                                    <div class="infoCard shadow-sm">
+
+                                        <div class="infoIcon bg-primary">
+
+                                            <i class="bi bi-file-earmark-pdf-fill"></i>
+
+                                        </div>
+
+                                        <div>
+
+                                            <h5 class="fw-bold mb-0">
+                                                {{ $evidencias->count() }}
+                                            </h5>
+
+                                            <small>
+                                                Reportes disponibles
+                                            </small>
+
+                                        </div>
 
                                     </div>
 
-                                    <div>
+                                </div>
 
-                                        <h5 class="fw-bold mb-0">
-                                            {{ $evidencias->count() }}
-                                        </h5>
+                                <div class="col-md-4">
 
-                                        <small>
-                                            Reportes disponibles
-                                        </small>
+                                    <div class="infoCard shadow-sm">
+
+                                        <div class="infoIcon bg-success">
+
+                                            <i class="bi bi-check-circle-fill"></i>
+
+                                        </div>
+
+                                        <div>
+
+                                            <h5 class="fw-bold mb-0">
+                                                {{ $evidencias->where('estado', 2)->count() }}
+                                            </h5>
+
+                                            <small>
+                                                Evidencias aprobadas
+                                            </small>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="col-md-4">
+
+                                    <div class="infoCard shadow-sm">
+
+                                        <div class="infoIcon bg-danger">
+
+                                            <i class="bi bi-x-circle-fill"></i>
+
+                                        </div>
+
+                                        <div>
+
+                                            <h5 class="fw-bold mb-0">
+                                                {{ $evidencias->where('estado', 4)->count() }}
+                                            </h5>
+
+                                            <small>
+                                                Evidencias rechazadas
+                                            </small>
+
+                                        </div>
 
                                     </div>
 
@@ -108,335 +158,165 @@
 
                             </div>
 
-                            <div class="col-md-4">
+                            {{-- TABLA --}}
+                            <div class="table-responsive">
 
-                                <div class="infoCard shadow-sm">
+                                <table class="table table-hover align-middle">
 
-                                    <div class="infoIcon bg-success">
+                                    <thead>
 
-                                        <i class="bi bi-check-circle-fill"></i>
+                                        <tr>
 
-                                    </div>
+                                            <th>Docente</th>
 
-                                    <div>
+                                            <th>Materia</th>
 
-                                        <h5 class="fw-bold mb-0">
-                                            {{ $evidencias->where('estado', 2)->count() }}
-                                        </h5>
+                                            @foreach ($revisiones as $revision)
+                                                <th class="text-center">
 
-                                        <small>
-                                            Evidencias aprobadas
-                                        </small>
+                                                    <div class="fw-bold">
 
-                                    </div>
+                                                        {{ $revision->nombre }}
+
+                                                    </div>
+
+                                                    @if ($revision->fecha_limite)
+                                                        <small class="text-white-50">
+
+                                                            {{ \Carbon\Carbon::parse($revision->fecha_limite)->format('d/m/Y') }}
+
+                                                        </small>
+                                                    @endif
+
+                                                </th>
+                                            @endforeach
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody>
+
+                                        @forelse($materias as $materia)
+
+                                            <tr>
+
+                                                <td>
+
+                                                    {{ $materia->asignaciones->first()?->docente?->name }}
+
+                                                </td>
+
+                                                <td>
+
+                                                    {{ $materia->nombre }}
+
+                                                </td>
+
+                                                @foreach ($revisiones as $revision)
+                                                    @php
+
+                                                        $evidencia = $materia->evidencias
+                                                            ->where('revision_id', $revision->id)
+                                                            ->first();
+
+                                                    @endphp
+
+                                                    <td class="text-center">
+
+                                                        {{-- REVISION INACTIVA --}}
+                                                        @if (!$revision->activo)
+                                                            <button class="estadoBtn asignada" disabled>
+
+                                                                <i class="bi bi-pause-circle-fill"></i>
+
+                                                            </button>
+
+                                                            {{-- EXISTE EVIDENCIA --}}
+                                                        @elseif($evidencia)
+                                                            @php
+
+                                                                $estado = $evidencia->estado;
+
+                                                            @endphp
+
+                                                            <a href="{{ route('reportes-generar', $evidencia->id) }}"
+                                                                target="_blank">
+
+                                                                @switch($estado)
+                                                                    @case(2)
+                                                                        <button class="estadoBtn aprobado">
+
+                                                                            <i class="bi bi-file-earmark-pdf-fill"></i>
+
+                                                                        </button>
+                                                                    @break
+
+                                                                    @case(3)
+                                                                        <button class="estadoBtn pendiente">
+
+                                                                            <i class="bi bi-file-earmark-pdf-fill"></i>
+
+                                                                        </button>
+                                                                    @break
+
+                                                                    @case(4)
+                                                                        <button class="estadoBtn rechazada">
+
+                                                                            <i class="bi bi-file-earmark-pdf-fill"></i>
+
+                                                                        </button>
+                                                                    @break
+
+                                                                    @default
+                                                                        <button class="estadoBtn vacio">
+
+                                                                            <i class="bi bi-file-earmark-pdf-fill"></i>
+
+                                                                        </button>
+                                                                @endswitch
+
+                                                            </a>
+
+                                                            {{-- NO EXISTE EVIDENCIA --}}
+                                                        @else
+                                                            <a href="{{ route('reportes-vacio', [
+                                                                'materia' => $materia->id,
+                                                                'revision' => $revision->id,
+                                                            ]) }}"
+                                                                class="btn btn-secondary rounded-circle generar-vacio">
+
+                                                                <i class="bi bi-file-earmark-pdf-fill"></i>
+
+                                                            </a>
+                                                        @endif
+
+                                                    </td>
+                                                @endforeach
+
+                                            </tr>
+
+                                            @empty
+
+                                                <tr>
+
+                                                    <td colspan="{{ $revisiones->count() + 2 }}" class="text-center py-5">
+
+                                                        No existen registros.
+
+                                                    </td>
+
+                                                </tr>
+
+                                            @endforelse
+
+                                        </tbody>
+
+                                    </table>
 
                                 </div>
 
                             </div>
-
-                            <div class="col-md-4">
-
-                                <div class="infoCard shadow-sm">
-
-                                    <div class="infoIcon bg-danger">
-
-                                        <i class="bi bi-x-circle-fill"></i>
-
-                                    </div>
-
-                                    <div>
-
-                                        <h5 class="fw-bold mb-0">
-                                            {{ $evidencias->where('estado', 4)->count() }}
-                                        </h5>
-
-                                        <small>
-                                            Evidencias rechazadas
-                                        </small>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                        {{-- TABLA --}}
-                        <div class="table-responsive">
-
-                            <table class="table align-middle table-hover">
-
-                                <thead>
-
-                                    <tr>
-
-                                        <th class="text-center">
-                                            #
-                                        </th>
-
-                                        <th>
-                                            Docente
-                                        </th>
-
-                                        <th>
-                                            Cargo
-                                        </th>
-
-                                        <th>
-                                            Materia
-                                        </th>
-
-                                        <th class="text-center">
-                                            Revisión
-                                        </th>
-
-                                        <th class="text-center">
-                                            Estado
-                                        </th>
-
-                                        <th class="text-center">
-                                            Promedio
-                                        </th>
-
-                                        <th class="text-center">
-                                            Acciones
-                                        </th>
-
-                                    </tr>
-
-                                </thead>
-
-                                <tbody>
-
-                                    @forelse($evidencias as $item)
-
-                                    @php
-
-                                    $evaluacion =
-                                    $item->evaluacion ?? [];
-
-                                    $criterios = [
-
-                                    'instrumentacion',
-                                    'reporte_inicio',
-                                    'examen_diagnostico',
-                                    'analisis_diagnostico',
-                                    'acuerdos',
-                                    'instrumentos',
-                                    'rubricas',
-                                    'calificaciones',
-                                    'rac',
-
-                                    ];
-
-                                    $suma = 0;
-                                    $contador = 0;
-
-                                    foreach($criterios as $criterio){
-
-                                    $calificacion =
-                                    $evaluacion[$criterio]['calificacion']
-                                    ?? null;
-
-                                    $na =
-                                    $evaluacion[$criterio]['na']
-                                    ?? false;
-
-                                    if(!$na && $calificacion !== null){
-
-                                    $suma += $calificacion;
-                                    $contador++;
-
-                                    }
-
-                                    }
-
-                                    $promedio =
-                                    $contador > 0
-                                    ? round($suma / $contador, 2)
-                                    : 0;
-
-                                    @endphp
-
-                                    <tr>
-
-                                        <td class="text-center fw-bold">
-
-                                            {{ $item->id }}
-
-                                        </td>
-
-                                        <td>
-
-                                            <div class="d-flex flex-column">
-
-                                                <span class="fw-bold">
-
-                                                    {{ $item->asignacion?->docente?->name }}
-
-                                                </span>
-
-                                                <small class="text-muted">
-
-                                                    {{ $item->asignacion?->docente?->email }}
-
-                                                </small>
-
-                                            </div>
-
-                                        </td>
-
-                                        <td>
-
-                                            <span class="badge bg-dark rounded-pill px-3 py-2">
-
-                                                {{ $item->asignacion?->docente?->cargo ?? 'Sin cargo' }}
-
-                                            </span>
-
-                                        </td>
-
-                                        <td class="fw-semibold">
-
-                                            {{ $item->materia?->nombre }}
-
-                                        </td>
-
-                                        <td class="text-center">
-
-                                            <span class="badge bg-primary rounded-pill px-3 py-2">
-
-                                                {{ $item->revision?->nombre }}
-
-                                            </span>
-
-                                        </td>
-
-                                        <td class="text-center">
-
-                                            @switch($item->estado)
-
-                                            @case(2)
-
-                                            <span class="badge bg-success rounded-pill px-3 py-2">
-
-                                                <i class="bi bi-check-circle-fill"></i>
-                                                Aprobada
-
-                                            </span>
-
-                                            @break
-
-                                            @case(3)
-
-                                            <span class="badge bg-warning text-dark rounded-pill px-3 py-2">
-
-                                                <i class="bi bi-clock-history"></i>
-                                                Pendiente
-
-                                            </span>
-
-                                            @break
-
-                                            @case(4)
-
-                                            <span class="badge bg-danger rounded-pill px-3 py-2">
-
-                                                <i class="bi bi-x-circle-fill"></i>
-                                                Rechazada
-
-                                            </span>
-
-                                            @break
-
-                                            @default
-
-                                            <span class="badge bg-secondary rounded-pill px-3 py-2">
-
-                                                Sin estado
-
-                                            </span>
-
-                                            @endswitch
-
-                                        </td>
-
-                                        <td class="text-center">
-
-                                            @if($promedio >= 70)
-
-                                            <span class="fw-bold text-success">
-
-                                                {{ $promedio }}
-
-                                            </span>
-
-                                            @else
-
-                                            <span class="fw-bold text-danger">
-
-                                                {{ $promedio }}
-
-                                            </span>
-
-                                            @endif
-
-                                        </td>
-
-                                        <td class="text-center">
-
-                                            <div class="d-flex justify-content-center gap-2">
-
-                                                {{-- PDF --}}
-                                                <a
-                                                    href="{{ route('reportes-generar', $item->id) }}"
-                                                    target="_blank"
-                                                    class="btn btn-danger rounded-circle shadow-sm"
-                                                    title="Generar PDF"
-                                                    style="width:46px;height:46px;display:flex;align-items:center;justify-content:center;">
-
-                                                    <i class="bi bi-file-earmark-pdf-fill"></i>
-
-                                                </a>
-
-                                                {{-- VER EVALUACION --}}
-                                                <a
-                                                    href="{{ route('evaluaciones.show', $item->id) }}"
-                                                    class="btn btn-primary rounded-circle shadow-sm"
-                                                    title="Ver evaluación"
-                                                    style="width:46px;height:46px;display:flex;align-items:center;justify-content:center;">
-
-                                                    <i class="bi bi-eye-fill"></i>
-
-                                                </a>
-
-                                            </div>
-
-                                        </td>
-
-                                    </tr>
-
-                                    @empty
-
-                                    <tr>
-
-                                        <td colspan="8"
-                                            class="text-center py-5 text-muted">
-
-                                            <i class="bi bi-folder-x display-4 d-block mb-3"></i>
-
-                                            No existen reportes disponibles.
-
-                                        </td>
-
-                                    </tr>
-
-                                    @endforelse
-
-                                </tbody>
-
-                            </table>
 
                         </div>
 
@@ -444,91 +324,164 @@
 
                 </div>
 
-            </div>
+            </section>
 
-        </div>
+        </main>
 
-    </section>
+        <style>
+            .reportes-card {
 
-</main>
+                border-radius: 24px;
+                overflow: hidden;
+                background: white;
 
-<style>
-    .reportes-card {
+            }
 
-        border-radius: 24px;
-        overflow: hidden;
-        background: white;
+            .reportes-header {
 
-    }
+                background: linear-gradient(135deg, #f8fbff, #eef5ff);
+                border-bottom: 1px solid #e8eef7;
+                padding: 25px;
 
-    .reportes-header {
+            }
 
-        background: linear-gradient(135deg, #f8fbff, #eef5ff);
-        border-bottom: 1px solid #e8eef7;
-        padding: 25px;
+            .infoCard {
 
-    }
+                background: white;
+                border-radius: 18px;
+                padding: 18px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                border: 1px solid #e5e7eb;
 
-    .infoCard {
+            }
 
-        background: white;
-        border-radius: 18px;
-        padding: 18px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        border: 1px solid #e5e7eb;
+            .infoIcon {
 
-    }
+                width: 60px;
+                height: 60px;
+                border-radius: 18px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 24px;
 
-    .infoIcon {
+            }
 
-        width: 60px;
-        height: 60px;
-        border-radius: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 24px;
+            .estadoBtn {
+                width: 46px;
+                height: 46px;
+                border-radius: 50%;
+                border: none;
+                color: white;
+                font-size: 18px;
+                box-shadow: 0 6px 14px rgba(0, 0, 0, .1);
+                transition: .3s ease;
+            }
 
-    }
+            .estadoBtn:hover {
+                transform: translateY(-3px);
+            }
 
-    table thead th {
+            .aprobado {
+                background: linear-gradient(135deg, #10b981, #059669);
+            }
 
-        background: linear-gradient(135deg, #0a2342, #102c57) !important;
-        color: white !important;
-        border: none;
-        padding: 16px;
-        font-weight: 700;
-        vertical-align: middle;
+            .pendiente {
+                background: linear-gradient(135deg, #f59e0b, #d97706);
+            }
 
-    }
+            .rechazada {
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+            }
 
-    table tbody td {
+            .vacio {
+                background: linear-gradient(135deg, #9ca3af, #6b7280);
+            }
 
-        padding: 16px 12px;
-        vertical-align: middle;
+            .asignada {
+                background: linear-gradient(135deg, #3b82f6, #2563eb);
+            }
 
-    }
+            table thead th {
 
-    table tbody tr:hover {
+                background: linear-gradient(135deg, #0a2342, #102c57) !important;
+                color: white !important;
+                border: none;
+                padding: 16px;
+                font-weight: 700;
+                vertical-align: middle;
 
-        background: rgba(15, 23, 42, .03);
+            }
 
-    }
+            table tbody td {
 
-    table thead tr th:first-child {
+                padding: 16px 12px;
+                vertical-align: middle;
 
-        border-top-left-radius: 12px;
+            }
 
-    }
+            table tbody tr:hover {
 
-    table thead tr th:last-child {
+                background: rgba(15, 23, 42, .03);
 
-        border-top-right-radius: 12px;
+            }
 
-    }
-</style>
+            table thead tr th:first-child {
 
-@endsection
+                border-top-left-radius: 12px;
+
+            }
+
+            table thead tr th:last-child {
+
+                border-top-right-radius: 12px;
+
+            }
+        </style>
+
+        <script>
+            document.querySelectorAll('.generar-vacio').forEach(btn => {
+
+                btn.addEventListener('click', function(e) {
+
+                    e.preventDefault();
+
+                    const url = this.href;
+
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Sin evaluación',
+                        html: `
+                Esta revisión se encuentra activa pero el docente
+                <b>no ha entregado evidencia</b>.
+                <br><br>
+                El reporte se generará con:
+                <ul style="text-align:left;margin-top:10px;">
+                    <li>Todas las calificaciones en 0</li>
+                    <li>Observación: "SIN ENTREGAR EVIDENCIA"</li>
+                </ul>
+                ¿Deseas generar el PDF?
+            `,
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, generar PDF',
+                        cancelButtonText: 'No',
+                        confirmButtonColor: '#198754',
+                        cancelButtonColor: '#dc3545'
+                    }).then((result) => {
+
+                        if (result.isConfirmed) {
+
+                            window.open(url, '_blank');
+
+                        }
+
+                    });
+
+                });
+
+            });
+        </script>
+    @endsection

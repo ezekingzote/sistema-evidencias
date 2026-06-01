@@ -113,7 +113,8 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('reportes')->group(function () {
             Route::get('/', [Reportes::class, 'index'])->name('reportes');
-            Route::get('/{id}',[Reportes::class, 'reportePdf'])->name('reportes-generar');
+            Route::get('/{id}', [Reportes::class, 'reportePdf'])->name('reportes-generar');
+            Route::get('/vacio/{materia}/{revision}',[Reportes::class, 'reporteVacio'])->name('reportes-vacio');
         });
     });
 
