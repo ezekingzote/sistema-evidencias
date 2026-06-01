@@ -190,6 +190,9 @@
 
                                                 </th>
                                             @endforeach
+                                            <th class="text-center">
+                                                Acciones
+                                            </th>
 
                                         </tr>
 
@@ -294,13 +297,76 @@
                                                     </td>
                                                 @endforeach
 
+                                                <td class="text-center">
+
+                                                    @php
+                                                        $docente = $materia->asignaciones->first()?->docente;
+                                                        $telefono = preg_replace(
+                                                            '/[^0-9]/',
+                                                            '',
+                                                            $docente?->celular ?? '',
+                                                        );
+
+                                                        $revisionesDisponibles = [];
+
+                                                        foreach ($revisiones as $revision) {
+                                                            if (!$revision->activo) {
+                                                                continue;
+                                                            }
+
+                                                            $evidencia = $materia->evidencias
+                                                                ->where('revision_id', $revision->id)
+                                                                ->first();
+
+                                                            if ($evidencia) {
+                                                                $pdf = route('reportes-generar', $evidencia->id);
+                                                            } else {
+                                                                $pdf = route('reportes-vacio', [
+                                                                    'materia' => $materia->id,
+                                                                    'revision' => $revision->id,
+                                                                ]);
+                                                            }
+
+                                                            $mensaje = "Hola {$docente?->name}, comparto el reporte de {$materia->nombre} correspondiente a {$revision->nombre}: {$pdf}";
+
+                                                            $revisionesDisponibles[] = [
+                                                                'nombre' => $revision->nombre,
+                                                                'url' =>
+                                                                    "https://wa.me/52{$telefono}?text=" .
+                                                                    urlencode($mensaje),
+                                                            ];
+                                                        }
+                                                    @endphp
+
+                                                    @if ($telefono && count($revisionesDisponibles))
+                                                        <select class="form-select form-select-sm enviarWhatsapp">
+
+                                                            <option value="">
+                                                                Enviar PDF...
+                                                            </option>
+
+                                                            @foreach ($revisionesDisponibles as $item)
+                                                                <option value="{{ $item['url'] }}">
+                                                                    {{ $item['nombre'] }}
+                                                                </option>
+                                                            @endforeach
+
+                                                        </select>
+                                                    @else
+                                                        <span class="badge bg-secondary">
+                                                            Sin WhatsApp
+                                                        </span>
+                                                    @endif
+
+                                                </td>
+
                                             </tr>
 
                                             @empty
 
                                                 <tr>
 
-                                                    <td colspan="{{ $revisiones->count() + 2 }}" class="text-center py-5">
+                                                    <td colspan="{{ $revisiones->count() + 3 }}" class="text-center py-5">
 
                                                         No existen registros.
 
@@ -481,6 +547,23 @@
                     });
 
                 });
+
+            });
+        </script>
+
+        <script>
+            document.addEventListener('change', function(e) {
+
+                if (e.target.classList.contains('enviarWhatsapp')) {
+
+                    const url = e.target.value;
+
+                    if (url) {
+                        window.open(url, '_blank');
+                        e.target.selectedIndex = 0;
+                    }
+
+                }
 
             });
         </script>

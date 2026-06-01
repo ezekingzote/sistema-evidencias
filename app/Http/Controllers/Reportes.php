@@ -7,6 +7,7 @@ use App\Models\Materia;
 use App\Models\Revision;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class Reportes extends Controller
 {
@@ -182,5 +183,75 @@ class Reportes extends Controller
         );
 
         return $pdf->stream('reporte-sin-evaluacion.pdf');
+    }
+
+    public function reportePdfDocente($id)
+    {
+        $evidencia = Evidencia::with([
+            'materia',
+            'revision',
+            'asignacion.docente',
+            'asignacionMateria.semestre'
+        ])->findOrFail($id);
+
+        // Seguridad:
+        if (
+            $evidencia->asignacionMateria->docente_id != Auth::id()
+        ) {
+            abort(403);
+        }
+
+        $evaluacion = $evidencia->evaluacion ?? [];
+
+        $criterios = [
+
+            'instrumentacion'      => 'Instrumentación didáctica',
+            'reporte_inicio'       => 'Reporte inicio de curso',
+            'examen_diagnostico'   => 'Examen diagnóstico',
+            'analisis_diagnostico' => 'Análisis del diagnóstico',
+            'acuerdos'             => 'Acuerdos de clase',
+            'avance_programatico'  => 'Avance programático',
+            'instrumentos'         => 'Evidencia de instrumentos de evaluación (3 muestras)',
+            'rubricas'             => 'Rúbricas del semestre',
+            'calificaciones'       => 'Lista de calificaciones',
+            'rac'                  => 'Actividades de regularización',
+            'asiste_seguimiento'   => 'Asiste al seguimiento',
+        ];
+
+        $promedio = 0;
+        $contador = 0;
+
+        foreach ($criterios as $key => $nombre) {
+
+            $item = $evaluacion[$key] ?? [];
+
+            $na = !empty($item['na']);
+
+            $calificacion = $item['calificacion'] ?? null;
+
+            if (!$na && $calificacion !== null && $calificacion !== '') {
+
+                $promedio += floatval($calificacion);
+
+                $contador++;
+            }
+        }
+
+        $promedioFinal = $contador > 0
+            ? round($promedio / $contador, 2)
+            : 0;
+
+        $pdf = Pdf::loadView(
+            'modules.reportes.pdf',
+            [
+                'evidencia' => $evidencia,
+                'evaluacion' => $evaluacion,
+                'criterios' => $criterios,
+                'promedioFinal' => $promedioFinal,
+                'admin' => Auth::user(),
+            ]
+        );
+
+        return $pdf->stream('reporte-seguimiento.pdf');
     }
 }

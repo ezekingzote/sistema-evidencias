@@ -24,6 +24,8 @@ class Evidencia extends Model
 
         'evaluacion',
 
+        'pdf_generado',
+
     ];
 
     protected $casts = [

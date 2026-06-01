@@ -67,7 +67,6 @@ class Evidencias extends Controller
         ));
     }
 
-
     private function cleanFolderName($text)
     {
         $text = strtolower($text);
@@ -274,22 +273,101 @@ class Evidencias extends Controller
     {
         $evidencia = Evidencia::findOrFail($id);
 
-        $data = $evidencia->documentos ?? [];
+        // Todo vive dentro de la columna 'documentos' según el volcado de datos
+        $datosContenedor = is_array($evidencia->documentos) ? $evidencia->documentos : (json_decode($evidencia->documentos, true) ?? []);
 
-        $documentos = $data['documentos'] ?? [];
+        // Extraemos los sub-bloques del JSON
+        $docsJson = $datosContenedor['documentos'] ?? [];
+        $evisJson = $datosContenedor['evidencias'] ?? [];
+        $instJson = $datosContenedor['instrumentos'] ?? [];
 
-        $evidencias = $data['evidencias'] ?? [];
+        // Las calificaciones siguen viviendo en su columna independiente
+        $evalJson = is_array($evidencia->evaluacion) ? $evidencia->evaluacion : (json_decode($evidencia->evaluacion, true) ?? []);
 
-        $instrumentos = $data['instrumentos'] ?? [];
+        // Helper sencillo para limpiar el prefijo 'public/' si existiera y validar archivo real
+        $procesarRuta = function ($rutaCruda) {
+            if (!$rutaCruda) return null;
+            $rutaLimpia = str_replace('public/', '', $rutaCruda);
+            return Storage::disk('public')->exists($rutaLimpia) ? $rutaLimpia : null;
+        };
 
-        $evaluacion = $evidencia->evaluacion ?? [];
+        // 1. Procesamiento de DOCUMENTOS
+        $documentosCampos = [
+            'instrumentacion' => 'Instrumentación didáctica',
+            'reporte_inicio'  => 'Reporte de inicio de curso',
+            'acuerdos'        => 'Acuerdos de clase',
+            'calificaciones'  => 'Lista de calificaciones',
+        ];
+
+        $documentos = [];
+        foreach ($documentosCampos as $key => $nombre) {
+            $rutaDetectada = $procesarRuta($docsJson[$key] ?? null);
+            $calificacion = $evalJson[$key]['calificacion'] ?? 0;
+
+            $documentos[] = [
+                'key'      => $key,
+                'nombre'   => $nombre,
+                'ruta'     => $rutaDetectada,
+                'aprobado' => $calificacion >= 70,
+                'existe'   => !is_null($rutaDetectada)
+            ];
+        }
+
+        // Caso Especial: RAC (Actividades de Regularización)
+        $racNoAplica = $docsJson['rac']['na'] ?? false;
+        $rutaRacCruda = $docsJson['rac']['archivo'] ?? null;
+        $rutaRacDetectada = $racNoAplica ? null : $procesarRuta($rutaRacCruda);
+        $califRac = $evalJson['rac']['calificacion'] ?? 0;
+
+        $racData = [
+            'key'      => 'rac',
+            'nombre'   => 'Actividades de regularización (RAC)',
+            'ruta'     => $rutaRacDetectada,
+            'aprobado' => $califRac >= 70,
+            'na'       => $racNoAplica,
+            'existe'   => !is_null($rutaRacDetectada)
+        ];
+
+        // 2. Procesamiento de EVIDENCIAS
+        $evidenciasCampos = [
+            'examen_diagnostico'   => 'Examen diagnóstico',
+            'analisis_diagnostico' => 'Análisis diagnóstico',
+            'rubricas'             => 'Rúbricas del semestre'
+        ];
+
+        $evidencias = [];
+        foreach ($evidenciasCampos as $key => $nombre) {
+            $rutaDetectada = $procesarRuta($evisJson[$key] ?? null);
+            $calificacion = $evalJson[$key]['calificacion'] ?? 0;
+
+            $evidencias[] = [
+                'key'      => $key,
+                'nombre'   => $nombre,
+                'ruta'     => $rutaDetectada,
+                'aprobado' => $calificacion >= 70,
+                'existe'   => !is_null($rutaDetectada)
+            ];
+        }
+
+        // 3. Procesamiento de INSTRUMENTOS MÚLTIPLES
+        $instrumentos = [];
+        foreach ($instJson as $inst) {
+            $rutaLimpia = str_replace('public/', '', $inst);
+            $instrumentos[] = [
+                'ruta_original' => $inst,
+                'ruta_limpia'   => $rutaLimpia,
+                'existe'        => Storage::disk('public')->exists($rutaLimpia)
+            ];
+        }
+        $instAprobados = ($evalJson['instrumentos']['calificacion'] ?? 0) >= 70;
 
         return view('modules.evidencias.edit', compact(
             'evidencia',
             'documentos',
+            'racData',
             'evidencias',
             'instrumentos',
-            'evaluacion'
+            'instAprobados'
         ));
     }
 

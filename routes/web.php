@@ -114,7 +114,7 @@ Route::middleware('auth')->group(function () {
         Route::prefix('reportes')->group(function () {
             Route::get('/', [Reportes::class, 'index'])->name('reportes');
             Route::get('/{id}', [Reportes::class, 'reportePdf'])->name('reportes-generar');
-            Route::get('/vacio/{materia}/{revision}',[Reportes::class, 'reporteVacio'])->name('reportes-vacio');
+            Route::get('/vacio/{materia}/{revision}', [Reportes::class, 'reporteVacio'])->name('reportes-vacio');
         });
     });
 
@@ -145,6 +145,9 @@ Route::middleware('auth')->group(function () {
             Route::put('/update/{id}', [Evidencias::class, 'update'])->name('evidencias.update');
         });
 
+        Route::prefix('mis-reportes')->group(function () {
+            Route::get('/{id}', [Reportes::class, 'reportePdfDocente'])->name('mis-reportes.pdf');
+        });
 
         Route::get('/notificaciones/marcar-leidas', function () {
             auth()->user()->unreadNotifications->markAsRead();
