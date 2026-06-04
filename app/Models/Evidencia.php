@@ -36,10 +36,6 @@ class Evidencia extends Model
 
     ];
 
-    // =====================================
-    // RELACIONES
-    // =====================================
-
     public function materia()
     {
         return $this->belongsTo(Materia::class);
@@ -61,5 +57,10 @@ class Evidencia extends Model
     public function asignacion()
     {
         return $this->belongsTo(AsignacionMateria::class, 'asignacion_materia_id');
+    }
+
+    public function admin()
+    {
+        return $this->belongsTo(User::class, 'admin_id');
     }
 }

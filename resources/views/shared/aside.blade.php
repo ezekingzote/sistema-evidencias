@@ -67,6 +67,13 @@
                 <span>Archivos</span>
             </a>
         </li>
+        
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="{{ route('imagenes') }}">
+                <i class="fa-solid fa-file-image"></i>
+                <span>Imagenes de oficios</span>
+            </a>
+        </li>
         @endif
 
 

@@ -59,7 +59,8 @@ class Reportes extends Controller
             'materia',
             'revision',
             'asignacion.docente',
-            'asignacionMateria.semestre'
+            'asignacionMateria.semestre',
+            'admin'
         ])->findOrFail($id);
 
         $evaluacion = $evidencia->evaluacion ?? [];
@@ -178,7 +179,7 @@ class Reportes extends Controller
                 'evaluacion' => $evaluacion,
                 'criterios' => $criterios,
                 'promedioFinal' => 0,
-                'admin' => Auth::user(),
+                'admin' => $evidencia->admin,
             ]
         );
 
@@ -191,10 +192,10 @@ class Reportes extends Controller
             'materia',
             'revision',
             'asignacion.docente',
-            'asignacionMateria.semestre'
+            'asignacionMateria.semestre',
+            'admin'
         ])->findOrFail($id);
 
-        // Seguridad:
         if (
             $evidencia->asignacionMateria->docente_id != Auth::id()
         ) {
@@ -248,7 +249,7 @@ class Reportes extends Controller
                 'evaluacion' => $evaluacion,
                 'criterios' => $criterios,
                 'promedioFinal' => $promedioFinal,
-                'admin' => Auth::user(),
+                'admin' => $evidencia->admin,
             ]
         );
 

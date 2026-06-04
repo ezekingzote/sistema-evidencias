@@ -22,10 +22,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        
         URL::forceScheme('https');
         if (!app()->environment('local')) {
             URL::forceScheme('https');
         }
+        
         //gates en Laravel
         Gate::define('ver-admin', function (User $user){
             return $user->rol === 'admin';

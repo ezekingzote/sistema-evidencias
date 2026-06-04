@@ -116,7 +116,7 @@ class Archivos extends Controller
         return response()->download($zipPath)->deleteFileAfterSend(true);
     }
 
-    // Retorna el archivo con los headers adecuados para evitar bloqueos del navegador
+
     public function verArchivo(Request $request)
     {
         $rutaParam = $request->get('ruta');
@@ -133,7 +133,7 @@ class Archivos extends Controller
 
         $path = storage_path('app/public/' . $ruta);
         
-        // Retornamos de forma binaria nativa para saltar restricciones perimetrales del Web Server
+
         return response()->file($path, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="' . basename($path) . '"'

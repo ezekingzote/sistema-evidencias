@@ -7,6 +7,7 @@ use App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Docentes;
 use App\Http\Controllers\Evaluaciones;
 use App\Http\Controllers\Evidencias;
+use App\Http\Controllers\Imagenes;
 use App\Http\Controllers\Materias;
 use App\Http\Controllers\Pdfs;
 use App\Http\Controllers\PlanesEstudio;
@@ -115,6 +116,11 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [Reportes::class, 'index'])->name('reportes');
             Route::get('/{id}', [Reportes::class, 'reportePdf'])->name('reportes-generar');
             Route::get('/vacio/{materia}/{revision}', [Reportes::class, 'reporteVacio'])->name('reportes-vacio');
+        });
+
+        Route::prefix('imagenes')->group(function () {
+            Route::get('/', [Imagenes::class, 'index'])->name('imagenes');
+            Route::post('/configuracion-pdf',[Imagenes::class, 'update'])->name('imagenes.update');
         });
     });
 
