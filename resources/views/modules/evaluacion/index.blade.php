@@ -31,7 +31,37 @@
                                     @php
                                         $evaluacion = $evidencia->evaluacion[$doc['key']] ?? [];
 
-                                        $esNA = !empty($evaluacion['na']);
+                                        $documentoNaLista = !empty($doc['documento_na']);
+
+                                        $archivoLista = $doc['archivo'] ?? null;
+
+                                        if (is_array($archivoLista)) {
+                                            $documentoNaLista = $documentoNaLista || !empty($archivoLista['na']);
+                                        }
+
+                                        $archivosMultiplesLista = $doc['archivos_multiples'] ?? [];
+                                        $hayArchivoMultipleLista = false;
+                                        $hayNaMultipleLista = false;
+
+                                        foreach ($archivosMultiplesLista as $pdfLista) {
+                                            if (is_array($pdfLista)) {
+                                                if (!empty($pdfLista['archivo'])) {
+                                                    $hayArchivoMultipleLista = true;
+                                                }
+
+                                                if (!empty($pdfLista['na'])) {
+                                                    $hayNaMultipleLista = true;
+                                                }
+                                            } elseif (is_string($pdfLista) && trim($pdfLista) !== '') {
+                                                $hayArchivoMultipleLista = true;
+                                            }
+                                        }
+
+                                        if (!$hayArchivoMultipleLista && $hayNaMultipleLista) {
+                                            $documentoNaLista = true;
+                                        }
+
+                                        $esNA = !empty($evaluacion['na']) || $documentoNaLista;
                                         $calificacion = $evaluacion['calificacion'] ?? null;
                                     @endphp
 
@@ -74,10 +104,63 @@
 
                                             <div class="mb-4 bg-light border rounded overflow-hidden" style="height: 60vh;">
                                                 @php
-                                                    $archivosMultiples = $doc['archivos_multiples'] ?? [];
+                                                    $archivosMultiplesOriginales = $doc['archivos_multiples'] ?? [];
+                                                    $archivosMultiples = [];
+
+                                                    $hayArchivoMultiple = false;
+                                                    $hayNaMultiple = false;
+
+                                                    foreach ($archivosMultiplesOriginales as $pdf) {
+                                                        if (is_array($pdf)) {
+                                                            if (!empty($pdf['archivo'])) {
+                                                                $archivosMultiples[] = $pdf['archivo'];
+                                                                $hayArchivoMultiple = true;
+                                                            }
+
+                                                            if (!empty($pdf['na'])) {
+                                                                $hayNaMultiple = true;
+                                                            }
+                                                        } elseif (is_string($pdf) && trim($pdf) !== '') {
+                                                            $archivosMultiples[] = $pdf;
+                                                            $hayArchivoMultiple = true;
+                                                        }
+                                                    }
+
+                                                    $archivoPrincipal = $doc['archivo'] ?? null;
+                                                    $documentoNa = !empty($doc['documento_na']);
+
+                                                    if (is_array($archivoPrincipal)) {
+                                                        $documentoNa = $documentoNa || !empty($archivoPrincipal['na']);
+                                                        $archivoPrincipal = $archivoPrincipal['archivo'] ?? null;
+                                                    }
+
+                                                    if (!is_string($archivoPrincipal)) {
+                                                        $archivoPrincipal = null;
+                                                    }
+
+                                                    if (!$hayArchivoMultiple && $hayNaMultiple) {
+                                                        $documentoNa = true;
+                                                    }
                                                 @endphp
 
-                                                @if (count($archivosMultiples) > 1)
+                                                @if ($documentoNa)
+                                                    <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                                                        <div class="text-center px-4">
+                                                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-secondary-subtle text-secondary mb-3"
+                                                                style="width: 72px; height: 72px;">
+                                                                <i class="bi bi-dash-circle fs-1"></i>
+                                                            </div>
+
+                                                            <h5 class="fw-bold text-secondary mb-2">
+                                                                No aplica (N/A)
+                                                            </h5>
+
+                                                            <p class="mb-0 text-muted">
+                                                                Este apartado fue marcado como no aplicable por el docente.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                @elseif (count($archivosMultiples) > 1)
                                                     <div class="d-flex flex-column h-100 w-100">
 
                                                         <div
@@ -139,8 +222,8 @@
                                                         height="100%"
                                                         style="border:none;">
                                                     </iframe>
-                                                @elseif(!empty($doc['archivo']))
-                                                    <iframe src="{{ asset('storage/' . $doc['archivo']) }}"
+                                                @elseif(!empty($archivoPrincipal))
+                                                    <iframe src="{{ asset('storage/' . $archivoPrincipal) }}"
                                                         width="100%"
                                                         height="100%"
                                                         style="border:none;">
@@ -157,6 +240,11 @@
                                                     </div>
                                                 @endif
                                             </div>
+
+                                            @php
+                                                $evaluacionActual = $evidencia->evaluacion[$doc['key']] ?? [];
+                                                $checkNa = !empty($evaluacionActual['na']) || $documentoNa;
+                                            @endphp
 
                                             <div class="bg-primary-subtle p-3 rounded-3 form-evaluacion"
                                                 data-key="{{ $doc['key'] }}">
@@ -181,7 +269,7 @@
                                                         value="1"
                                                         id="na-{{ $doc['key'] }}"
                                                         data-key="{{ $doc['key'] }}"
-                                                        {{ isset($evidencia->evaluacion[$doc['key']]['na']) ? 'checked' : '' }}>
+                                                        {{ $checkNa ? 'checked' : '' }}>
 
                                                     <label class="form-check-label fw-semibold text-secondary"
                                                         for="na-{{ $doc['key'] }}">

@@ -18,7 +18,62 @@
     $evidenciasData = $evidencias ?? ($datosEvidencia['evidencias'] ?? []);
     $instrumentosExistentes = $datosEvidencia['instrumentos'] ?? [];
 
-    $totalUnidadesMateria = $evidencia->materia->unidades ?? 0;
+    $totalUnidadesMateria = (int) ($evidencia->materia->unidades ?? 0);
+
+    $primeraRevisionId = 1;
+    $esPrimeraRevision = (int) ($evidencia->revision->id ?? 0) === $primeraRevisionId;
+
+    $estadoActual = strtolower((string) ($evidencia->estado ?? ''));
+    $evidenciaAprobada = in_array($estadoActual, ['1', 'aprobado', 'aprobada'], true);
+
+    $unidadesOcupadas = array_values(array_unique(array_map('intval', $unidadesOcupadas ?? [])));
+    $unidadesSeleccionadas = array_values(array_map('intval', $unidadesSeleccionadas ?? []));
+
+    $unidadesActualesSinCero = array_values(array_filter($unidadesSeleccionadas, function ($unidad) {
+        return (int) $unidad !== 0;
+    }));
+
+    $unidadesDisponiblesParaEditar = [];
+
+    for ($i = 1; $i <= $totalUnidadesMateria; $i++) {
+        $unidadEstaOcupada = in_array($i, $unidadesOcupadas);
+        $unidadEsActual = in_array($i, $unidadesActualesSinCero);
+
+        if (!$unidadEstaOcupada || $unidadEsActual) {
+            $unidadesDisponiblesParaEditar[] = $i;
+        }
+    }
+
+    $sinUnidadesDisponibles = count($unidadesDisponiblesParaEditar) === 0;
+
+    if ($sinUnidadesDisponibles && count($unidadesActualesSinCero) === 0) {
+        $unidadesSeleccionadas = [0];
+    }
+
+    $permitirNingunaUnidad = $esPrimeraRevision || $sinUnidadesDisponibles;
+
+    $obtenerArchivo = function ($valor) {
+        if (is_array($valor)) {
+            return $valor['archivo'] ?? null;
+        }
+
+        if (is_string($valor)) {
+            return $valor;
+        }
+
+        return null;
+    };
+
+    $obtenerNa = function ($valor) {
+        return is_array($valor) && !empty($valor['na']);
+    };
+
+    $instrumentacionActual = $obtenerArchivo($documentosData['instrumentacion'] ?? null);
+    $reporteInicioActual = $obtenerArchivo($documentosData['reporte_inicio'] ?? null);
+    $acuerdosActual = $obtenerArchivo($documentosData['acuerdos'] ?? null);
+
+    $examenDiagnosticoActual = $obtenerArchivo($evidenciasData['examen_diagnostico'] ?? null);
+    $analisisDiagnosticoActual = $obtenerArchivo($evidenciasData['analisis_diagnostico'] ?? null);
 @endphp
 
 <main id="main" class="main">
@@ -47,6 +102,13 @@
                     </ul>
 
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
+            @if($evidenciaAprobada)
+                <div class="alert alert-success rounded-3 mb-4">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    Esta evidencia ya fue aprobada. No se permiten modificaciones.
                 </div>
             @endif
 
@@ -94,13 +156,20 @@
 
                 <div class="row g-3 mb-4" id="contenedor_tarjetas_unidades">
 
-                    @if(in_array(0, $unidadesSeleccionadas))
-
+                    @if($permitirNingunaUnidad)
                         <div class="col-md-3">
-                            <div class="card card-unidad-check p-3 text-center shadow-sm h-100 d-flex flex-column align-items-center justify-content-center active"
-                                id="card_unidad_0">
+                            <div class="card card-unidad-check p-3 text-center shadow-sm h-100 d-flex flex-column align-items-center justify-content-center {{ in_array(0, $unidadesSeleccionadas) ? 'active' : '' }} {{ $evidenciaAprobada ? 'unidad-bloqueada' : '' }}"
+                                id="card_unidad_0"
+                                @if(!$evidenciaAprobada)
+                                    onclick="toggleUnidadTarjeta(0)"
+                                @endif>
 
-                                <input type="checkbox" name="unidades[]" value="0" class="d-none" checked>
+                                <input type="checkbox"
+                                    id="chk_unidad_0"
+                                    name="unidades[]"
+                                    value="0"
+                                    class="d-none"
+                                    {{ in_array(0, $unidadesSeleccionadas) ? 'checked' : '' }}>
 
                                 <i class="bi bi-dash-circle fs-3 text-secondary mb-2"></i>
 
@@ -108,36 +177,60 @@
                                     Ninguna Unidad
                                 </span>
 
+                                @if($sinUnidadesDisponibles)
+                                    <span class="badge bg-secondary mt-2">
+                                        Sin unidades disponibles
+                                    </span>
+                                @endif
                             </div>
                         </div>
-
-                    @else
-
-                        @for($i = 1; $i <= $totalUnidadesMateria; $i++)
-
-                            <div class="col-md-3">
-                                <div class="card card-unidad-check p-3 text-center shadow-sm h-100 d-flex flex-column align-items-center justify-content-center {{ in_array($i, $unidadesSeleccionadas) ? 'active' : '' }}"
-                                    id="card_unidad_{{ $i }}">
-
-                                    <input type="checkbox"
-                                        id="chk_unidad_{{ $i }}"
-                                        name="unidades[]"
-                                        value="{{ $i }}"
-                                        class="d-none"
-                                        {{ in_array($i, $unidadesSeleccionadas) ? 'checked' : '' }}>
-
-                                    <i class="bi bi-bookmark-check fs-3 text-primary mb-2"></i>
-
-                                    <span class="fw-bold text-dark">
-                                        Unidad {{ $i }}
-                                    </span>
-
-                                </div>
-                            </div>
-
-                        @endfor
-
                     @endif
+
+                    @for($i = 1; $i <= $totalUnidadesMateria; $i++)
+                        @php
+                            $unidadEstaOcupada = in_array($i, $unidadesOcupadas);
+                            $unidadEsActual = in_array($i, $unidadesActualesSinCero);
+                            $unidadBloqueada = $unidadEstaOcupada && !$unidadEsActual;
+                            $unidadActiva = in_array($i, $unidadesSeleccionadas);
+                        @endphp
+
+                        <div class="col-md-3">
+                            <div class="card card-unidad-check p-3 text-center shadow-sm h-100 d-flex flex-column align-items-center justify-content-center {{ $unidadActiva ? 'active' : '' }} {{ ($unidadBloqueada || $evidenciaAprobada) ? 'unidad-bloqueada' : '' }}"
+                                id="card_unidad_{{ $i }}"
+                                @if(!$unidadBloqueada && !$evidenciaAprobada)
+                                    onclick="toggleUnidadTarjeta({{ $i }})"
+                                @endif>
+
+                                <input type="checkbox"
+                                    id="chk_unidad_{{ $i }}"
+                                    name="unidades[]"
+                                    value="{{ $i }}"
+                                    class="d-none"
+                                    {{ $unidadActiva ? 'checked' : '' }}
+                                    {{ $unidadBloqueada ? 'disabled' : '' }}>
+
+                                <i class="bi bi-bookmark-check fs-3 {{ $unidadBloqueada ? 'text-muted' : 'text-primary' }} mb-2"></i>
+
+                                <span class="fw-bold text-dark">
+                                    Unidad {{ $i }}
+                                </span>
+
+                                @if($unidadBloqueada)
+                                    <span class="badge bg-danger-subtle text-danger mt-2">
+                                        Ya evaluada
+                                    </span>
+                                @elseif($unidadEsActual)
+                                    <span class="badge bg-success-subtle text-success mt-2">
+                                        Actual
+                                    </span>
+                                @else
+                                    <span class="badge bg-primary-subtle text-primary mt-2">
+                                        Disponible
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                    @endfor
 
                 </div>
 
@@ -149,110 +242,124 @@
 
                 <div class="row g-4">
 
-                    <div class="col-md-6">
-                        <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                    @if($esPrimeraRevision)
+                        <div class="col-md-6 campo-solo-revision-1">
+                            <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
 
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="p-2.5 rounded-3 bg-primary-subtle text-primary me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                    style="width: 45px; height: 45px;">
-                                    <i class="bi bi-book-half"></i>
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="p-2.5 rounded-3 bg-primary-subtle text-primary me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                        style="width: 45px; height: 45px;">
+                                        <i class="bi bi-book-half"></i>
+                                    </div>
+
+                                    <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                        Instrumentación didáctica
+                                    </label>
                                 </div>
 
-                                <label class="form-label fw-bold text-dark fs-5 mb-0">
-                                    Instrumentación didáctica
-                                </label>
+                                @if($instrumentacionActual)
+                                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
+                                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+
+                                        <a href="{{ asset('storage/' . $instrumentacionActual) }}"
+                                            target="_blank"
+                                            class="text-decoration-none small text-truncate">
+                                            Ver documento actual
+                                        </a>
+                                    </div>
+                                @endif
+
+                                <input type="file"
+                                    name="instrumentacion"
+                                    class="form-control form-control-lg fs-6 archivo-pdf-5mb"
+                                    accept="application/pdf"
+                                    {{ $evidenciaAprobada ? 'disabled' : '' }}>
+
+                                <small class="text-muted mt-1 d-block">
+                                    Dejar vacío para mantener el actual. Solo PDF, máximo 5 MB.
+                                </small>
+
                             </div>
-
-                            @if($documentosData['instrumentacion'] ?? false)
-                                <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
-                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-
-                                    <a href="{{ asset('storage/' . $documentosData['instrumentacion']) }}"
-                                        target="_blank"
-                                        class="text-decoration-none small text-truncate">
-                                        Ver documento actual
-                                    </a>
-                                </div>
-                            @endif
-
-                            <input type="file" name="instrumentacion" class="form-control form-control-lg fs-6">
-
-                            <small class="text-muted mt-1">
-                                Dejar vacío para mantener el actual.
-                            </small>
-
                         </div>
-                    </div>
 
-                    <div class="col-md-6">
-                        <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                        <div class="col-md-6 campo-solo-revision-1">
+                            <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
 
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="p-2.5 rounded-3 bg-info-subtle text-info me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                    style="width: 45px; height: 45px;">
-                                    <i class="bi bi-calendar-check"></i>
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="p-2.5 rounded-3 bg-info-subtle text-info me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                        style="width: 45px; height: 45px;">
+                                        <i class="bi bi-calendar-check"></i>
+                                    </div>
+
+                                    <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                        Reporte de inicio de curso
+                                    </label>
                                 </div>
 
-                                <label class="form-label fw-bold text-dark fs-5 mb-0">
-                                    Reporte de inicio de curso
-                                </label>
+                                @if($reporteInicioActual)
+                                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
+                                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+
+                                        <a href="{{ asset('storage/' . $reporteInicioActual) }}"
+                                            target="_blank"
+                                            class="text-decoration-none small text-truncate">
+                                            Ver documento actual
+                                        </a>
+                                    </div>
+                                @endif
+
+                                <input type="file"
+                                    name="reporte_inicio"
+                                    class="form-control form-control-lg fs-6 archivo-pdf-5mb"
+                                    accept="application/pdf"
+                                    {{ $evidenciaAprobada ? 'disabled' : '' }}>
+
+                                <small class="text-muted mt-1 d-block">
+                                    Dejar vacío para mantener el actual. Solo PDF, máximo 5 MB.
+                                </small>
+
                             </div>
-
-                            @if($documentosData['reporte_inicio'] ?? false)
-                                <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
-                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-
-                                    <a href="{{ asset('storage/' . $documentosData['reporte_inicio']) }}"
-                                        target="_blank"
-                                        class="text-decoration-none small text-truncate">
-                                        Ver documento actual
-                                    </a>
-                                </div>
-                            @endif
-
-                            <input type="file" name="reporte_inicio" class="form-control form-control-lg fs-6">
-
-                            <small class="text-muted mt-1">
-                                Dejar vacío para mantener el actual.
-                            </small>
-
                         </div>
-                    </div>
 
-                    <div class="col-md-6">
-                        <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                        <div class="col-md-6 campo-solo-revision-1">
+                            <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
 
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                    style="width: 45px; height: 45px;">
-                                    <i class="bi bi-person-workspace"></i>
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                        style="width: 45px; height: 45px;">
+                                        <i class="bi bi-person-workspace"></i>
+                                    </div>
+
+                                    <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                        Acuerdos de clase
+                                    </label>
                                 </div>
 
-                                <label class="form-label fw-bold text-dark fs-5 mb-0">
-                                    Acuerdos de clase
-                                </label>
+                                @if($acuerdosActual)
+                                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
+                                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+
+                                        <a href="{{ asset('storage/' . $acuerdosActual) }}"
+                                            target="_blank"
+                                            class="text-decoration-none small text-truncate">
+                                            Ver documento actual
+                                        </a>
+                                    </div>
+                                @endif
+
+                                <input type="file"
+                                    name="acuerdos"
+                                    class="form-control form-control-lg fs-6 archivo-pdf-5mb"
+                                    accept="application/pdf"
+                                    {{ $evidenciaAprobada ? 'disabled' : '' }}>
+
+                                <small class="text-muted mt-1 d-block">
+                                    Dejar vacío para mantener el actual. Solo PDF, máximo 5 MB.
+                                </small>
+
                             </div>
-
-                            @if($documentosData['acuerdos'] ?? false)
-                                <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
-                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-
-                                    <a href="{{ asset('storage/' . $documentosData['acuerdos']) }}"
-                                        target="_blank"
-                                        class="text-decoration-none small text-truncate">
-                                        Ver documento actual
-                                    </a>
-                                </div>
-                            @endif
-
-                            <input type="file" name="acuerdos" class="form-control form-control-lg fs-6">
-
-                            <small class="text-muted mt-1">
-                                Dejar vacío para mantener el actual.
-                            </small>
-
                         </div>
-                    </div>
+                    @endif
 
                     <div class="col-md-6" id="contenedor_calificaciones">
                         <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
@@ -268,55 +375,7 @@
                                 </label>
                             </div>
 
-                            <div class="wrapper-inputs d-flex flex-column gap-2">
-
-                                @if(in_array(0, $unidadesSeleccionadas))
-
-                                    <span class="text-muted small">
-                                        No aplica para esta revisión
-                                    </span>
-
-                                    <input type="hidden" name="unidades[]" value="0">
-
-                                @else
-
-                                    @foreach($unidadesSeleccionadas as $unidad)
-
-                                        @php
-                                            $rutaCal = $documentosData['calificaciones_detalladas']["u{$unidad}"] ?? null;
-                                        @endphp
-
-                                        <div class="mb-2">
-                                            <span class="badge bg-secondary mb-1">
-                                                U{{ $unidad }}
-                                            </span>
-
-                                            @if($rutaCal)
-                                                <div class="d-flex align-items-center bg-light p-1 rounded mb-1">
-                                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-
-                                                    <a href="{{ asset('storage/' . $rutaCal) }}"
-                                                        target="_blank"
-                                                        class="text-decoration-none small">
-                                                        Actual
-                                                    </a>
-                                                </div>
-                                            @endif
-
-                                            <input type="file"
-                                                name="calificaciones[{{ $unidad }}]"
-                                                class="form-control form-control-sm fs-6">
-
-                                            <small class="text-muted">
-                                                Dejar vacío para mantener
-                                            </small>
-                                        </div>
-
-                                    @endforeach
-
-                                @endif
-
-                            </div>
+                            <div class="wrapper-inputs d-flex flex-column gap-2" id="wrapper_calificaciones"></div>
 
                         </div>
                     </div>
@@ -335,89 +394,7 @@
                                 </label>
                             </div>
 
-                            <div class="wrapper-inputs d-flex flex-column gap-3">
-
-                                @if(in_array(0, $unidadesSeleccionadas))
-
-                                    <span class="text-muted small">
-                                        No aplica para esta revisión
-                                    </span>
-
-                                @else
-
-                                    @foreach($unidadesSeleccionadas as $unidad)
-
-                                        @php
-                                            $racData = $documentosData['rac_detallado']["u{$unidad}"] ?? null;
-
-                                            $racNa = is_array($racData) ? ($racData['na'] ?? false) : false;
-                                            $rutaRac = is_array($racData) ? ($racData['archivo'] ?? null) : null;
-                                        @endphp
-
-                                        <div class="rac-edit-row">
-
-                                            <span class="badge bg-secondary rac-edit-badge">
-                                                U{{ $unidad }}
-                                            </span>
-
-                                            <div class="rac-edit-file-box">
-
-                                                @if($racNa)
-
-                                                    <div class="alert alert-secondary py-2 px-3 mb-2 small">
-                                                        <i class="bi bi-ban me-1"></i>
-                                                        Esta unidad está marcada como No aplica.
-                                                    </div>
-
-                                                @elseif($rutaRac)
-
-                                                    <div class="d-flex align-items-center bg-light p-1 rounded mb-1">
-                                                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-
-                                                        <a href="{{ asset('storage/' . $rutaRac) }}"
-                                                            target="_blank"
-                                                            class="text-decoration-none small">
-                                                            Actual
-                                                        </a>
-                                                    </div>
-
-                                                @endif
-
-                                                <input type="file"
-                                                    name="rac[{{ $unidad }}]"
-                                                    id="rac_file_{{ $unidad }}"
-                                                    class="form-control form-control-sm fs-6 rac-edit-file"
-                                                    {{ $racNa ? 'disabled' : '' }}>
-
-                                                <small class="text-muted">
-                                                    Dejar vacío para mantener
-                                                </small>
-
-                                            </div>
-
-                                            <div class="form-check form-switch rac-edit-na-box">
-
-                                                <input class="form-check-input rac-edit-na-toggle"
-                                                    type="checkbox"
-                                                    name="rac_na[{{ $unidad }}]"
-                                                    value="1"
-                                                    id="rac_na_{{ $unidad }}"
-                                                    data-unidad="{{ $unidad }}"
-                                                    {{ $racNa ? 'checked' : '' }}>
-
-                                                <label class="form-check-label" for="rac_na_{{ $unidad }}">
-                                                    No aplica
-                                                </label>
-
-                                            </div>
-
-                                        </div>
-
-                                    @endforeach
-
-                                @endif
-
-                            </div>
+                            <div class="wrapper-inputs d-flex flex-column gap-3" id="wrapper_rac"></div>
 
                         </div>
                     </div>
@@ -432,75 +409,85 @@
 
                 <div class="row g-4">
 
-                    <div class="col-md-6">
-                        <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                    @if($esPrimeraRevision)
+                        <div class="col-md-6 campo-solo-revision-1">
+                            <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
 
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="p-2.5 rounded-3 bg-primary-subtle text-primary me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                    style="width: 45px; height: 45px;">
-                                    <i class="bi bi-file-earmark-medical"></i>
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="p-2.5 rounded-3 bg-primary-subtle text-primary me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                        style="width: 45px; height: 45px;">
+                                        <i class="bi bi-file-earmark-medical"></i>
+                                    </div>
+
+                                    <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                        Examen diagnóstico
+                                    </label>
                                 </div>
 
-                                <label class="form-label fw-bold text-dark fs-5 mb-0">
-                                    Examen diagnóstico
-                                </label>
+                                @if($examenDiagnosticoActual)
+                                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
+                                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+
+                                        <a href="{{ asset('storage/' . $examenDiagnosticoActual) }}"
+                                            target="_blank"
+                                            class="text-decoration-none small text-truncate">
+                                            Ver documento actual
+                                        </a>
+                                    </div>
+                                @endif
+
+                                <input type="file"
+                                    name="examen_diagnostico"
+                                    class="form-control form-control-lg fs-6 archivo-pdf-5mb"
+                                    accept="application/pdf"
+                                    {{ $evidenciaAprobada ? 'disabled' : '' }}>
+
+                                <small class="text-muted mt-1 d-block">
+                                    Dejar vacío para mantener el actual. Solo PDF, máximo 5 MB.
+                                </small>
+
                             </div>
-
-                            @if($evidenciasData['examen_diagnostico'] ?? false)
-                                <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
-                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-
-                                    <a href="{{ asset('storage/' . $evidenciasData['examen_diagnostico']) }}"
-                                        target="_blank"
-                                        class="text-decoration-none small text-truncate">
-                                        Ver documento actual
-                                    </a>
-                                </div>
-                            @endif
-
-                            <input type="file" name="examen_diagnostico" class="form-control form-control-lg fs-6">
-
-                            <small class="text-muted mt-1">
-                                Dejar vacío para mantener el actual.
-                            </small>
-
                         </div>
-                    </div>
 
-                    <div class="col-md-6">
-                        <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                        <div class="col-md-6 campo-solo-revision-1">
+                            <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
 
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="p-2.5 rounded-3 bg-info-subtle text-info me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                    style="width: 45px; height: 45px;">
-                                    <i class="bi bi-bar-chart-line"></i>
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="p-2.5 rounded-3 bg-info-subtle text-info me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                        style="width: 45px; height: 45px;">
+                                        <i class="bi bi-bar-chart-line"></i>
+                                    </div>
+
+                                    <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                        Análisis del diagnóstico
+                                    </label>
                                 </div>
 
-                                <label class="form-label fw-bold text-dark fs-5 mb-0">
-                                    Análisis del diagnóstico
-                                </label>
+                                @if($analisisDiagnosticoActual)
+                                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
+                                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+
+                                        <a href="{{ asset('storage/' . $analisisDiagnosticoActual) }}"
+                                            target="_blank"
+                                            class="text-decoration-none small text-truncate">
+                                            Ver documento actual
+                                        </a>
+                                    </div>
+                                @endif
+
+                                <input type="file"
+                                    name="analisis_diagnostico"
+                                    class="form-control form-control-lg fs-6 archivo-pdf-5mb"
+                                    accept="application/pdf"
+                                    {{ $evidenciaAprobada ? 'disabled' : '' }}>
+
+                                <small class="text-muted mt-1 d-block">
+                                    Dejar vacío para mantener el actual. Solo PDF, máximo 5 MB.
+                                </small>
+
                             </div>
-
-                            @if($evidenciasData['analisis_diagnostico'] ?? false)
-                                <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
-                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-
-                                    <a href="{{ asset('storage/' . $evidenciasData['analisis_diagnostico']) }}"
-                                        target="_blank"
-                                        class="text-decoration-none small text-truncate">
-                                        Ver documento actual
-                                    </a>
-                                </div>
-                            @endif
-
-                            <input type="file" name="analisis_diagnostico" class="form-control form-control-lg fs-6">
-
-                            <small class="text-muted mt-1">
-                                Dejar vacío para mantener el actual.
-                            </small>
-
                         </div>
-                    </div>
+                    @endif
 
                     <div class="col-md-6" id="contenedor_rubricas">
                         <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
@@ -516,53 +503,7 @@
                                 </label>
                             </div>
 
-                            <div class="wrapper-inputs d-flex flex-column gap-2">
-
-                                @if(in_array(0, $unidadesSeleccionadas))
-
-                                    <span class="text-muted small">
-                                        No aplica para esta revisión
-                                    </span>
-
-                                @else
-
-                                    @foreach($unidadesSeleccionadas as $unidad)
-
-                                        @php
-                                            $rutaRub = $evidenciasData['rubricas_detalladas']["u{$unidad}"] ?? null;
-                                        @endphp
-
-                                        <div class="mb-2">
-                                            <span class="badge bg-secondary mb-1">
-                                                U{{ $unidad }}
-                                            </span>
-
-                                            @if($rutaRub)
-                                                <div class="d-flex align-items-center bg-light p-1 rounded mb-1">
-                                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-
-                                                    <a href="{{ asset('storage/' . $rutaRub) }}"
-                                                        target="_blank"
-                                                        class="text-decoration-none small">
-                                                        Actual
-                                                    </a>
-                                                </div>
-                                            @endif
-
-                                            <input type="file"
-                                                name="rubricas[{{ $unidad }}]"
-                                                class="form-control form-control-sm fs-6">
-
-                                            <small class="text-muted">
-                                                Dejar vacío para mantener
-                                            </small>
-                                        </div>
-
-                                    @endforeach
-
-                                @endif
-
-                            </div>
+                            <div class="wrapper-inputs d-flex flex-column gap-2" id="wrapper_rubricas"></div>
 
                         </div>
                     </div>
@@ -571,119 +512,7 @@
 
                 <hr class="my-4">
 
-                <div id="seccion_dropzones_dinamicos">
-
-                    <h5 class="fw-bold text-success mb-3">
-                        INSTRUMENTOS DE EVALUACIÓN INDIVIDUALES
-                    </h5>
-
-                    @if(!in_array(0, $unidadesSeleccionadas))
-
-                        @foreach($unidadesSeleccionadas as $unidad)
-
-                            @php
-                                $instrumentosUnidad = array_filter($instrumentosExistentes, function($path) use ($unidad) {
-                                    return strpos($path, "instrumento_u{$unidad}_") !== false;
-                                });
-                            @endphp
-
-                            <div class="card border border-light-subtle rounded-3 shadow-sm p-4 bg-white style-dropzone mb-3"
-                                id="dropzone_u_{{ $unidad }}">
-
-                                <div class="d-flex align-items-center justify-content-between mb-3">
-                                    <div class="d-flex align-items-center">
-
-                                        <div class="p-2.5 rounded-3 bg-success-subtle text-success me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                            style="width: 45px; height: 45px;">
-                                            <i class="bi bi-file-earmark-arrow-up"></i>
-                                        </div>
-
-                                        <div>
-                                            <h5 class="fw-bold text-dark fs-5 mb-0">
-                                                Instrumentos de Evaluación -
-                                                <span class="text-success">
-                                                    Unidad {{ $unidad }}
-                                                </span>
-                                            </h5>
-
-                                            <p class="text-muted small mb-0">
-                                                Sube hasta 3 archivos PDF para esta unidad
-                                            </p>
-                                        </div>
-
-                                    </div>
-
-                                    <button type="button"
-                                        class="btn btn-light border-0 p-2 rounded-circle btn-minimizar"
-                                        onclick="toggleMinimizarDropzone({{ $unidad }}, this)">
-                                        <i class="bi bi-chevron-down fs-5 text-secondary"></i>
-                                    </button>
-                                </div>
-
-                                <div class="dropzone-body-collapse mt-3" id="body_dropzone_u_{{ $unidad }}">
-                                    <div class="row align-items-center bg-light p-3 rounded-3 g-3">
-
-                                        <div class="col-md-4">
-                                            <input type="file"
-                                                id="helper_file_u_{{ $unidad }}"
-                                                accept="application/pdf"
-                                                multiple
-                                                onchange="agregarArchivosDropzone(this, {{ $unidad }})">
-
-                                            <button type="button"
-                                                class="btn btn-outline-success rounded-pill fw-semibold small px-4 py-2.5 w-100 shadow-sm d-flex align-items-center justify-content-center gap-2"
-                                                onclick="document.getElementById('helper_file_u_{{ $unidad }}').click()">
-
-                                                <i class="bi bi-folder2-open"></i>
-                                                Archivos Unidad {{ $unidad }}
-
-                                            </button>
-                                        </div>
-
-                                        <div class="col-md-8">
-                                            <div id="lista_archivos_u_{{ $unidad }}" class="d-flex flex-column gap-2 text-start">
-
-                                                @foreach($instrumentosUnidad as $idx => $path)
-
-                                                    <div class="archivo-cargado-item d-flex align-items-center justify-content-between p-2.5 bg-white border border-light-subtle rounded-3 shadow-sm">
-
-                                                        <div class="d-flex align-items-center">
-                                                            <div class="p-2 rounded-2 bg-danger-subtle text-danger me-2.5 d-inline-flex align-items-center justify-content-center"
-                                                                style="width: 32px; height: 32px;">
-                                                                <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
-                                                            </div>
-
-                                                            <span class="text-secondary fw-medium small">
-                                                                {{ basename($path) }}
-                                                            </span>
-                                                        </div>
-
-                                                        <button type="button"
-                                                            class="btn-eliminar-archivo btn border-0 p-2 text-muted rounded-2 d-inline-flex align-items-center justify-content-center"
-                                                            style="width: 32px; height: 32px;"
-                                                            onclick="eliminarArchivoExistente({{ $unidad }}, '{{ $path }}', this)">
-                                                            <i class="bi bi-trash3 fs-5"></i>
-                                                        </button>
-
-                                                    </div>
-
-                                                @endforeach
-
-                                            </div>
-                                        </div>
-
-                                    </div>
-                                </div>
-
-                                <div id="hidden_inputs_u_{{ $unidad }}"></div>
-
-                            </div>
-
-                        @endforeach
-
-                    @endif
-
-                </div>
+                <div id="seccion_dropzones_dinamicos"></div>
 
                 <div class="mt-4 d-flex gap-2">
 
@@ -692,7 +521,7 @@
                         Regresar
                     </a>
 
-                    <button type="submit" class="btn btn-primary px-4 rounded-pill">
+                    <button type="submit" class="btn btn-primary px-4 rounded-pill" {{ $evidenciaAprobada ? 'disabled' : '' }}>
                         <i class="bi bi-floppy me-1"></i>
                         Actualizar Evidencia
                     </button>
@@ -719,14 +548,30 @@
     }
 
     .card-unidad-check {
-        cursor: default;
+        cursor: pointer;
         transition: all 0.2s ease;
         border: 2px solid #dee2e6 !important;
+    }
+
+    .card-unidad-check:hover {
+        border-color: #0d6efd !important;
+        background-color: #f8f9fa;
     }
 
     .card-unidad-check.active {
         border-color: #198754 !important;
         background-color: #f0fdf4;
+    }
+
+    .unidad-bloqueada {
+        cursor: not-allowed !important;
+        opacity: 0.75;
+        background-color: #f8f9fa !important;
+    }
+
+    .unidad-bloqueada:hover {
+        border-color: #dee2e6 !important;
+        background-color: #f8f9fa !important;
     }
 
     .dropzone-body-collapse {
@@ -835,18 +680,477 @@
 </style>
 
 <script>
+    const evidenciaAprobada = @json($evidenciaAprobada);
+    const esPrimeraRevision = @json($esPrimeraRevision);
+    const totalUnidadesMateria = @json($totalUnidadesMateria);
+    const unidadesOcupadas = @json($unidadesOcupadas);
+    const sinUnidadesDisponibles = @json($sinUnidadesDisponibles);
+
+    const documentosData = @json($documentosData);
+    const evidenciasData = @json($evidenciasData);
+    const instrumentosExistentesOriginales = @json($instrumentosExistentes);
+
+    let unidadesSeleccionadas = @json(array_values($unidadesSeleccionadas));
     let nuevosArchivosPorUnidad = {};
     let archivosExistentesAEliminar = [];
 
-    const unidadesSeleccionadas = @json($unidadesSeleccionadas);
+    const wrapperCalificaciones = document.getElementById('wrapper_calificaciones');
+    const wrapperRac = document.getElementById('wrapper_rac');
+    const wrapperRubricas = document.getElementById('wrapper_rubricas');
+    const seccionDropzones = document.getElementById('seccion_dropzones_dinamicos');
 
-    if (!unidadesSeleccionadas.includes(0)) {
+    function obtenerArchivo(valor) {
+        if (valor && typeof valor === 'object' && !Array.isArray(valor)) {
+            return valor.archivo ?? null;
+        }
+
+        if (typeof valor === 'string' && valor.trim() !== '') {
+            return valor;
+        }
+
+        return null;
+    }
+
+    function obtenerNa(valor) {
+        return !!(valor && typeof valor === 'object' && valor.na);
+    }
+
+    function assetStorage(path) {
+        return `{{ asset('storage') }}/${path}`;
+    }
+
+    function limpiarNombreArchivo(path) {
+        if (!path) {
+            return '';
+        }
+
+        return path.split('/').pop();
+    }
+
+    function validarArchivoPdf5Mb(input) {
+        const maxSize = 5 * 1024 * 1024;
+
+        if (!input.files || input.files.length === 0) {
+            return true;
+        }
+
+        for (const file of input.files) {
+            if (file.type !== 'application/pdf') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Archivo no permitido',
+                    text: 'Solo se permiten archivos en formato PDF.'
+                });
+
+                input.value = '';
+                return false;
+            }
+
+            if (file.size > maxSize) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Archivo demasiado pesado',
+                    text: `El archivo "${file.name}" supera el límite de 5 MB.`
+                });
+
+                input.value = '';
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function actualizarListaUnidadesDesdeCheckboxes() {
+        unidadesSeleccionadas = [];
+
+        const chk0 = document.getElementById('chk_unidad_0');
+
+        if (chk0 && chk0.checked) {
+            unidadesSeleccionadas = [0];
+            return;
+        }
+
+        for (let i = 1; i <= totalUnidadesMateria; i++) {
+            const chk = document.getElementById(`chk_unidad_${i}`);
+
+            if (chk && chk.checked && !chk.disabled) {
+                unidadesSeleccionadas.push(i);
+            }
+        }
+    }
+
+    window.toggleUnidadTarjeta = function(num) {
+        if (evidenciaAprobada) {
+            return;
+        }
+
+        const checkbox = document.getElementById(`chk_unidad_${num}`);
+        const tarjeta = document.getElementById(`card_unidad_${num}`);
+
+        if (!checkbox || !tarjeta || checkbox.disabled) {
+            return;
+        }
+
+        if (num === 0) {
+            for (let i = 1; i <= totalUnidadesMateria; i++) {
+                const chk = document.getElementById(`chk_unidad_${i}`);
+                const crd = document.getElementById(`card_unidad_${i}`);
+
+                if (chk && chk.checked) {
+                    chk.checked = false;
+                    crd.classList.remove('active');
+                }
+            }
+
+            checkbox.checked = !checkbox.checked;
+            tarjeta.classList.toggle('active', checkbox.checked);
+        } else {
+            const chk0 = document.getElementById('chk_unidad_0');
+            const crd0 = document.getElementById('card_unidad_0');
+
+            if (chk0 && chk0.checked) {
+                chk0.checked = false;
+                crd0.classList.remove('active');
+            }
+
+            checkbox.checked = !checkbox.checked;
+            tarjeta.classList.toggle('active', checkbox.checked);
+        }
+
+        actualizarListaUnidadesDesdeCheckboxes();
+        procesarCambioUnidadesEdit();
+    };
+
+    function obtenerCalificacionUnidad(unidad) {
+        return documentosData?.calificaciones_detalladas?.[`u${unidad}`] ?? null;
+    }
+
+    function obtenerRacUnidad(unidad) {
+        return documentosData?.rac_detallado?.[`u${unidad}`] ?? null;
+    }
+
+    function obtenerRubricaUnidad(unidad) {
+        return evidenciasData?.rubricas_detalladas?.[`u${unidad}`] ?? null;
+    }
+
+    function procesarCambioUnidadesEdit() {
+        actualizarListaUnidadesDesdeCheckboxes();
+
+        const esNingunaUnidad = unidadesSeleccionadas.includes(0);
+
+        if (esNingunaUnidad) {
+            wrapperCalificaciones.innerHTML = `
+                <span class="text-muted small">
+                    No aplica para esta revisión
+                </span>
+                <input type="hidden" name="unidades[]" value="0">
+            `;
+
+            wrapperRac.innerHTML = `
+                <span class="text-muted small">
+                    No aplica para esta revisión
+                </span>
+            `;
+
+            wrapperRubricas.innerHTML = `
+                <span class="text-muted small">
+                    No aplica para esta revisión
+                </span>
+            `;
+
+            seccionDropzones.innerHTML = `
+                <h5 class="fw-bold text-success mb-3">
+                    INSTRUMENTOS DE EVALUACIÓN INDIVIDUALES
+                </h5>
+
+                <div class="alert alert-secondary">
+                    <i class="bi bi-ban me-1"></i>
+                    No aplica para esta revisión.
+                </div>
+            `;
+
+            nuevosArchivosPorUnidad = {};
+            return;
+        }
+
+        if (unidadesSeleccionadas.length === 0) {
+            wrapperCalificaciones.innerHTML = `
+                <span class="text-muted small">
+                    Selecciona unidades primero
+                </span>
+            `;
+
+            wrapperRac.innerHTML = `
+                <span class="text-muted small">
+                    Selecciona unidades primero
+                </span>
+            `;
+
+            wrapperRubricas.innerHTML = `
+                <span class="text-muted small">
+                    Selecciona unidades primero
+                </span>
+            `;
+
+            seccionDropzones.innerHTML = '';
+            nuevosArchivosPorUnidad = {};
+            return;
+        }
+
+        wrapperCalificaciones.innerHTML = '';
+        wrapperRac.innerHTML = '';
+        wrapperRubricas.innerHTML = '';
+
         unidadesSeleccionadas.forEach(unidad => {
-            nuevosArchivosPorUnidad[unidad] = [];
+            const calData = obtenerCalificacionUnidad(unidad);
+            const rutaCal = obtenerArchivo(calData);
+
+            wrapperCalificaciones.innerHTML += `
+                <div class="mb-2">
+                    <span class="badge bg-secondary mb-1">
+                        U${unidad}
+                    </span>
+
+                    ${rutaCal ? `
+                        <div class="d-flex align-items-center bg-light p-1 rounded mb-1">
+                            <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+
+                            <a href="${assetStorage(rutaCal)}"
+                                target="_blank"
+                                class="text-decoration-none small">
+                                Actual
+                            </a>
+                        </div>
+                    ` : ''}
+
+                    <input type="file"
+                        name="calificaciones[${unidad}]"
+                        class="form-control form-control-sm fs-6 archivo-pdf-5mb"
+                        accept="application/pdf"
+                        ${evidenciaAprobada ? 'disabled' : ''}>
+
+                    <small class="text-muted">
+                        ${rutaCal ? 'Dejar vacío para mantener. Solo PDF, máximo 5 MB.' : 'Archivo requerido. Solo PDF, máximo 5 MB.'}
+                    </small>
+                </div>
+            `;
+
+            const racData = obtenerRacUnidad(unidad);
+            const racNa = obtenerNa(racData);
+            const rutaRac = obtenerArchivo(racData);
+
+            wrapperRac.innerHTML += `
+                <div class="rac-edit-row">
+                    <span class="badge bg-secondary rac-edit-badge">
+                        U${unidad}
+                    </span>
+
+                    <div class="rac-edit-file-box">
+                        ${racNa ? `
+                            <div class="alert alert-secondary py-2 px-3 mb-2 small">
+                                <i class="bi bi-ban me-1"></i>
+                                Esta unidad está marcada como No aplica.
+                            </div>
+                        ` : ''}
+
+                        ${(!racNa && rutaRac) ? `
+                            <div class="d-flex align-items-center bg-light p-1 rounded mb-1">
+                                <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+
+                                <a href="${assetStorage(rutaRac)}"
+                                    target="_blank"
+                                    class="text-decoration-none small">
+                                    Actual
+                                </a>
+                            </div>
+                        ` : ''}
+
+                        <input type="file"
+                            name="rac[${unidad}]"
+                            id="rac_file_${unidad}"
+                            class="form-control form-control-sm fs-6 rac-edit-file archivo-pdf-5mb"
+                            accept="application/pdf"
+                            ${racNa || evidenciaAprobada ? 'disabled' : ''}>
+
+                        <small class="text-muted">
+                            ${rutaRac ? 'Dejar vacío para mantener. Solo PDF, máximo 5 MB.' : 'Sube archivo o marca No aplica. Solo PDF, máximo 5 MB.'}
+                        </small>
+                    </div>
+
+                    <div class="form-check form-switch rac-edit-na-box">
+                        <input class="form-check-input rac-edit-na-toggle"
+                            type="checkbox"
+                            name="rac_na[${unidad}]"
+                            value="1"
+                            id="rac_na_${unidad}"
+                            data-unidad="${unidad}"
+                            ${racNa ? 'checked' : ''}
+                            ${evidenciaAprobada ? 'disabled' : ''}>
+
+                        <label class="form-check-label" for="rac_na_${unidad}">
+                            No aplica
+                        </label>
+                    </div>
+                </div>
+            `;
+
+            const rubData = obtenerRubricaUnidad(unidad);
+            const rutaRub = obtenerArchivo(rubData);
+
+            wrapperRubricas.innerHTML += `
+                <div class="mb-2">
+                    <span class="badge bg-secondary mb-1">
+                        U${unidad}
+                    </span>
+
+                    ${rutaRub ? `
+                        <div class="d-flex align-items-center bg-light p-1 rounded mb-1">
+                            <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+
+                            <a href="${assetStorage(rutaRub)}"
+                                target="_blank"
+                                class="text-decoration-none small">
+                                Actual
+                            </a>
+                        </div>
+                    ` : ''}
+
+                    <input type="file"
+                        name="rubricas[${unidad}]"
+                        class="form-control form-control-sm fs-6 archivo-pdf-5mb"
+                        accept="application/pdf"
+                        ${evidenciaAprobada ? 'disabled' : ''}>
+
+                    <small class="text-muted">
+                        ${rutaRub ? 'Dejar vacío para mantener. Solo PDF, máximo 5 MB.' : 'Archivo requerido. Solo PDF, máximo 5 MB.'}
+                    </small>
+                </div>
+            `;
+        });
+
+        seccionDropzones.innerHTML = `
+            <h5 class="fw-bold text-success mb-3">
+                INSTRUMENTOS DE EVALUACIÓN INDIVIDUALES
+            </h5>
+        `;
+
+        unidadesSeleccionadas.forEach(unidad => {
+            nuevosArchivosPorUnidad[unidad] = nuevosArchivosPorUnidad[unidad] || [];
+
+            const instrumentosUnidad = instrumentosExistentesOriginales.filter(path => {
+                return typeof path === 'string' && path.includes(`instrumento_u${unidad}_`);
+            });
+
+            seccionDropzones.innerHTML += `
+                <div class="card border border-light-subtle rounded-3 shadow-sm p-4 bg-white style-dropzone mb-3"
+                    id="dropzone_u_${unidad}">
+
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="p-2.5 rounded-3 bg-success-subtle text-success me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                style="width: 45px; height: 45px;">
+                                <i class="bi bi-file-earmark-arrow-up"></i>
+                            </div>
+
+                            <div>
+                                <h5 class="fw-bold text-dark fs-5 mb-0">
+                                    Instrumentos de Evaluación -
+                                    <span class="text-success">
+                                        Unidad ${unidad}
+                                    </span>
+                                </h5>
+
+                                <p class="text-muted small mb-0">
+                                    Sube hasta 3 archivos PDF para esta unidad. Máximo 5 MB por archivo.
+                                </p>
+                            </div>
+                        </div>
+
+                        <button type="button"
+                            class="btn btn-light border-0 p-2 rounded-circle btn-minimizar"
+                            onclick="toggleMinimizarDropzone(${unidad}, this)">
+                            <i class="bi bi-chevron-down fs-5 text-secondary"></i>
+                        </button>
+                    </div>
+
+                    <div class="dropzone-body-collapse mt-3" id="body_dropzone_u_${unidad}">
+                        <div class="row align-items-center bg-light p-3 rounded-3 g-3">
+
+                            <div class="col-md-4">
+                                <input type="file"
+                                    id="helper_file_u_${unidad}"
+                                    class="archivo-pdf-5mb"
+                                    accept="application/pdf"
+                                    multiple
+                                    onchange="agregarArchivosDropzone(this, ${unidad})"
+                                    ${evidenciaAprobada ? 'disabled' : ''}>
+
+                                <button type="button"
+                                    class="btn btn-outline-success rounded-pill fw-semibold small px-4 py-2.5 w-100 shadow-sm d-flex align-items-center justify-content-center gap-2"
+                                    onclick="document.getElementById('helper_file_u_${unidad}').click()"
+                                    ${evidenciaAprobada ? 'disabled' : ''}>
+
+                                    <i class="bi bi-folder2-open"></i>
+                                    Archivos Unidad ${unidad}
+
+                                </button>
+                            </div>
+
+                            <div class="col-md-8">
+                                <div id="lista_archivos_u_${unidad}" class="d-flex flex-column gap-2 text-start">
+                                    ${instrumentosUnidad.map(path => `
+                                        <div class="archivo-cargado-item d-flex align-items-center justify-content-between p-2.5 bg-white border border-light-subtle rounded-3 shadow-sm">
+                                            <div class="d-flex align-items-center">
+                                                <div class="p-2 rounded-2 bg-danger-subtle text-danger me-2.5 d-inline-flex align-items-center justify-content-center"
+                                                    style="width: 32px; height: 32px;">
+                                                    <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
+                                                </div>
+
+                                                <span class="text-secondary fw-medium small">
+                                                    ${limpiarNombreArchivo(path)}
+                                                </span>
+                                            </div>
+
+                                            ${!evidenciaAprobada ? `
+                                                <button type="button"
+                                                    class="btn-eliminar-archivo btn border-0 p-2 text-muted rounded-2 d-inline-flex align-items-center justify-content-center"
+                                                    style="width: 32px; height: 32px;"
+                                                    onclick="eliminarArchivoExistente(${unidad}, '${path}', this)">
+                                                    <i class="bi bi-trash3 fs-5"></i>
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="hidden_inputs_u_${unidad}"></div>
+                </div>
+            `;
+        });
+
+        unidadesSeleccionadas.forEach(unidad => renderizarDropzoneUnidad(unidad));
+        aplicarListenersRac();
+    }
+
+    function aplicarListenersRac() {
+        document.querySelectorAll('.rac-edit-na-toggle').forEach(function(checkbox) {
+            aplicarRacNoAplicaUnidad(checkbox);
+
+            checkbox.addEventListener('change', function() {
+                aplicarRacNoAplicaUnidad(this);
+            });
         });
     }
 
     window.agregarArchivosDropzone = function(inputElement, unidad) {
+        if (!validarArchivoPdf5Mb(inputElement)) {
+            return;
+        }
+
         if (!nuevosArchivosPorUnidad[unidad]) {
             nuevosArchivosPorUnidad[unidad] = [];
         }
@@ -856,7 +1160,16 @@
                 continue;
             }
 
+            if (file.size > 5 * 1024 * 1024) {
+                continue;
+            }
+
             if (nuevosArchivosPorUnidad[unidad].length >= 3) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Límite alcanzado',
+                    text: 'Solo puedes subir hasta 3 archivos PDF por unidad.'
+                });
                 break;
             }
 
@@ -868,7 +1181,22 @@
     };
 
     window.eliminarArchivoExistente = function(unidad, ruta, boton) {
-        if (confirm('¿Eliminar este archivo permanentemente?')) {
+        if (evidenciaAprobada) {
+            return;
+        }
+
+        Swal.fire({
+            icon: 'warning',
+            title: '¿Eliminar archivo?',
+            text: 'Este archivo se eliminará al actualizar la evidencia.',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                return;
+            }
+
             archivosExistentesAEliminar.push(ruta);
 
             const item = boton.closest('.archivo-cargado-item');
@@ -885,7 +1213,7 @@
             inputDel.value = ruta;
 
             hiddenContainer.appendChild(inputDel);
-        }
+        });
     };
 
     function renderizarDropzoneUnidad(unidad) {
@@ -908,7 +1236,8 @@
 
             nuevoDiv.innerHTML = `
                 <div class="d-flex align-items-center">
-                    <div class="p-2 rounded-2 bg-danger-subtle text-danger me-2.5 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                    <div class="p-2 rounded-2 bg-danger-subtle text-danger me-2.5 d-inline-flex align-items-center justify-content-center"
+                        style="width: 32px; height: 32px;">
                         <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
                     </div>
 
@@ -974,17 +1303,17 @@
             inputFile.value = '';
             inputFile.disabled = true;
         } else {
-            inputFile.disabled = false;
+            inputFile.disabled = evidenciaAprobada ? true : false;
         }
     }
 
-    document.querySelectorAll('.rac-edit-na-toggle').forEach(function(checkbox) {
-        aplicarRacNoAplicaUnidad(checkbox);
-
-        checkbox.addEventListener('change', function() {
-            aplicarRacNoAplicaUnidad(this);
-        });
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('archivo-pdf-5mb')) {
+            validarArchivoPdf5Mb(e.target);
+        }
     });
+
+    procesarCambioUnidadesEdit();
 </script>
 
 @endsection

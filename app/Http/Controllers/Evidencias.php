@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Evidencia;
 use App\Models\Revision;
 use App\Models\AsignacionMateria;
+use App\Models\Docente;
 use App\Models\Materia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -81,8 +82,123 @@ class Evidencias extends Controller
 
     public function store(Request $request)
     {
-        $unidadesInput = $request->input('unidades', []);
-        $esNingunaUnidad = in_array(0, $unidadesInput);
+        $user = Auth::user();
+
+        $docente = Docente::where('user_id', $user->id)->first();
+
+        $idsDocentePermitidos = [$user->id];
+
+        if ($docente) {
+            $idsDocentePermitidos[] = $docente->id;
+        }
+
+        $materia = Materia::findOrFail($request->materia_id);
+        $revision = Revision::findOrFail($request->revision_id);
+
+        $asignacion = AsignacionMateria::where('materia_id', $materia->id)
+            ->whereIn('docente_id', array_unique($idsDocentePermitidos))
+            ->firstOrFail();
+
+        $unidadesInput = array_values(array_unique(array_map(
+            'intval',
+            $request->input('unidades', [])
+        )));
+
+        $primeraRevisionId = (int) Revision::orderBy('id', 'asc')->value('id');
+        $esPrimeraRevision = (int) $revision->id === $primeraRevisionId;
+
+        $otrasEvidencias = Evidencia::where('asignacion_materia_id', $asignacion->id)
+            ->get();
+
+        $unidadesOcupadas = [];
+
+        foreach ($otrasEvidencias as $otraEvidencia) {
+            $datosOtra = is_array($otraEvidencia->documentos)
+                ? $otraEvidencia->documentos
+                : json_decode($otraEvidencia->documentos ?? '[]', true);
+
+            if (!is_array($datosOtra)) {
+                continue;
+            }
+
+            foreach (($datosOtra['unidades'] ?? []) as $unidadOtra) {
+                $unidadOtra = (int) $unidadOtra;
+
+                if ($unidadOtra !== 0) {
+                    $unidadesOcupadas[] = $unidadOtra;
+                }
+            }
+        }
+
+        $unidadesOcupadas = array_values(array_unique($unidadesOcupadas));
+
+        $totalUnidadesMateria = (int) ($materia->unidades ?? 0);
+
+        $unidadesDisponibles = [];
+
+        for ($i = 1; $i <= $totalUnidadesMateria; $i++) {
+            if (!in_array($i, $unidadesOcupadas, true)) {
+                $unidadesDisponibles[] = $i;
+            }
+        }
+
+        $sinUnidadesDisponibles = count($unidadesDisponibles) === 0;
+
+        if (empty($unidadesInput) && $sinUnidadesDisponibles) {
+            $unidadesInput = [0];
+        }
+
+        $esNingunaUnidad = in_array(0, $unidadesInput, true);
+
+        if (empty($unidadesInput)) {
+            return back()
+                ->withErrors([
+                    'unidades' => 'Debes seleccionar al menos una unidad o marcar Ninguna Unidad cuando aplique.',
+                ])
+                ->withInput();
+        }
+
+        if ($esNingunaUnidad && count($unidadesInput) > 1) {
+            return back()
+                ->withErrors([
+                    'unidades' => 'No puedes seleccionar Ninguna Unidad junto con otras unidades.',
+                ])
+                ->withInput();
+        }
+
+        if ($esNingunaUnidad && !$esPrimeraRevision && !$sinUnidadesDisponibles) {
+            return back()
+                ->withErrors([
+                    'unidades' => 'La opción Ninguna Unidad solo está permitida en la primera revisión o cuando ya no hay unidades disponibles.',
+                ])
+                ->withInput();
+        }
+
+        foreach ($unidadesInput as $unidadSeleccionada) {
+            if ($unidadSeleccionada === 0) {
+                continue;
+            }
+
+            if ($unidadSeleccionada < 1 || $unidadSeleccionada > $totalUnidadesMateria) {
+                return back()
+                    ->withErrors([
+                        'unidades' => "La Unidad {$unidadSeleccionada} no pertenece a esta materia.",
+                    ])
+                    ->withInput();
+            }
+
+            if (in_array($unidadSeleccionada, $unidadesOcupadas, true)) {
+                return back()
+                    ->withErrors([
+                        'unidades' => "La Unidad {$unidadSeleccionada} ya fue evaluada en otra revisión.",
+                    ])
+                    ->withInput();
+            }
+        }
+
+        $reglaArchivoGeneral = $esPrimeraRevision
+            ? 'required|file|mimes:pdf|max:5120'
+            : 'nullable|file|mimes:pdf|max:5120';
 
         $request->validate([
             'materia_id' => 'required|exists:materias,id',
@@ -90,34 +206,69 @@ class Evidencias extends Controller
             'unidades' => 'required|array',
             'unidades.*' => 'integer',
 
-            'instrumentacion' => 'required|file|mimes:pdf',
-            'reporte_inicio' => 'required|file|mimes:pdf',
-            'acuerdos' => 'required|file|mimes:pdf',
+            'instrumentacion' => $reglaArchivoGeneral,
+            'reporte_inicio' => $reglaArchivoGeneral,
+            'acuerdos' => $reglaArchivoGeneral,
 
             'calificaciones' => $esNingunaUnidad ? 'nullable|array' : 'required|array',
-            'calificaciones.*' => 'file|mimes:pdf',
+            'calificaciones.*' => 'file|mimes:pdf|max:5120',
 
             'rac' => 'nullable|array',
-            'rac.*' => 'nullable|file|mimes:pdf',
+            'rac.*' => 'nullable|file|mimes:pdf|max:5120',
 
             'rac_na' => 'nullable|array',
             'rac_na.*' => 'nullable|boolean',
 
-            'examen_diagnostico' => 'required|file|mimes:pdf',
-            'analisis_diagnostico' => 'required|file|mimes:pdf',
+            'examen_diagnostico' => $reglaArchivoGeneral,
+            'analisis_diagnostico' => $reglaArchivoGeneral,
 
             'rubricas' => $esNingunaUnidad ? 'nullable|array' : 'required|array',
-            'rubricas.*' => 'file|mimes:pdf',
+            'rubricas.*' => 'file|mimes:pdf|max:5120',
 
             'instrumentos' => 'nullable|array',
+            'instrumentos.*' => 'array',
+            'instrumentos.*.*' => 'file|mimes:pdf|max:5120',
+        ], [
+            '*.mimes' => 'Todos los archivos deben estar en formato PDF.',
+            '*.max' => 'Cada archivo PDF no debe pesar más de 5 MB.',
+
+            'instrumentacion.required' => 'La instrumentación didáctica es obligatoria en la primera revisión.',
+            'reporte_inicio.required' => 'El reporte de inicio de curso es obligatorio en la primera revisión.',
+            'acuerdos.required' => 'Los acuerdos de clase son obligatorios en la primera revisión.',
+            'examen_diagnostico.required' => 'El examen diagnóstico es obligatorio en la primera revisión.',
+            'analisis_diagnostico.required' => 'El análisis del diagnóstico es obligatorio en la primera revisión.',
+
+            'calificaciones.required' => 'Debes subir la lista de calificaciones de las unidades seleccionadas.',
+            'rubricas.required' => 'Debes subir las rúbricas de las unidades seleccionadas.',
         ]);
 
-        $materia = Materia::findOrFail($request->materia_id);
-        $revision = Revision::findOrFail($request->revision_id);
+        if (!$esNingunaUnidad) {
+            $racNaUnidades = $request->input('rac_na', []);
+            $errores = [];
 
-        $asignacion = AsignacionMateria::where('materia_id', $materia->id)
-            ->where('docente_id', Auth::id())
-            ->firstOrFail();
+            foreach ($unidadesInput as $numUnidad) {
+                if (!$request->hasFile("calificaciones.{$numUnidad}")) {
+                    $errores["calificaciones.{$numUnidad}"] = "La lista de calificaciones de la Unidad {$numUnidad} es obligatoria.";
+                }
+
+                if (!$request->hasFile("rubricas.{$numUnidad}")) {
+                    $errores["rubricas.{$numUnidad}"] = "La rúbrica de la Unidad {$numUnidad} es obligatoria.";
+                }
+
+                $racEsNoAplica = array_key_exists($numUnidad, $racNaUnidades)
+                    || array_key_exists((string) $numUnidad, $racNaUnidades);
+
+                if (!$racEsNoAplica && !$request->hasFile("rac.{$numUnidad}")) {
+                    $errores["rac.{$numUnidad}"] = "Debes subir el RAC de la Unidad {$numUnidad} o marcar No aplica.";
+                }
+            }
+
+            if (!empty($errores)) {
+                return back()
+                    ->withErrors($errores)
+                    ->withInput();
+            }
+        }
 
         $semestreNombre = $this->limpiarNombre($asignacion->semestre->nombre ?? 'SIN_SEMESTRE');
         $materiaNombre = $this->limpiarNombre($materia->nombre);
@@ -128,46 +279,111 @@ class Evidencias extends Controller
         $documentos = [];
         $evidencias = [];
         $instrumentosGrupales = [];
+        $instrumentosNa = false;
 
-        $globalDocs = ['instrumentacion', 'reporte_inicio', 'acuerdos'];
+        if ($esPrimeraRevision) {
+            $globalDocs = [
+                'instrumentacion',
+                'reporte_inicio',
+                'acuerdos',
+            ];
 
-        foreach ($globalDocs as $field) {
-            $documentos[$field] = $request->file($field)->storeAs(
-                $basePath . '/documentos',
-                $field . '.pdf',
-                'public'
-            );
-        }
+            foreach ($globalDocs as $field) {
+                $documentos[$field] = $request->file($field)->storeAs(
+                    $basePath . '/documentos',
+                    $field . '.pdf',
+                    'public'
+                );
+            }
 
-        $globalEvis = ['examen_diagnostico', 'analisis_diagnostico'];
+            $globalEvis = [
+                'examen_diagnostico',
+                'analisis_diagnostico',
+            ];
 
-        foreach ($globalEvis as $field) {
-            $evidencias[$field] = $request->file($field)->storeAs(
-                $basePath . '/evidencias',
-                $field . '.pdf',
-                'public'
-            );
+            foreach ($globalEvis as $field) {
+                $evidencias[$field] = $request->file($field)->storeAs(
+                    $basePath . '/evidencias',
+                    $field . '.pdf',
+                    'public'
+                );
+            }
+        } else {
+            $documentos['instrumentacion'] = [
+                'na' => true,
+                'archivo' => null,
+            ];
+
+            $documentos['reporte_inicio'] = [
+                'na' => true,
+                'archivo' => null,
+            ];
+
+            $documentos['acuerdos'] = [
+                'na' => true,
+                'archivo' => null,
+            ];
+
+            $evidencias['examen_diagnostico'] = [
+                'na' => true,
+                'archivo' => null,
+            ];
+
+            $evidencias['analisis_diagnostico'] = [
+                'na' => true,
+                'archivo' => null,
+            ];
         }
 
         if ($esNingunaUnidad) {
-
             $unidades = [0];
 
-            $documentos['calificaciones'] = null;
+            $documentos['calificaciones'] = [
+                'na' => true,
+                'archivo' => null,
+            ];
+
+            $documentos['calificaciones_detalladas'] = [
+                'u0' => [
+                    'na' => true,
+                    'archivo' => null,
+                ],
+            ];
 
             $documentos['rac'] = [
                 'na' => true,
                 'archivo' => null,
             ];
 
-            $evidencias['rubricas'] = null;
-        } else {
+            $documentos['rac_detallado'] = [
+                'u0' => [
+                    'na' => true,
+                    'archivo' => null,
+                ],
+            ];
 
-            $unidades = $unidadesInput;
+            $evidencias['rubricas'] = [
+                'na' => true,
+                'archivo' => null,
+            ];
+
+            $evidencias['rubricas_detalladas'] = [
+                'u0' => [
+                    'na' => true,
+                    'archivo' => null,
+                ],
+            ];
+
+            $instrumentosGrupales = [];
+            $instrumentosNa = true;
+        } else {
+            $unidades = array_values(array_filter($unidadesInput, function ($unidad) {
+                return (int) $unidad !== 0;
+            }));
+
             $racNaUnidades = $request->input('rac_na', []);
 
             foreach ($unidades as $index => $numUnidad) {
-
                 if ($request->hasFile("calificaciones.{$numUnidad}")) {
                     $pathCal = $request->file("calificaciones.{$numUnidad}")->storeAs(
                         $basePath . '/documentos',
@@ -175,17 +391,23 @@ class Evidencias extends Controller
                         'public'
                     );
 
-                    $documentos['calificaciones_detalladas']["u{$numUnidad}"] = $pathCal;
+                    $documentos['calificaciones_detalladas']["u{$numUnidad}"] = [
+                        'na' => false,
+                        'archivo' => $pathCal,
+                    ];
 
                     if ($index === 0) {
-                        $documentos['calificaciones'] = $pathCal;
+                        $documentos['calificaciones'] = [
+                            'na' => false,
+                            'archivo' => $pathCal,
+                        ];
                     }
                 }
 
-                $racEsNoAplica = array_key_exists($numUnidad, $racNaUnidades);
+                $racEsNoAplica = array_key_exists($numUnidad, $racNaUnidades)
+                    || array_key_exists((string) $numUnidad, $racNaUnidades);
 
                 if ($racEsNoAplica) {
-
                     $documentos['rac_detallado']["u{$numUnidad}"] = [
                         'na' => true,
                         'archivo' => null,
@@ -198,39 +420,22 @@ class Evidencias extends Controller
                         ];
                     }
                 } else {
+                    $pathRac = $request->file("rac.{$numUnidad}")->storeAs(
+                        $basePath . '/documentos',
+                        "RAC_u{$numUnidad}.pdf",
+                        'public'
+                    );
 
-                    if ($request->hasFile("rac.{$numUnidad}")) {
+                    $documentos['rac_detallado']["u{$numUnidad}"] = [
+                        'na' => false,
+                        'archivo' => $pathRac,
+                    ];
 
-                        $pathRac = $request->file("rac.{$numUnidad}")->storeAs(
-                            $basePath . '/documentos',
-                            "RAC_u{$numUnidad}.pdf",
-                            'public'
-                        );
-
-                        $documentos['rac_detallado']["u{$numUnidad}"] = [
+                    if ($index === 0) {
+                        $documentos['rac'] = [
                             'na' => false,
                             'archivo' => $pathRac,
                         ];
-
-                        if ($index === 0) {
-                            $documentos['rac'] = [
-                                'na' => false,
-                                'archivo' => $pathRac,
-                            ];
-                        }
-                    } else {
-
-                        $documentos['rac_detallado']["u{$numUnidad}"] = [
-                            'na' => false,
-                            'archivo' => null,
-                        ];
-
-                        if ($index === 0) {
-                            $documentos['rac'] = [
-                                'na' => false,
-                                'archivo' => null,
-                            ];
-                        }
                     }
                 }
 
@@ -241,10 +446,16 @@ class Evidencias extends Controller
                         'public'
                     );
 
-                    $evidencias['rubricas_detalladas']["u{$numUnidad}"] = $pathRub;
+                    $evidencias['rubricas_detalladas']["u{$numUnidad}"] = [
+                        'na' => false,
+                        'archivo' => $pathRub,
+                    ];
 
                     if ($index === 0) {
-                        $evidencias['rubricas'] = $pathRub;
+                        $evidencias['rubricas'] = [
+                            'na' => false,
+                            'archivo' => $pathRub,
+                        ];
                     }
                 }
 
@@ -271,6 +482,7 @@ class Evidencias extends Controller
             'documentos' => $documentos,
             'evidencias' => $evidencias,
             'instrumentos' => $instrumentosGrupales,
+            'instrumentos_na' => $instrumentosNa,
         ];
 
         Evidencia::updateOrCreate(
@@ -290,9 +502,13 @@ class Evidencias extends Controller
             ->with('success', 'Evidencia guardada correctamente');
     }
 
+
     public function edit($id)
     {
-        $evidencia = Evidencia::with(['materia', 'revision'])->findOrFail($id);
+        $evidencia = Evidencia::with([
+            'materia',
+            'revision',
+        ])->findOrFail($id);
 
         $docenteId = Auth::id();
 
@@ -302,60 +518,107 @@ class Evidencias extends Controller
 
         $datos = is_array($evidencia->documentos)
             ? $evidencia->documentos
-            : json_decode($evidencia->documentos, true);
+            : json_decode($evidencia->documentos ?? '[]', true);
+
+        if (!is_array($datos)) {
+            $datos = [];
+        }
 
         $unidades = $datos['unidades'] ?? [];
         $documentos = $datos['documentos'] ?? [];
         $evidencias = $datos['evidencias'] ?? [];
 
+        $unidades = array_values(array_map('intval', $unidades));
+
+        $otrasEvidencias = Evidencia::where('asignacion_materia_id', $evidencia->asignacion_materia_id)
+            ->where('id', '!=', $evidencia->id)
+            ->get();
+
+        $unidadesOcupadas = [];
+
+        foreach ($otrasEvidencias as $otraEvidencia) {
+            $datosOtra = is_array($otraEvidencia->documentos)
+                ? $otraEvidencia->documentos
+                : json_decode($otraEvidencia->documentos ?? '[]', true);
+
+            if (!is_array($datosOtra)) {
+                continue;
+            }
+
+            $unidadesOtra = $datosOtra['unidades'] ?? [];
+
+            foreach ($unidadesOtra as $unidad) {
+                $unidad = (int) $unidad;
+
+                if ($unidad !== 0) {
+                    $unidadesOcupadas[] = $unidad;
+                }
+            }
+        }
+
+        $unidadesOcupadas = array_values(array_unique($unidadesOcupadas));
+
+        $totalUnidadesMateria = (int) ($evidencia->materia->unidades ?? 0);
+
+        $unidadesActualesSinCero = array_values(array_filter($unidades, function ($unidad) {
+            return (int) $unidad !== 0;
+        }));
+
+        $unidadesDisponiblesParaEditar = [];
+
+        for ($i = 1; $i <= $totalUnidadesMateria; $i++) {
+            $unidadEstaOcupada = in_array($i, $unidadesOcupadas);
+            $unidadEsActual = in_array($i, $unidadesActualesSinCero);
+
+            if (!$unidadEstaOcupada || $unidadEsActual) {
+                $unidadesDisponiblesParaEditar[] = $i;
+            }
+        }
+
+        if (count($unidadesDisponiblesParaEditar) === 0 && count($unidadesActualesSinCero) === 0) {
+            $unidades = [0];
+        }
+
         return view('modules.evidencias.edit', compact(
             'evidencia',
             'unidades',
             'documentos',
-            'evidencias'
+            'evidencias',
+            'unidadesOcupadas'
         ));
     }
 
-    /**
-     * Update the specified evidence in storage.
-     */
+
     public function update(Request $request, $id)
     {
         $evidencia = Evidencia::findOrFail($id);
 
+        $estadoActual = strtolower((string) ($evidencia->estado ?? ''));
+
+        if (in_array($estadoActual, ['1', 'aprobado', 'aprobada'], true)) {
+            return back()
+                ->withErrors([
+                    'estado' => 'Esta evidencia ya fue aprobada y no puede modificarse.',
+                ])
+                ->withInput();
+        }
+
+        $user = Auth::user();
+
+        $docente = Docente::where('user_id', $user->id)->first();
+
+        $idsDocentePermitidos = [$user->id];
+
+        if ($docente) {
+            $idsDocentePermitidos[] = $docente->id;
+        }
+
         $asignacion = AsignacionMateria::where('id', $evidencia->asignacion_materia_id)
-            ->where('docente_id', Auth::id())
+            ->whereIn('docente_id', array_unique($idsDocentePermitidos))
             ->firstOrFail();
 
         $materia = $evidencia->materia;
         $revision = $evidencia->revision;
-
-        $unidadesSeleccionadas = $request->input('unidades', []);
-        $esNingunaUnidad = in_array(0, $unidadesSeleccionadas);
-
-        $request->validate([
-            'instrumentacion' => 'nullable|file|mimes:pdf',
-            'reporte_inicio' => 'nullable|file|mimes:pdf',
-            'acuerdos' => 'nullable|file|mimes:pdf',
-
-            'calificaciones' => 'nullable|array',
-            'calificaciones.*' => 'file|mimes:pdf',
-
-            'rac' => 'nullable|array',
-            'rac.*' => 'nullable|file|mimes:pdf',
-
-            'rac_na' => 'nullable|array',
-            'rac_na.*' => 'nullable|boolean',
-
-            'examen_diagnostico' => 'nullable|file|mimes:pdf',
-            'analisis_diagnostico' => 'nullable|file|mimes:pdf',
-
-            'rubricas' => 'nullable|array',
-            'rubricas.*' => 'file|mimes:pdf',
-
-            'instrumentos' => 'nullable|array',
-            'eliminar_instrumentos' => 'nullable|array',
-        ]);
 
         $datosActuales = is_array($evidencia->documentos)
             ? $evidencia->documentos
@@ -368,6 +631,167 @@ class Evidencias extends Controller
         $datosActuales['documentos'] = $datosActuales['documentos'] ?? [];
         $datosActuales['evidencias'] = $datosActuales['evidencias'] ?? [];
         $datosActuales['instrumentos'] = $datosActuales['instrumentos'] ?? [];
+        $datosActuales['instrumentos_na'] = $datosActuales['instrumentos_na'] ?? false;
+
+        $unidadesSeleccionadas = array_values(array_unique(array_map(
+            'intval',
+            $request->input('unidades', [])
+        )));
+
+        $primeraRevisionId = (int) Revision::orderBy('id', 'asc')->value('id');
+        $esPrimeraRevision = (int) $revision->id === $primeraRevisionId;
+
+        $otrasEvidencias = Evidencia::where('asignacion_materia_id', $evidencia->asignacion_materia_id)
+            ->where('id', '!=', $evidencia->id)
+            ->get();
+
+        $unidadesOcupadas = [];
+
+        foreach ($otrasEvidencias as $otraEvidencia) {
+            $datosOtra = is_array($otraEvidencia->documentos)
+                ? $otraEvidencia->documentos
+                : json_decode($otraEvidencia->documentos ?? '[]', true);
+
+            if (!is_array($datosOtra)) {
+                continue;
+            }
+
+            foreach (($datosOtra['unidades'] ?? []) as $unidadOtra) {
+                $unidadOtra = (int) $unidadOtra;
+
+                if ($unidadOtra !== 0) {
+                    $unidadesOcupadas[] = $unidadOtra;
+                }
+            }
+        }
+
+        $unidadesOcupadas = array_values(array_unique($unidadesOcupadas));
+
+        $totalUnidadesMateria = (int) ($materia->unidades ?? 0);
+
+        $unidadesActuales = array_values(array_map(
+            'intval',
+            $datosActuales['unidades'] ?? []
+        ));
+
+        $unidadesActualesSinCero = array_values(array_filter($unidadesActuales, function ($unidad) {
+            return (int) $unidad !== 0;
+        }));
+
+        $unidadesDisponiblesParaEditar = [];
+
+        for ($i = 1; $i <= $totalUnidadesMateria; $i++) {
+            $unidadEstaOcupada = in_array($i, $unidadesOcupadas, true);
+            $unidadEsActual = in_array($i, $unidadesActualesSinCero, true);
+
+            if (!$unidadEstaOcupada || $unidadEsActual) {
+                $unidadesDisponiblesParaEditar[] = $i;
+            }
+        }
+
+        $sinUnidadesDisponibles = count($unidadesDisponiblesParaEditar) === 0;
+
+        if (empty($unidadesSeleccionadas) && $sinUnidadesDisponibles) {
+            $unidadesSeleccionadas = [0];
+        }
+
+        $esNingunaUnidad = in_array(0, $unidadesSeleccionadas, true);
+
+        if (empty($unidadesSeleccionadas)) {
+            return back()
+                ->withErrors([
+                    'unidades' => 'Debes seleccionar al menos una unidad o marcar Ninguna Unidad cuando aplique.',
+                ])
+                ->withInput();
+        }
+
+        if ($esNingunaUnidad && count($unidadesSeleccionadas) > 1) {
+            return back()
+                ->withErrors([
+                    'unidades' => 'No puedes seleccionar Ninguna Unidad junto con otras unidades.',
+                ])
+                ->withInput();
+        }
+
+        if ($esNingunaUnidad && !$esPrimeraRevision && !$sinUnidadesDisponibles) {
+            return back()
+                ->withErrors([
+                    'unidades' => 'La opción Ninguna Unidad solo está permitida en la primera revisión o cuando ya no hay unidades disponibles.',
+                ])
+                ->withInput();
+        }
+
+        foreach ($unidadesSeleccionadas as $unidadSeleccionada) {
+            if ($unidadSeleccionada === 0) {
+                continue;
+            }
+
+            if ($unidadSeleccionada < 1 || $unidadSeleccionada > $totalUnidadesMateria) {
+                return back()
+                    ->withErrors([
+                        'unidades' => "La Unidad {$unidadSeleccionada} no pertenece a esta materia.",
+                    ])
+                    ->withInput();
+            }
+
+            if (in_array($unidadSeleccionada, $unidadesOcupadas, true)) {
+                return back()
+                    ->withErrors([
+                        'unidades' => "La Unidad {$unidadSeleccionada} ya fue evaluada en otra revisión.",
+                    ])
+                    ->withInput();
+            }
+        }
+
+        $request->validate([
+            'instrumentacion' => 'nullable|file|mimes:pdf|max:5120',
+            'reporte_inicio' => 'nullable|file|mimes:pdf|max:5120',
+            'acuerdos' => 'nullable|file|mimes:pdf|max:5120',
+
+            'calificaciones' => 'nullable|array',
+            'calificaciones.*' => 'nullable|file|mimes:pdf|max:5120',
+
+            'rac' => 'nullable|array',
+            'rac.*' => 'nullable|file|mimes:pdf|max:5120',
+
+            'rac_na' => 'nullable|array',
+            'rac_na.*' => 'nullable|boolean',
+
+            'examen_diagnostico' => 'nullable|file|mimes:pdf|max:5120',
+            'analisis_diagnostico' => 'nullable|file|mimes:pdf|max:5120',
+
+            'rubricas' => 'nullable|array',
+            'rubricas.*' => 'nullable|file|mimes:pdf|max:5120',
+
+            'instrumentos' => 'nullable|array',
+            'instrumentos.*' => 'array',
+            'instrumentos.*.*' => 'file|mimes:pdf|max:5120',
+
+            'eliminar_instrumentos' => 'nullable|array',
+        ], [
+            '*.mimes' => 'Todos los archivos deben estar en formato PDF.',
+            '*.max' => 'Cada archivo PDF no debe pesar más de 5 MB.',
+        ]);
+
+        $obtenerArchivo = function ($valor) {
+            if (is_array($valor)) {
+                return $valor['archivo'] ?? null;
+            }
+
+            if (is_string($valor) && trim($valor) !== '') {
+                return $valor;
+            }
+
+            return null;
+        };
+
+        $eliminarArchivo = function ($valor) use ($obtenerArchivo) {
+            $archivo = $obtenerArchivo($valor);
+
+            if (!empty($archivo)) {
+                Storage::disk('public')->delete($archivo);
+            }
+        };
 
         $semestreNombre = $this->limpiarNombre($asignacion->semestre->nombre ?? 'SIN_SEMESTRE');
         $materiaNombre = $this->limpiarNombre($materia->nombre);
@@ -375,71 +799,146 @@ class Evidencias extends Controller
 
         $basePath = "evidencias_pdf/{$semestreNombre}/{$materiaNombre}/{$revisionNombre}";
 
-        $actualizarArchivo = function ($campo, $subcarpeta, $nombreFijo = null) use ($request, $basePath, $datosActuales) {
-            if ($request->hasFile($campo)) {
-                if (isset($datosActuales[$subcarpeta][$campo])) {
-                    Storage::disk('public')->delete($datosActuales[$subcarpeta][$campo]);
-                }
+        $actualizarArchivo = function ($campo, $subcarpeta, $nombreFijo) use (
+            $request,
+            $basePath,
+            &$datosActuales,
+            $obtenerArchivo,
+            $eliminarArchivo
+        ) {
+            $archivoActual = $datosActuales[$subcarpeta][$campo] ?? null;
 
-                $nombre = $nombreFijo ?? $campo . '.pdf';
+            if ($request->hasFile($campo)) {
+                $eliminarArchivo($archivoActual);
 
                 return $request->file($campo)->storeAs(
                     $basePath . '/' . $subcarpeta,
-                    $nombre,
+                    $nombreFijo,
                     'public'
                 );
             }
 
-            return $datosActuales[$subcarpeta][$campo] ?? null;
+            return $obtenerArchivo($archivoActual);
         };
 
-        $datosActuales['documentos']['instrumentacion'] = $actualizarArchivo(
-            'instrumentacion',
-            'documentos',
-            'instrumentacion.pdf'
-        );
+        if ($esPrimeraRevision) {
+            $datosActuales['documentos']['instrumentacion'] = $actualizarArchivo(
+                'instrumentacion',
+                'documentos',
+                'instrumentacion.pdf'
+            );
 
-        $datosActuales['documentos']['reporte_inicio'] = $actualizarArchivo(
-            'reporte_inicio',
-            'documentos',
-            'reporte_inicio.pdf'
-        );
+            $datosActuales['documentos']['reporte_inicio'] = $actualizarArchivo(
+                'reporte_inicio',
+                'documentos',
+                'reporte_inicio.pdf'
+            );
 
-        $datosActuales['documentos']['acuerdos'] = $actualizarArchivo(
-            'acuerdos',
-            'documentos',
-            'acuerdos.pdf'
-        );
+            $datosActuales['documentos']['acuerdos'] = $actualizarArchivo(
+                'acuerdos',
+                'documentos',
+                'acuerdos.pdf'
+            );
 
-        $datosActuales['evidencias']['examen_diagnostico'] = $actualizarArchivo(
-            'examen_diagnostico',
-            'evidencias',
-            'examen_diagnostico.pdf'
-        );
+            $datosActuales['evidencias']['examen_diagnostico'] = $actualizarArchivo(
+                'examen_diagnostico',
+                'evidencias',
+                'examen_diagnostico.pdf'
+            );
 
-        $datosActuales['evidencias']['analisis_diagnostico'] = $actualizarArchivo(
-            'analisis_diagnostico',
-            'evidencias',
-            'analisis_diagnostico.pdf'
-        );
+            $datosActuales['evidencias']['analisis_diagnostico'] = $actualizarArchivo(
+                'analisis_diagnostico',
+                'evidencias',
+                'analisis_diagnostico.pdf'
+            );
+        } else {
+            foreach (['instrumentacion', 'reporte_inicio', 'acuerdos'] as $campo) {
+                if (isset($datosActuales['documentos'][$campo])) {
+                    $eliminarArchivo($datosActuales['documentos'][$campo]);
+                }
+
+                $datosActuales['documentos'][$campo] = [
+                    'na' => true,
+                    'archivo' => null,
+                ];
+            }
+
+            foreach (['examen_diagnostico', 'analisis_diagnostico'] as $campo) {
+                if (isset($datosActuales['evidencias'][$campo])) {
+                    $eliminarArchivo($datosActuales['evidencias'][$campo]);
+                }
+
+                $datosActuales['evidencias'][$campo] = [
+                    'na' => true,
+                    'archivo' => null,
+                ];
+            }
+        }
 
         if ($esNingunaUnidad) {
+            foreach ($datosActuales['documentos']['calificaciones_detalladas'] ?? [] as $archivo) {
+                $eliminarArchivo($archivo);
+            }
+
+            foreach ($datosActuales['documentos']['rac_detallado'] ?? [] as $archivo) {
+                $eliminarArchivo($archivo);
+            }
+
+            foreach ($datosActuales['evidencias']['rubricas_detalladas'] ?? [] as $archivo) {
+                $eliminarArchivo($archivo);
+            }
+
+            foreach ($datosActuales['instrumentos'] ?? [] as $archivo) {
+                $eliminarArchivo($archivo);
+            }
+
             $datosActuales['unidades'] = [0];
 
-            $datosActuales['documentos']['calificaciones'] = null;
-            $datosActuales['documentos']['calificaciones_detalladas'] = [];
+            $datosActuales['documentos']['calificaciones'] = [
+                'na' => true,
+                'archivo' => null,
+            ];
+
+            $datosActuales['documentos']['calificaciones_detalladas'] = [
+                'u0' => [
+                    'na' => true,
+                    'archivo' => null,
+                ],
+            ];
 
             $datosActuales['documentos']['rac'] = [
                 'na' => true,
                 'archivo' => null,
             ];
 
-            $datosActuales['documentos']['rac_detallado'] = [];
+            $datosActuales['documentos']['rac_detallado'] = [
+                'u0' => [
+                    'na' => true,
+                    'archivo' => null,
+                ],
+            ];
 
-            $datosActuales['evidencias']['rubricas'] = null;
-            $datosActuales['evidencias']['rubricas_detalladas'] = [];
+            $datosActuales['evidencias']['rubricas'] = [
+                'na' => true,
+                'archivo' => null,
+            ];
+
+            $datosActuales['evidencias']['rubricas_detalladas'] = [
+                'u0' => [
+                    'na' => true,
+                    'archivo' => null,
+                ],
+            ];
+
+            $datosActuales['instrumentos'] = [];
+            $datosActuales['instrumentos_na'] = true;
         } else {
-            $datosActuales['unidades'] = $unidadesSeleccionadas;
+            $unidadesReales = array_values(array_filter($unidadesSeleccionadas, function ($unidad) {
+                return (int) $unidad !== 0;
+            }));
+
+            $datosActuales['unidades'] = $unidadesReales;
+            $datosActuales['instrumentos_na'] = false;
 
             $datosActuales['documentos']['calificaciones_detalladas'] =
                 $datosActuales['documentos']['calificaciones_detalladas'] ?? [];
@@ -450,49 +949,128 @@ class Evidencias extends Controller
             $datosActuales['evidencias']['rubricas_detalladas'] =
                 $datosActuales['evidencias']['rubricas_detalladas'] ?? [];
 
-            foreach ($unidadesSeleccionadas as $index => $unidad) {
-                if ($request->hasFile("calificaciones.{$unidad}")) {
-                    if (isset($datosActuales['documentos']['calificaciones_detalladas']["u{$unidad}"])) {
-                        Storage::disk('public')->delete(
-                            $datosActuales['documentos']['calificaciones_detalladas']["u{$unidad}"]
-                        );
+            $keysSeleccionadas = array_map(function ($unidad) {
+                return "u{$unidad}";
+            }, $unidadesReales);
+
+            foreach ($datosActuales['documentos']['calificaciones_detalladas'] as $key => $valor) {
+                if ($key !== 'u0' && !in_array($key, $keysSeleccionadas, true)) {
+                    $eliminarArchivo($valor);
+                    unset($datosActuales['documentos']['calificaciones_detalladas'][$key]);
+                }
+            }
+
+            foreach ($datosActuales['documentos']['rac_detallado'] as $key => $valor) {
+                if ($key !== 'u0' && !in_array($key, $keysSeleccionadas, true)) {
+                    $eliminarArchivo($valor);
+                    unset($datosActuales['documentos']['rac_detallado'][$key]);
+                }
+            }
+
+            foreach ($datosActuales['evidencias']['rubricas_detalladas'] as $key => $valor) {
+                if ($key !== 'u0' && !in_array($key, $keysSeleccionadas, true)) {
+                    $eliminarArchivo($valor);
+                    unset($datosActuales['evidencias']['rubricas_detalladas'][$key]);
+                }
+            }
+
+            unset($datosActuales['documentos']['calificaciones_detalladas']['u0']);
+            unset($datosActuales['documentos']['rac_detallado']['u0']);
+            unset($datosActuales['evidencias']['rubricas_detalladas']['u0']);
+
+            $datosActuales['instrumentos'] = array_values(array_filter(
+                $datosActuales['instrumentos'] ?? [],
+                function ($path) use ($unidadesReales) {
+                    if (!is_string($path)) {
+                        return false;
                     }
 
-                    $path = $request->file("calificaciones.{$unidad}")->storeAs(
+                    if (preg_match('/instrumento_u(\d+)_/', $path, $matches)) {
+                        $unidadArchivo = (int) $matches[1];
+
+                        if (!in_array($unidadArchivo, $unidadesReales, true)) {
+                            Storage::disk('public')->delete($path);
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
+            ));
+
+            $racNaUnidades = $request->input('rac_na', []);
+            $errores = [];
+
+            foreach ($unidadesReales as $unidad) {
+                $keyUnidad = "u{$unidad}";
+
+                $calificacionActual = $datosActuales['documentos']['calificaciones_detalladas'][$keyUnidad] ?? null;
+                $calificacionActualArchivo = $obtenerArchivo($calificacionActual);
+
+                if (!$request->hasFile("calificaciones.{$unidad}") && empty($calificacionActualArchivo)) {
+                    $errores["calificaciones.{$unidad}"] = "La lista de calificaciones de la Unidad {$unidad} es obligatoria.";
+                }
+
+                $rubricaActual = $datosActuales['evidencias']['rubricas_detalladas'][$keyUnidad] ?? null;
+                $rubricaActualArchivo = $obtenerArchivo($rubricaActual);
+
+                if (!$request->hasFile("rubricas.{$unidad}") && empty($rubricaActualArchivo)) {
+                    $errores["rubricas.{$unidad}"] = "La rúbrica de la Unidad {$unidad} es obligatoria.";
+                }
+
+                $racActual = $datosActuales['documentos']['rac_detallado'][$keyUnidad] ?? null;
+                $racActualArchivo = $obtenerArchivo($racActual);
+
+                $racEsNoAplica = array_key_exists($unidad, $racNaUnidades)
+                    || array_key_exists((string) $unidad, $racNaUnidades);
+
+                if (!$racEsNoAplica && !$request->hasFile("rac.{$unidad}") && empty($racActualArchivo)) {
+                    $errores["rac.{$unidad}"] = "Debes subir el RAC de la Unidad {$unidad} o marcar No aplica.";
+                }
+            }
+
+            if (!empty($errores)) {
+                return back()
+                    ->withErrors($errores)
+                    ->withInput();
+            }
+
+            foreach ($unidadesReales as $index => $unidad) {
+                $keyUnidad = "u{$unidad}";
+
+                $calificacionActual = $datosActuales['documentos']['calificaciones_detalladas'][$keyUnidad] ?? null;
+                $calificacionActualArchivo = $obtenerArchivo($calificacionActual);
+
+                if ($request->hasFile("calificaciones.{$unidad}")) {
+                    $eliminarArchivo($calificacionActual);
+
+                    $calificacionActualArchivo = $request->file("calificaciones.{$unidad}")->storeAs(
                         $basePath . '/documentos',
                         "calificaciones_u{$unidad}.pdf",
                         'public'
                     );
-
-                    $datosActuales['documentos']['calificaciones_detalladas']["u{$unidad}"] = $path;
-
-                    if ($index === 0) {
-                        $datosActuales['documentos']['calificaciones'] = $path;
-                    }
-                } elseif ($index === 0) {
-                    $datosActuales['documentos']['calificaciones'] =
-                        $datosActuales['documentos']['calificaciones_detalladas']["u{$unidad}"]
-                        ?? $datosActuales['documentos']['calificaciones']
-                        ?? null;
                 }
-            }
 
-            $racNaUnidades = $request->input('rac_na', []);
-
-            foreach ($unidadesSeleccionadas as $index => $unidad) {
-                $keyUnidad = "u{$unidad}";
-
-                $racActualUnidad = $datosActuales['documentos']['rac_detallado'][$keyUnidad] ?? [
+                $datosActuales['documentos']['calificaciones_detalladas'][$keyUnidad] = [
                     'na' => false,
-                    'archivo' => null,
+                    'archivo' => $calificacionActualArchivo,
                 ];
 
-                $racEsNoAplica = array_key_exists($unidad, $racNaUnidades);
+                if ($index === 0) {
+                    $datosActuales['documentos']['calificaciones'] = [
+                        'na' => false,
+                        'archivo' => $calificacionActualArchivo,
+                    ];
+                }
+
+                $racActual = $datosActuales['documentos']['rac_detallado'][$keyUnidad] ?? null;
+                $racActualArchivo = $obtenerArchivo($racActual);
+
+                $racEsNoAplica = array_key_exists($unidad, $racNaUnidades)
+                    || array_key_exists((string) $unidad, $racNaUnidades);
 
                 if ($racEsNoAplica) {
-                    if (!empty($racActualUnidad['archivo'])) {
-                        Storage::disk('public')->delete($racActualUnidad['archivo']);
-                    }
+                    $eliminarArchivo($racActual);
 
                     $datosActuales['documentos']['rac_detallado'][$keyUnidad] = [
                         'na' => true,
@@ -505,85 +1083,63 @@ class Evidencias extends Controller
                             'archivo' => null,
                         ];
                     }
-
-                    continue;
-                }
-
-                if ($request->hasFile("rac.{$unidad}")) {
-                    if (!empty($racActualUnidad['archivo'])) {
-                        Storage::disk('public')->delete($racActualUnidad['archivo']);
-                    }
-
-                    $path = $request->file("rac.{$unidad}")->storeAs(
-                        $basePath . '/documentos',
-                        "RAC_u{$unidad}.pdf",
-                        'public'
-                    );
-
-                    $datosActuales['documentos']['rac_detallado'][$keyUnidad] = [
-                        'na' => false,
-                        'archivo' => $path,
-                    ];
-
-                    if ($index === 0) {
-                        $datosActuales['documentos']['rac'] = [
-                            'na' => false,
-                            'archivo' => $path,
-                        ];
-                    }
                 } else {
-                    $archivoActual = $racActualUnidad['archivo'] ?? null;
+                    if ($request->hasFile("rac.{$unidad}")) {
+                        $eliminarArchivo($racActual);
 
-                    $datosActuales['documentos']['rac_detallado'][$keyUnidad] = [
-                        'na' => false,
-                        'archivo' => $archivoActual,
-                    ];
-
-                    if ($index === 0) {
-                        $datosActuales['documentos']['rac'] = [
-                            'na' => false,
-                            'archivo' => $archivoActual,
-                        ];
-                    }
-                }
-            }
-
-            foreach ($unidadesSeleccionadas as $index => $unidad) {
-                if ($request->hasFile("rubricas.{$unidad}")) {
-                    if (isset($datosActuales['evidencias']['rubricas_detalladas']["u{$unidad}"])) {
-                        Storage::disk('public')->delete(
-                            $datosActuales['evidencias']['rubricas_detalladas']["u{$unidad}"]
+                        $racActualArchivo = $request->file("rac.{$unidad}")->storeAs(
+                            $basePath . '/documentos',
+                            "RAC_u{$unidad}.pdf",
+                            'public'
                         );
                     }
 
-                    $path = $request->file("rubricas.{$unidad}")->storeAs(
+                    $datosActuales['documentos']['rac_detallado'][$keyUnidad] = [
+                        'na' => false,
+                        'archivo' => $racActualArchivo,
+                    ];
+
+                    if ($index === 0) {
+                        $datosActuales['documentos']['rac'] = [
+                            'na' => false,
+                            'archivo' => $racActualArchivo,
+                        ];
+                    }
+                }
+
+                $rubricaActual = $datosActuales['evidencias']['rubricas_detalladas'][$keyUnidad] ?? null;
+                $rubricaActualArchivo = $obtenerArchivo($rubricaActual);
+
+                if ($request->hasFile("rubricas.{$unidad}")) {
+                    $eliminarArchivo($rubricaActual);
+
+                    $rubricaActualArchivo = $request->file("rubricas.{$unidad}")->storeAs(
                         $basePath . '/evidencias',
                         "rubricas_u{$unidad}.pdf",
                         'public'
                     );
+                }
 
-                    $datosActuales['evidencias']['rubricas_detalladas']["u{$unidad}"] = $path;
+                $datosActuales['evidencias']['rubricas_detalladas'][$keyUnidad] = [
+                    'na' => false,
+                    'archivo' => $rubricaActualArchivo,
+                ];
 
-                    if ($index === 0) {
-                        $datosActuales['evidencias']['rubricas'] = $path;
-                    }
-                } elseif ($index === 0) {
-                    $datosActuales['evidencias']['rubricas'] =
-                        $datosActuales['evidencias']['rubricas_detalladas']["u{$unidad}"]
-                        ?? $datosActuales['evidencias']['rubricas']
-                        ?? null;
+                if ($index === 0) {
+                    $datosActuales['evidencias']['rubricas'] = [
+                        'na' => false,
+                        'archivo' => $rubricaActualArchivo,
+                    ];
                 }
             }
-        }
 
-        if ($request->has('eliminar_instrumentos')) {
-            foreach ($request->eliminar_instrumentos as $unidad => $rutas) {
-                foreach ($rutas as $ruta) {
-                    Storage::disk('public')->delete($ruta);
+            if ($request->has('eliminar_instrumentos')) {
+                foreach ($request->eliminar_instrumentos as $unidad => $rutas) {
+                    foreach ($rutas as $ruta) {
+                        Storage::disk('public')->delete($ruta);
 
-                    if (isset($datosActuales['instrumentos'])) {
                         $datosActuales['instrumentos'] = array_values(array_filter(
-                            $datosActuales['instrumentos'],
+                            $datosActuales['instrumentos'] ?? [],
                             function ($item) use ($ruta) {
                                 return $item !== $ruta;
                             }
@@ -591,33 +1147,55 @@ class Evidencias extends Controller
                     }
                 }
             }
-        }
 
-        if ($request->hasFile('instrumentos')) {
-            foreach ($request->file('instrumentos') as $unidad => $archivos) {
-                foreach ($archivos as $idx => $file) {
-                    if ($idx >= 3) {
-                        break;
+            if ($request->hasFile('instrumentos')) {
+                foreach ($request->file('instrumentos') as $unidad => $archivos) {
+                    $unidad = (int) $unidad;
+
+                    if (!in_array($unidad, $unidadesReales, true)) {
+                        continue;
                     }
 
                     $existentesUnidad = array_filter(
                         $datosActuales['instrumentos'] ?? [],
                         function ($path) use ($unidad) {
-                            return strpos($path, "instrumento_u{$unidad}_") !== false;
+                            return is_string($path) && strpos($path, "instrumento_u{$unidad}_") !== false;
                         }
                     );
 
-                    $consecutivo = count($existentesUnidad) + $idx + 1;
+                    $numerosUsados = [];
 
-                    $nombre = "instrumento_u{$unidad}_{$consecutivo}.pdf";
+                    foreach ($existentesUnidad as $pathExistente) {
+                        if (preg_match("/instrumento_u{$unidad}_(\d+)\.pdf$/", $pathExistente, $matches)) {
+                            $numerosUsados[] = (int) $matches[1];
+                        }
+                    }
 
-                    $path = $file->storeAs(
-                        $basePath . '/instrumentos',
-                        $nombre,
-                        'public'
-                    );
+                    foreach ($archivos as $file) {
+                        $numeroDisponible = null;
 
-                    $datosActuales['instrumentos'][] = $path;
+                        for ($n = 1; $n <= 3; $n++) {
+                            if (!in_array($n, $numerosUsados, true)) {
+                                $numeroDisponible = $n;
+                                break;
+                            }
+                        }
+
+                        if ($numeroDisponible === null) {
+                            break;
+                        }
+
+                        $nombre = "instrumento_u{$unidad}_{$numeroDisponible}.pdf";
+
+                        $path = $file->storeAs(
+                            $basePath . '/instrumentos',
+                            $nombre,
+                            'public'
+                        );
+
+                        $datosActuales['instrumentos'][] = $path;
+                        $numerosUsados[] = $numeroDisponible;
+                    }
                 }
             }
         }
@@ -629,6 +1207,7 @@ class Evidencias extends Controller
             ->route('evidencias')
             ->with('success', 'Evidencia actualizada correctamente');
     }
+
 
     public function destroy($id)
     {
