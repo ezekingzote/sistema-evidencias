@@ -22,23 +22,71 @@ class Docentes extends Controller
 
     public function data()
     {
-        // 1. Añadimos ->with('docente') para traer ambas tablas en una sola consulta
-        $query = User::with('docente')->orderBy('id', 'ASC');
+        $query = User::query()
+            ->leftJoin('docentes', 'docentes.user_id', '=', 'users.id')
+            ->select([
+                'users.id',
+                'users.name',
+                'users.email',
+                'users.rol',
+                'docentes.celular as celular',
+                'docentes.departamento as departamento',
+                'docentes.cargo as cargo',
+                'docentes.activo as docente_activo',
+            ])
+            ->orderBy('users.id', 'ASC');
 
         return DataTables::of($query)
 
-            // Buscamos el celular en la relación docente
-            ->editColumn('celular', function ($row) {
-                return ($row->docente && $row->docente->celular) ? $row->docente->celular : 'Sin número';
-            })
+            ->filter(function ($query) {
+                $search = request('search.value');
 
-            // Agregamos explícitamente el departamento desde la relación
-            ->addColumn('departamento', function ($row) {
-                return $row->docente->departamento ?? 'Sin departamento';
+                if (!empty($search)) {
+                    $search = strtolower($search);
+
+                    $query->where(function ($q) use ($search) {
+                        $q->whereRaw('LOWER(users.name) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(users.email) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(users.rol) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(docentes.celular) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(docentes.departamento) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(docentes.cargo) LIKE ?', ["%{$search}%"]);
+                    });
+                }
             })
 
             ->addColumn('nombre', function ($row) {
                 return strtoupper($row->name);
+            })
+
+            ->editColumn('celular', function ($row) {
+                return $row->celular ?: 'Sin número';
+            })
+
+            ->addColumn('departamento', function ($row) {
+                return $row->departamento ?: 'Sin departamento';
+            })
+
+            ->editColumn('cargo', function ($row) {
+                $cargo = $row->cargo ?: 'SIN CARGO';
+
+                if ($row->rol === 'admin') {
+                    return '<span class="badge bg-danger-subtle text-danger border border-danger">'
+                        . strtoupper($cargo) .
+                        '</span>';
+                }
+
+                return '<span class="badge bg-primary-subtle text-primary border border-primary">'
+                    . strtoupper($cargo) .
+                    '</span>';
+            })
+
+            ->editColumn('rol', function ($row) {
+                if ($row->rol === 'admin') {
+                    return '<span class="badge bg-danger">ADMIN</span>';
+                }
+
+                return '<span class="badge bg-info text-dark">DOCENTE</span>';
             })
 
             ->addColumn('password_btn', function ($row) {
@@ -47,9 +95,8 @@ class Docentes extends Controller
                     </button>';
             })
 
-            // Buscamos el estado activo en la relación docente
             ->addColumn('activo_switch', function ($row) {
-                $checked = ($row->docente && $row->docente->activo) ? 'checked' : '';
+                $checked = $row->docente_activo ? 'checked' : '';
 
                 return '<div class="form-check form-switch d-flex justify-content-center">
                         <input class="form-check-input cambiar-estado" 
@@ -66,29 +113,12 @@ class Docentes extends Controller
                     </a>';
             })
 
-            // Buscamos el cargo en la relación docente
-            ->editColumn('cargo', function ($row) {
-                $cargo = $row->docente->cargo ?? 'SIN CARGO';
-
-                if ($row->rol === 'admin') {
-                    return '<span class="badge bg-danger-subtle text-danger border border-danger">
-                    ' . strtoupper($cargo) . '
-                </span>';
-                }
-
-                return '<span class="badge bg-primary-subtle text-primary border border-primary">
-                ' . strtoupper($cargo) . '
-            </span>';
-            })
-
-            // El rol pertenece a la tabla users, así que se queda igual
-            ->editColumn('rol', function ($row) {
-                if ($row->rol === 'admin') {
-                    return '<span class="badge bg-danger">ADMIN</span>';
-                }
-
-                return '<span class="badge bg-info text-dark">DOCENTE</span>';
-            })
+            ->orderColumn('nombre', 'users.name $1')
+            ->orderColumn('email', 'users.email $1')
+            ->orderColumn('celular', 'docentes.celular $1')
+            ->orderColumn('departamento', 'docentes.departamento $1')
+            ->orderColumn('cargo', 'docentes.cargo $1')
+            ->orderColumn('rol', 'users.rol $1')
 
             ->rawColumns(['cargo', 'rol', 'password_btn', 'activo_switch', 'editar_btn'])
             ->make(true);
