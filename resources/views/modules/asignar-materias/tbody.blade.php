@@ -14,7 +14,7 @@
     </td>
 
     <td>
-        {{ $item->docente->name }}
+        {{ $item->docente->user->name ?? 'Sin docente' }}
     </td>
 
     <td>

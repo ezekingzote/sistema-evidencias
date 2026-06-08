@@ -22,7 +22,8 @@ class AsignarMaterias extends Controller
         $items = AsignacionMateria::with([
             'materia',
             'docente',
-            'semestre'
+            'semestre',
+            'docente.user'
         ])
             ->orderBy('id', 'desc')
             ->get();
