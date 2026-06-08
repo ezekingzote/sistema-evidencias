@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Docente;
 
 class AsignarMaterias extends Controller
 {
@@ -35,13 +36,16 @@ class AsignarMaterias extends Controller
     public function create()
     {
         $titulo = "Asignar Materia";
-        $docentes = User::where('rol', 'docente')
-            ->where('activo', 1)
-            ->orderBy('name')
+
+        $docentes = Docente::with('user')
+            ->join('users', 'docentes.user_id', '=', 'users.id')
+            ->where('docentes.activo', 1)
+            ->whereIn('users.rol', ['admin', 'docente'])
+            ->select('docentes.*')
+            ->orderBy('users.name', 'asc')
             ->get();
 
         $semestreActivo = Semestre::where('activo', 1)->first();
-
 
         if ($semestreActivo) {
             $materias = Materia::where('activo', 1)
@@ -137,8 +141,8 @@ class AsignarMaterias extends Controller
             $request->validate([
                 'docente_id' => 'required|exists:users,id'
             ]);
-            $item = AsignacionMateria::findOrFail($id);            
-            $item ->alumnos = $request->alumnos;
+            $item = AsignacionMateria::findOrFail($id);
+            $item->alumnos = $request->alumnos;
             $item->docente_id = $request->docente_id;
             $item->save();
 
@@ -194,7 +198,6 @@ class AsignarMaterias extends Controller
             return response()->json([
                 'success' => true
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -243,5 +246,4 @@ class AsignarMaterias extends Controller
 
         return view('modules.asignar-materias.tbody', compact('items'));
     }
-    
 }

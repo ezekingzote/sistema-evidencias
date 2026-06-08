@@ -14,8 +14,6 @@ class Reportes extends Controller
     public function index()
     {
         $titulo = "Reportes";
-
-        // Para las tarjetas resumen
         $evidencias = Evidencia::with([
             'materia',
             'revision',

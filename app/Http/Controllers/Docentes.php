@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Docente;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\DataTables;
 
 class Docentes extends Controller
@@ -20,12 +22,19 @@ class Docentes extends Controller
 
     public function data()
     {
-        $query = User::orderBy('id', 'ASC');
+        // 1. Añadimos ->with('docente') para traer ambas tablas en una sola consulta
+        $query = User::with('docente')->orderBy('id', 'ASC');
 
         return DataTables::of($query)
 
+            // Buscamos el celular en la relación docente
             ->editColumn('celular', function ($row) {
-                return $row->celular ?: 'Sin número';
+                return ($row->docente && $row->docente->celular) ? $row->docente->celular : 'Sin número';
+            })
+
+            // Agregamos explícitamente el departamento desde la relación
+            ->addColumn('departamento', function ($row) {
+                return $row->docente->departamento ?? 'Sin departamento';
             })
 
             ->addColumn('nombre', function ($row) {
@@ -38,8 +47,9 @@ class Docentes extends Controller
                     </button>';
             })
 
+            // Buscamos el estado activo en la relación docente
             ->addColumn('activo_switch', function ($row) {
-                $checked = $row->activo ? 'checked' : '';
+                $checked = ($row->docente && $row->docente->activo) ? 'checked' : '';
 
                 return '<div class="form-check form-switch d-flex justify-content-center">
                         <input class="form-check-input cambiar-estado" 
@@ -56,20 +66,22 @@ class Docentes extends Controller
                     </a>';
             })
 
+            // Buscamos el cargo en la relación docente
             ->editColumn('cargo', function ($row) {
+                $cargo = $row->docente->cargo ?? 'SIN CARGO';
 
                 if ($row->rol === 'admin') {
-
                     return '<span class="badge bg-danger-subtle text-danger border border-danger">
-                    ' . strtoupper($row->cargo) . '
+                    ' . strtoupper($cargo) . '
                 </span>';
                 }
 
                 return '<span class="badge bg-primary-subtle text-primary border border-primary">
-                DOCENTE
+                ' . strtoupper($cargo) . '
             </span>';
             })
 
+            // El rol pertenece a la tabla users, así que se queda igual
             ->editColumn('rol', function ($row) {
                 if ($row->rol === 'admin') {
                     return '<span class="badge bg-danger">ADMIN</span>';
@@ -92,21 +104,14 @@ class Docentes extends Controller
     public function store(Request $request)
     {
         try {
-
             $nombre = strtoupper(trim($request->name));
             $apellidoP = strtoupper(trim($request->apellido_p));
             $apellidoM = strtoupper(trim($request->apellido_m));
             $nombreCompleto = "$nombre $apellidoP $apellidoM";
-            $emailBase = strtolower(trim($request->email));
-            $dominio = ($request->rol == 'admin') ? '@admin.com' : '@docente.com';
-            $emailCompleto = $emailBase . $dominio;
-
-
-            if (User::where('email', $emailCompleto)->exists()) {
-                return back()->withInput()->with('error', 'El correo ya existe.');
+            $email = strtolower(trim($request->email));
+            if (User::where('email', $email)->exists()) {
+                return back()->withInput()->with('error', 'El correo ya existe en el sistema.');
             }
-
-
             $partes = explode(' ', strtolower($nombreCompleto));
             $nombreFormateado = '';
             foreach ($partes as $p) {
@@ -115,31 +120,38 @@ class Docentes extends Controller
             $passwordTemporal = "Sistema" . $nombreFormateado;
 
 
-            $user = new User();
-            $user->name = $nombreCompleto;
-            $user->email = $emailCompleto;
-            $user->celular = $request->celular;
-            $user->password = Hash::make($passwordTemporal);
-            $user->rol = $request->rol;
-            $user->departamento = $request->dpto;
-            $user->cargo = $request->rol == 'admin'
-                ? strtoupper($request->cargo)
-                : 'DOCENTE';
-            $user->activo = 1;
-            $user->save();
+            DB::transaction(function () use ($request, $nombreCompleto, $email, $passwordTemporal) {
 
+
+                $user = new User();
+                $user->name = $nombreCompleto;
+                $user->email = $email;
+                $user->password = Hash::make($passwordTemporal);
+                $user->rol = $request->rol;
+                $user->save();
+
+
+                $docente = new Docente();
+                $docente->user_id = $user->id;
+                $docente->celular = $request->celular;
+                $docente->departamento = $request->dpto;
+                $docente->cargo = ($request->rol == 'admin')
+                    ? strtoupper($request->cargo)
+                    : 'DOCENTE';
+                $docente->activo = 1;
+                $docente->save();
+            });
             $urlPdf = route('pdf.descargar', [
                 'nombre' => (string)$nombreCompleto,
-                'email'  => (string)$emailCompleto,
+                'email'  => (string)$email,
                 'pass'   => (string)$passwordTemporal
             ]);
-
 
             return redirect()->route('docentes')
                 ->with('success', 'Usuario guardado con éxito!')
                 ->with('pdf', $urlPdf);
-        } catch (Exception $e) {
-            return back()->withInput()->with('error', 'Error: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Error al registrar: ' . $e->getMessage());
         }
     }
 
@@ -218,66 +230,68 @@ class Docentes extends Controller
     public function edit(string $id)
     {
         $titulo = 'Editar Docente';
-        $item = User::find($id);
+
+        $item = User::with('docente')->findOrFail($id);
+
         return view('modules.docentes.edit', compact('item', 'titulo'));
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
         try {
-
-            $item = User::find($id);
-
-            if (!$item) {
-                return to_route('docentes')->with('error', 'Usuario no encontrado');
-            }
-
-            $nombre = strtoupper($request->name);
-            $apellidoP = strtoupper($request->apellido_p);
-            $apellidoM = strtoupper($request->apellido_m);
-
-            $nombreCompleto = trim("$nombre $apellidoP $apellidoM");
+            $user = User::findOrFail($id);
 
             $email = strtolower(trim($request->email));
 
-            $dominio = $request->rol == 'admin'
-                ? '@admin.com'
-                : '@docente.com';
-
-            $emailCompleto = $email . $dominio;
-
-            $existeEmail = User::where('email', $emailCompleto)
-                ->where('id', '!=', $id)
-                ->exists();
-
-            if ($existeEmail) {
-
-                return to_route('docentes.edit', $id)
-                    ->with('error', 'El correo ya está registrado');
+            if (User::where('email', $email)->where('id', '!=', $id)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El correo ya existe en el sistema.'
+                ], 422);
             }
 
-            $item->name = $nombreCompleto;
-            $item->email = $emailCompleto;
-            $item->rol = $request->rol;
-            $item->departamento = $request->dpto;
-            $item->celular = $request->celular;
-            $item->cargo = $request->rol == 'admin'
-                ? strtoupper($request->cargo)
-                : 'DOCENTE';
-            if (!preg_match('/^[0-9]{10}$/', $request->celular)) {
+            $nombre = strtoupper(trim($request->name));
 
-                return to_route('docentes.edit', $id)
-                    ->with('error', 'El número celular debe contener exactamente 10 dígitos');
+            if ($request->filled('apellido_p') || $request->filled('apellido_m')) {
+                $apellidoP = strtoupper(trim($request->apellido_p));
+                $apellidoM = strtoupper(trim($request->apellido_m));
+                $nombreCompleto = trim("$nombre $apellidoP $apellidoM");
+            } else {
+                $nombreCompleto = $nombre;
             }
 
-            $item->save();
+            $departamento = $request->input('dpto', $request->input('departamento'));
 
-            return to_route('docentes')
-                ->with('success', 'Usuario actualizado correctamente');
-        } catch (Exception $e) {
+            DB::transaction(function () use ($request, $user, $nombreCompleto, $email, $departamento) {
 
-            return to_route('docentes')
-                ->with('error', 'No se pudo actualizar: ' . $e->getMessage());
+                $user->name = $nombreCompleto;
+                $user->email = $email;
+                $user->rol = $request->rol;
+                $user->save();
+
+                $docente = $user->docente;
+
+                if (!$docente) {
+                    $docente = new Docente();
+                    $docente->user_id = $user->id;
+                    $docente->activo = 1;
+                }
+
+                $docente->celular = $request->celular;
+                $docente->departamento = $departamento;
+                $docente->cargo = ($request->rol == 'admin')
+                    ? strtoupper($request->cargo)
+                    : 'DOCENTE';
+
+                $docente->save();
+            });
+            return redirect()->route('docentes')
+                ->with('success', 'Usuario actualizado con éxito!');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo actualizar: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

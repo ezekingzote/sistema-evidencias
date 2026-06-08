@@ -8,9 +8,6 @@ use Illuminate\Support\Facades\Auth;
 
 class Evaluaciones extends Controller
 {
-    /**
-     * Mostrar evaluación
-     */
     public function show($id)
     {
         $evidencia = Evidencia::with([
@@ -63,17 +60,19 @@ class Evaluaciones extends Controller
                 'key' => 'instrumentos',
                 'nombre' => 'Evidencias de instrumentos de evaluación',
                 'archivo' => null,
-                'instrumentos' => $instrumentos
+                'archivos_multiples' => $instrumentos
             ],
             [
                 'key' => 'rubricas',
                 'nombre' => 'Rúbricas del semestre',
                 'archivo' => $evidencias['rubricas'] ?? null,
+                'archivos_multiples' => isset($evidencias['rubricas_detalladas']) ? array_values($evidencias['rubricas_detalladas']) : []
             ],
             [
                 'key' => 'calificaciones',
                 'nombre' => 'Lista de calificaciones',
                 'archivo' => $documentos['calificaciones'] ?? null,
+                'archivos_multiples' => isset($documentos['calificaciones_detalladas']) ? array_values($documentos['calificaciones_detalladas']) : []
             ],
             [
                 'key' => 'rac',
@@ -141,5 +140,29 @@ class Evaluaciones extends Controller
                 ? 'Evidencia aprobada correctamente'
                 : 'Evidencia rechazada por documentos con calificación menor a 70'
         );
+    }
+
+    /**
+     * Guardado automático
+     */
+    public function autoSave(Request $request, $id)
+    {
+        $evidencia = Evidencia::findOrFail($id);
+        $key = $request->input('key');  
+        $evaluacionActual = $evidencia->evaluacion ?? [];
+        $evaluacionActual[$key] = [
+            'na' => $request->input('na'),
+            'calificacion' => $request->input('calificacion'),
+            'observaciones' => $request->input('observaciones')
+        ];
+
+        $evidencia->update([
+            'evaluacion' => $evaluacionActual
+        ]);
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Guardado automático exitoso'
+        ]);
     }
 }

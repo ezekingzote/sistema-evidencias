@@ -35,10 +35,13 @@
                     </li>
 
                     @php $rutaAcumulada = ''; @endphp
+
                     @foreach($breadcrumbs as $crumb)
                     @php $rutaAcumulada .= ($rutaAcumulada ? '/' : '') . $crumb; @endphp
+
                     <li class="breadcrumb-item active">
-                        <a href="{{ route('archivos', ['ruta' => $rutaAcumulada]) }}" class="text-decoration-none text-capitalize">
+                        <a href="{{ route('archivos', ['ruta' => $rutaAcumulada]) }}"
+                            class="text-decoration-none text-capitalize">
                             {{ $crumb }}
                         </a>
                     </li>
@@ -64,18 +67,29 @@
                         <div class="card folder-card border-0 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between folder-link"
                             data-url="{{ route('archivos', ['ruta' => $carpeta['ruta_completa']]) }}">
 
-                            <div class="d-flex align-items-center truncate-box">
-                                <i class="bi bi-folder-fill text-warning fs-3 me-3"></i>
-                                <span class="fw-semibold text-dark text-truncate small">
-                                    {{ $carpeta['nombre'] }}
-                                </span>
+                            <div class="folder-main d-flex align-items-center truncate-box">
+                                <div class="folder-icon-box me-3">
+                                    <i class="bi bi-folder-fill"></i>
+                                </div>
+
+                                <div class="folder-text-box">
+                                    <span class="fw-semibold text-dark text-truncate small d-block">
+                                        {{ $carpeta['nombre'] }}
+                                    </span>
+
+                                    <span class="folder-hint">
+                                        Abrir carpeta
+                                    </span>
+                                </div>
                             </div>
 
                             <a href="{{ route('carpetas.zip', ['ruta' => $carpeta['ruta_completa']]) }}"
-                                class="btn btn-sm btn-light border rounded-pill d-flex align-items-center justify-content-center download-zip-btn"
-                                title="Descargar en ZIP"
+                                class="btn btn-sm rounded-pill d-flex align-items-center justify-content-center download-zip-btn"
+                                title="Descargar carpeta en ZIP"
+                                aria-label="Descargar carpeta en ZIP"
                                 onclick="event.stopPropagation();">
-                                <i class="bi bi-file-earmark-zip-fill text-secondary fs-5"></i>
+                                <i class="bi bi-file-earmark-zip-fill zip-icon"></i>
+                                <span class="zip-label">ZIP</span>
                             </a>
                         </div>
                     </div>
@@ -99,18 +113,23 @@
                     $rutaSegura = base64_encode($archivo['ruta_completa']);
                     $urlVerPdf = route('archivos.ver', ['ruta' => $rutaSegura]);
                     @endphp
+
                     <div class="col-xl-3 col-lg-4 col-md-6">
                         <div class="card file-card border-0 shadow-sm">
                             <div class="file-preview">
 
                                 {{-- IMÁGENES --}}
                                 @if(in_array($archivo['extension'], ['jpg', 'jpeg', 'png', 'gif', 'webp']))
-                                <img src="{{ asset('storage/' . $archivo['ruta_completa']) }}" class="w-100 h-100 object-fit-cover" alt="">
+                                <img src="{{ asset('storage/' . $archivo['ruta_completa']) }}"
+                                    class="w-100 h-100 object-fit-cover"
+                                    alt="">
 
                                 {{-- PDF: VISTA PEQUEÑA DEL CONTENIDO REAL --}}
                                 @elseif($archivo['extension'] === 'pdf')
                                 <div class="w-100 h-100 position-relative iframe-container">
-                                    <embed src="{{ $urlVerPdf }}#toolbar=0&navpanes=0&scrollbar=0" type="application/pdf" class="w-100 h-100 pointer-events-none">
+                                    <embed src="{{ $urlVerPdf }}#toolbar=0&navpanes=0&scrollbar=0"
+                                        type="application/pdf"
+                                        class="w-100 h-100 pointer-events-none">
                                     <div class="iframe-overlay"></div>
                                 </div>
 
@@ -142,7 +161,10 @@
                                 <p class="small fw-semibold text-truncate mb-1" title="{{ $archivo['nombre'] }}">
                                     {{ $archivo['nombre'] }}
                                 </p>
-                                <p class="text-muted x-small mb-3">{{ $archivo['tamano'] }} • {{ $archivo['fecha'] }}</p>
+
+                                <p class="text-muted x-small mb-3">
+                                    {{ $archivo['tamano'] }} • {{ $archivo['fecha'] }}
+                                </p>
 
                                 <div class="d-flex justify-content-between align-items-center">
 
@@ -152,15 +174,18 @@
                                         class="btn btn-sm btn-outline-primary rounded-pill px-3 btn-preview-pdf"
                                         data-url="{{ $urlVerPdf }}"
                                         data-name="{{ $archivo['nombre'] }}">
-                                        <i class="fa-regular fa-eye"></i>  Vista Previa
+                                        <i class="fa-regular fa-eye"></i> Vista Previa
                                     </button>
                                     @else
-                                    <a href="{{ asset('storage/' . $archivo['ruta_completa']) }}" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3">
+                                    <a href="{{ asset('storage/' . $archivo['ruta_completa']) }}"
+                                        target="_blank"
+                                        class="btn btn-sm btn-primary rounded-pill px-3">
                                         Abrir
                                     </a>
                                     @endif
 
-                                    <a href="{{ route('archivos.descargar', ['ruta' => $rutaSegura]) }}" class="btn btn-sm btn-light border rounded-pill px-3">
+                                    <a href="{{ route('archivos.descargar', ['ruta' => $rutaSegura]) }}"
+                                        class="btn btn-sm btn-light border rounded-pill px-3">
                                         <i class="bi bi-download"></i>
                                     </a>
                                 </div>
@@ -213,25 +238,93 @@
 
 <style>
     .folder-card {
-        border: 1px solid #dadce0 !important;
-        border-radius: 14px;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 16px;
         transition: all .2s ease;
         cursor: pointer;
-        background: white;
+        background: #ffffff;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .folder-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 12px;
+        bottom: 12px;
+        width: 4px;
+        border-radius: 0 8px 8px 0;
+        background: #ffc107;
+        opacity: .95;
     }
 
     .folder-card:hover {
-        background: #f1f3f4;
+        background: #fffdf6;
+        border-color: #ffd76a !important;
         transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, .08) !important;
+    }
+
+    .folder-main {
+        min-width: 0;
+        flex: 1;
+        padding-left: 4px;
+    }
+
+    .folder-icon-box {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        border-radius: 14px;
+        background: #fff6d9;
+        color: #f5b400;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.65rem;
+    }
+
+    .folder-text-box {
+        min-width: 0;
+    }
+
+    .folder-hint {
+        display: block;
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: 2px;
     }
 
     .download-zip-btn {
-        padding: 6px 10px;
+        min-width: 58px;
+        height: 42px;
+        padding: 6px 11px;
+        gap: 5px;
+        border: 2px solid #0d6efd !important;
+        background: #eef5ff !important;
+        color: #0d6efd !important;
+        font-weight: 700;
+        transition: all .2s ease;
+        box-shadow: 0 4px 10px rgba(13, 110, 253, .10);
+        z-index: 2;
     }
 
     .download-zip-btn:hover {
-        background: #e8eaed !important;
-        color: #000 !important;
+        background: #0d6efd !important;
+        color: #ffffff !important;
+        border-color: #0d6efd !important;
+        transform: scale(1.05);
+        box-shadow: 0 8px 18px rgba(13, 110, 253, .22);
+    }
+
+    .download-zip-btn .zip-icon {
+        font-size: 1.1rem;
+    }
+
+    .download-zip-btn .zip-label {
+        font-size: 11px;
+        letter-spacing: .4px;
     }
 
     .file-card {
@@ -287,6 +380,19 @@
 
     .x-small {
         font-size: 11px;
+    }
+
+    @media (max-width: 576px) {
+        .download-zip-btn {
+            min-width: 42px;
+            width: 42px;
+            padding: 0;
+            border-radius: 50% !important;
+        }
+
+        .download-zip-btn .zip-label {
+            display: none;
+        }
     }
 </style>
 

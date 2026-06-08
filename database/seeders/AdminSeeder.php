@@ -3,21 +3,28 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use App\Models\User;
+use App\Models\Docente;
 
 class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        User::updateOrCreate(
+        $adminUser = User::updateOrCreate(
             ['email' => 'admin@admin.com'],
             [
                 'name' => 'Ezequiel Mendoza',
-                'departamento' => 'Ciencias Basicas',
                 'password' => Hash::make('admin'),
-                'activo' => true,
                 'rol' => 'admin'
+            ]
+        );
+        Docente::updateOrCreate(
+            ['user_id' => $adminUser->id],
+            [
+                'departamento' => 'Ciencias Basicas',
+                'cargo' => 'ADMIN', // Puedes ajustarlo si usas otro cargo por defecto
+                'activo' => 1
             ]
         );
     }

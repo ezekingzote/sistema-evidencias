@@ -16,7 +16,7 @@
                         </a>
                     </li>
                     <li class="breadcrumb-item active text-primary fw-semibold">
-                        Administrar mis Materias
+                        Ver mis Materias
                     </li>
                 </ol>
             </nav>
@@ -66,7 +66,6 @@
                                         @forelse ($materias as $materia)
                                             <tr>
                                                 <td class="fw-semibold text-dark">
-                                                    {{-- Acceso directo al nombre de la materia --}}
                                                     {{ $materia->nombre }}
                                                 </td>
 
@@ -93,7 +92,7 @@
                                                 </td>
 
                                                 <td>
-                                                    <a href="#"
+                                                    <a href="{{route('evidencias')}}"
                                                         class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">
                                                         <i class="bi bi-folder2-open me-2"></i>
                                                         Ver Evidencias

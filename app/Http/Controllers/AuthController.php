@@ -25,23 +25,41 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return back()->withErrors(['email' => 'Credencial Incorrecta'])->withInput();
+            return back()
+                ->withErrors(['email' => 'Credencial Incorrecta'])
+                ->withInput();
         }
 
-        if (!$user->activo) {
-            return back()->withErrors(['email' => 'Tu cuenta esta inactiva!']);
+        $rolUsuario = strtolower($user->rol);
+
+        if ($rolUsuario === 'docente' && (!$user->docente || !$user->docente->activo)) {
+            return back()->withErrors(['email' => 'Tu cuenta está inactiva!']);
         }
 
         Auth::login($user);
         $request->session()->regenerate();
 
-        if ($user->rol === 'admin') {
+        $request->session()->put(
+            'panel_activo',
+            $rolUsuario === 'admin' ? 'admin' : 'docente'
+        );
+
+        if ($rolUsuario === 'admin') {
             return redirect()->route('home');
-        } else if ($user->rol === 'docente') {
+        }
+
+        if ($rolUsuario === 'docente') {
             return redirect()->route('dashboard');
         }
 
-        return redirect()->route('home');
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()
+            ->route('login')
+            ->withErrors(['email' => 'El usuario no tiene un rol válido.']);
     }
 
     public function logout()

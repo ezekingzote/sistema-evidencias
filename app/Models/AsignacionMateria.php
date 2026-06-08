@@ -63,7 +63,7 @@ class AsignacionMateria extends Model
 
     public function docente()
     {
-        return $this->belongsTo(User::class, 'docente_id');
+        return $this->belongsTo(Docente::class, 'docente_id');
     }
 
     public function semestre()

@@ -114,8 +114,36 @@ class Materias extends Controller
     public function misMaterias()
     {
         $titulo = 'Mis Materias';
-        $materias = Auth::user()->materias;
-        return view('modules.materias.misMaterias', compact('titulo', 'materias'));
+
+        $user = Auth::user();
+        $materias = collect();
+
+        $semestreActivo = Semestre::where('activo', 1)->first();
+
+        if (!$semestreActivo) {
+            return view('modules.materias.misMaterias', compact(
+                'titulo',
+                'materias',
+                'semestreActivo'
+            ));
+        }
+
+        $docente = $user->docente;
+
+        if ($docente && $docente->activo) {
+            $materias = $docente->materias()
+                ->where('materias.activo', 1)
+                ->wherePivot('semestre_id', $semestreActivo->id)
+                ->wherePivot('activo', 1)
+                ->orderBy('materias.nombre', 'asc')
+                ->get();
+        }
+
+        return view('modules.materias.misMaterias', compact(
+            'titulo',
+            'materias',
+            'semestreActivo'
+        ));
     }
 
     public function estado(Request $request)
