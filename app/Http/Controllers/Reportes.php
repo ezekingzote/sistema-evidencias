@@ -14,29 +14,84 @@ class Reportes extends Controller
     public function index()
     {
         $titulo = "Reportes";
-        $evidencias = Evidencia::with([
-            'materia',
-            'revision',
-            'asignacion.docente'
-        ])->get();
 
-        // Para la tabla por revisiones
-        $materias = Materia::with([
-            'evidencias',
-            'asignaciones.docente'
-        ])
+        $evidencias = Evidencia::query()
+            ->with([
+                'materia',
+                'revision',
+                'asignacion'
+            ])
+            ->leftJoin(
+                'asignacion_materias as am',
+                'evidencias.asignacion_materia_id',
+                '=',
+                'am.id'
+            )
+            ->leftJoin('docentes as d', function ($join) {
+                $join->on('d.id', '=', 'am.docente_id')
+                    ->orOn('d.user_id', '=', 'am.docente_id');
+            })
+            ->leftJoin('users as u', function ($join) {
+                $join->on('u.id', '=', 'd.user_id')
+                    ->orOn('u.id', '=', 'am.docente_id');
+            })
+            ->select(
+                'evidencias.*',
+                'am.docente_id as asignacion_docente_id',
+                'am.grupo as asignacion_grupo',
+                'am.alumnos as asignacion_alumnos',
+                'u.name as docente_nombre',
+                'u.email as docente_email',
+                'd.departamento as docente_departamento',
+                'd.cargo as docente_cargo'
+            )
+            ->orderBy('u.name', 'asc')
+            ->orderBy('evidencias.created_at', 'desc')
+            ->get()
+            ->map(function ($evidencia) {
+                $evidencia->docente_nombre = $evidencia->docente_nombre ?: 'Sin docente asignado';
+                return $evidencia;
+            });
+
+        $materias = Materia::query()
             ->join(
-                'asignacion_materias',
+                'asignacion_materias as am',
                 'materias.id',
                 '=',
-                'asignacion_materias.materia_id'
+                'am.materia_id'
             )
+            ->leftJoin('docentes as d', function ($join) {
+                $join->on('d.id', '=', 'am.docente_id')
+                    ->orOn('d.user_id', '=', 'am.docente_id');
+            })
+            ->leftJoin('users as u', function ($join) {
+                $join->on('u.id', '=', 'd.user_id')
+                    ->orOn('u.id', '=', 'am.docente_id');
+            })
+            ->with([
+                'evidencias',
+                'asignaciones',
+            ])
             ->select(
                 'materias.*',
-                'asignacion_materias.docente_id'
+                'am.id as asignacion_id',
+                'am.docente_id as asignacion_docente_id',
+                'am.grupo as asignacion_grupo',
+                'am.alumnos as asignacion_alumnos',
+                'am.semestre_id as asignacion_semestre_id',
+                'am.activo as asignacion_activo',
+                'u.name as docente_nombre',
+                'u.email as docente_email',
+                'd.departamento as docente_departamento',
+                'd.cargo as docente_cargo'
             )
-            ->distinct()
-            ->get();
+            ->orderBy('u.name', 'asc')
+            ->orderBy('materias.nombre', 'asc')
+            ->get()
+            ->map(function ($materia) {
+                $materia->docente_nombre = $materia->docente_nombre ?: 'Sin docente asignado';
+                return $materia;
+            });
 
         $revisiones = Revision::orderBy('numero', 'asc')->get();
 

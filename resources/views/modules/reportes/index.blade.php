@@ -206,7 +206,7 @@
 
                                                 <td>
 
-                                                    {{ $materia->asignaciones->first()?->docente?->name }}
+                                                    {{ $materia->docente_nombre ?? 'Sin docente asignado' }}
 
                                                 </td>
 
