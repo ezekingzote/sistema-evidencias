@@ -30,6 +30,10 @@
 
     <td class="text-center">
 
+        <span style="display:none">
+            {{ $item->activo ? 1 : 0 }}
+        </span>
+
         <div class="form-check form-switch d-flex justify-content-center">
 
             <input
@@ -37,8 +41,7 @@
                 type="checkbox"
                 id="chk{{ $item->id }}"
                 data-id="{{ $item->id }}"
-                {{ $item->activo ? 'checked' : '' }}
-            >
+                {{ $item->activo ? 'checked' : '' }}>
 
         </div>
 
@@ -50,15 +53,13 @@
 
             <a
                 href="{{ route('materias.edit', $item->id) }}"
-                class="btn btn-outline-warning btn-sm rounded-pill px-3"
-            >
+                class="btn btn-outline-warning btn-sm rounded-pill px-3">
                 <i class="fa-solid fa-user-pen"></i>
             </a>
 
             <a
                 href="{{ route('materias.show', $item->id) }}"
-                class="btn btn-outline-danger btn-sm rounded-pill px-3"
-            >
+                class="btn btn-outline-danger btn-sm rounded-pill px-3">
                 <i class="fa-solid fa-trash-can"></i>
             </a>
 
