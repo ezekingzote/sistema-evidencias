@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
             $table->string('celular', 10)->nullable();
-            $table->string('departamento');
+            $table->string('departamento')->nullable();
             $table->string('cargo')->default('DOCENTE');
             $table->unsignedTinyInteger('activo')->default(1);
 

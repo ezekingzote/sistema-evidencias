@@ -21,10 +21,6 @@ class Evaluaciones extends Controller
         $documentos = $data['documentos'] ?? [];
         $evidencias = $data['evidencias'] ?? [];
         $instrumentos = $data['instrumentos'] ?? [];
-
-        // =====================================
-        // ITEMS VISUALES ESTRUCTURADOS
-        // =====================================
         $items = [
             [
                 'key' => 'instrumentacion',
@@ -89,10 +85,6 @@ class Evaluaciones extends Controller
 
         return view('modules.evaluacion.index', compact('evidencia', 'items'));
     }
-
-    /**
-     * Guardar evaluación
-     */
     public function update(Request $request, $id)
     {
         $evidencia = Evidencia::findOrFail($id);
@@ -142,9 +134,6 @@ class Evaluaciones extends Controller
         );
     }
 
-    /**
-     * Guardado automático
-     */
     public function autoSave(Request $request, $id)
     {
         $evidencia = Evidencia::findOrFail($id);

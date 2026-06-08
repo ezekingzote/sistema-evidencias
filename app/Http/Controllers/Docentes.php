@@ -152,7 +152,6 @@ class Docentes extends Controller
 
             DB::transaction(function () use ($request, $nombreCompleto, $email, $passwordTemporal) {
 
-
                 $user = new User();
                 $user->name = $nombreCompleto;
                 $user->email = $email;
@@ -160,15 +159,27 @@ class Docentes extends Controller
                 $user->rol = $request->rol;
                 $user->save();
 
-
                 $docente = new Docente();
                 $docente->user_id = $user->id;
-                $docente->celular = $request->celular;
-                $docente->departamento = $request->dpto;
-                $docente->cargo = ($request->rol == 'admin')
-                    ? strtoupper($request->cargo)
-                    : 'DOCENTE';
-                $docente->activo = 1;
+
+                if ($request->rol === 'admin') {
+                    $docente->cargo = strtoupper($request->cargo);
+                    $docente->activo = 1;
+
+                    if ($request->has('perfil_docente')) {
+                        $docente->celular = $request->celular;
+                        $docente->departamento = $request->dpto;
+                    } else {
+                        $docente->celular = null;
+                        $docente->departamento = null;
+                    }
+                } else {
+                    $docente->celular = $request->celular;
+                    $docente->departamento = $request->dpto;
+                    $docente->cargo = 'DOCENTE';
+                    $docente->activo = 1;
+                }
+
                 $docente->save();
             });
             $urlPdf = route('pdf.descargar', [
