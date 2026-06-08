@@ -95,6 +95,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/show/{id}', [Materias::class, 'show'])->name('materias.show');
             Route::delete('/destroy/{id}', [Materias::class, 'destroy'])->name('materias.destroy');
             Route::post('/estado', [Materias::class, 'estado'])->name('materias.estado.ajax');
+            Route::get('materias/buscar', [Materias::class, 'buscar'])->name('materias.buscar');
+            Route::get('/unidades/{materia}',[Evidencias::class, 'unidadesDisponibles']);
         });
 
         Route::prefix('revisiones')->group(function () {
@@ -120,7 +122,7 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('imagenes')->group(function () {
             Route::get('/', [Imagenes::class, 'index'])->name('imagenes');
-            Route::post('/configuracion-pdf',[Imagenes::class, 'update'])->name('imagenes.update');
+            Route::post('/configuracion-pdf', [Imagenes::class, 'update'])->name('imagenes.update');
         });
     });
 
@@ -149,6 +151,7 @@ Route::middleware('auth')->group(function () {
             Route::post('/guardar', [Evidencias::class, 'store'])->name('evidencias.store');
             Route::get('/edit/{id}', [Evidencias::class, 'edit'])->name('evidencias.edit');
             Route::put('/update/{id}', [Evidencias::class, 'update'])->name('evidencias.update');
+            Route::delete('/delete/{id}', [Evidencias::class, 'destroy'])->name('evidencias.destroy');
         });
 
         Route::prefix('mis-reportes')->group(function () {

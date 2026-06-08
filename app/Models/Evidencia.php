@@ -63,4 +63,13 @@ class Evidencia extends Model
     {
         return $this->belongsTo(User::class, 'admin_id');
     }
+
+    public function unidades()
+    {
+        return $this->hasMany(
+            EvidenciaUnidad::class,
+            'evidencia_id'
+        );
+    }
+    
 }

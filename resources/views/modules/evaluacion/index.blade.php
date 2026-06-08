@@ -1,248 +1,173 @@
 @extends('layouts.main')
-
 @section('titulo', 'Evaluar Evidencia')
-
 @section('contenido')
 
 <main id="main" class="main">
-
     <div class="pagetitle mb-4">
-        <h1 class="fw-bold text-primary">
-            Evaluación de Evidencias
-        </h1>
+        <h1 class="fw-bold text-primary"><i class="bi bi-clipboard-check me-2"></i>Evaluación de Evidencias</h1>
     </div>
 
     <section class="section">
-
         <div class="card border-0 shadow-lg p-4" style="border-radius: 18px;">
-
             <form method="POST" action="{{ route('evaluaciones.update', $evidencia->id) }}">
-                @csrf
-                @method('PUT')
-
-                @php
-                // Aseguramos que evaluación sea un array para evitar errores de sintaxis
-                $evaluacionGuardada = is_array($evidencia->evaluacion) ? $evidencia->evaluacion : [];
-                @endphp
+                @csrf @method('PUT')
 
                 <div class="row">
-
-                    {{-- ================================= --}}
-                    {{-- SIDEBAR --}}
-                    {{-- ================================= --}}
+                    <!-- SIDEBAR DE NAVEGACIÓN -->
                     <div class="col-md-4">
-
-                        <div class="border rounded-4 p-3 bg-light">
-
-                            <h5 class="fw-bold text-primary mb-3">
-                                Documentos
-                            </h5>
-
-                            <div class="d-flex flex-column gap-2">
-
-                                @foreach($items as $i => $doc)
-
-                                @php
-                                // Recuperamos la calificación de la persistencia para el icono del Sidebar
-                                $calificacion = $evaluacionGuardada[$doc['key']]['calificacion'] ?? null;
-                                $esNaGuardado = isset($evaluacionGuardada[$doc['key']]['na']);
-                                @endphp
-
-                                <button
-                                    type="button"
-                                    class="btn btn-outline-primary text-start rounded-pill documento-btn d-flex justify-content-between align-items-center {{ $i == 0 ? 'active' : '' }}"
-                                    data-target="doc-{{ $doc['key'] }}">
-
-                                    <span>
-                                        {{ $doc['nombre'] }}
-                                    </span>
-
-                                    <span>
-                                        @if($esNaGuardado)
-                                        <span class="badge bg-secondary text-uppercase" style="font-size: 0.7rem;">N/A</span>
-                                        @elseif($calificacion !== null)
-                                        @if($calificacion >= 70)
-                                        <i class="fa-solid fa-circle-check text-success"></i>
-                                        @else
-                                        <i class="fa-solid fa-circle-xmark text-danger"></i>
-                                        @endif
-                                        @endif
-                                    </span>
-
-                                </button>
-
-                                @endforeach
-
-                            </div>
-
+                        <div class="list-group list-group-flush border rounded-4 p-2 bg-light">
+                            <h6 class="px-3 py-2 text-uppercase text-muted small fw-bold">Secciones</h6>
+                            @foreach($items as $i => $doc)
+                            <button type="button"
+                                class="list-group-item list-group-item-action border-0 rounded-pill mb-1 documento-btn {{ $i == 0 ? 'active' : '' }}"
+                                data-target="doc-{{ $doc['key'] }}">
+                                <i class="bi bi-file-earmark-text me-2"></i> {{ $doc['nombre'] }}
+                            </button>
+                            @endforeach
                         </div>
-
                     </div>
 
-                    {{-- ================================= --}}
-                    {{-- CONTENIDO --}}
-                    {{-- ================================= --}}
+                    <!-- PANEL DE CONTENIDO -->
                     <div class="col-md-8">
 
-                        @foreach($items as $i => $doc)
-
                         @php
-                        // Extraemos el sub-array de este documento si ya existe en la BD
-                        $evaluado = $evaluacionGuardada[$doc['key']] ?? null;
 
-                        // Lógica de N/A Automático si no hay archivos
-                        $esNAAutomatico = false;
-                        if (
-                        (empty($doc['archivo']) && !isset($doc['instrumentos'])) ||
-                        (isset($doc['instrumentos']) && count($doc['instrumentos']) == 0)
-                        ) {
-                        $esNAAutomatico = true;
-                        }
+                        $grupos = [
 
-                        // Determinamos si debe estar checkeado el switch de N/A
-                        $marcarAsNA = $evaluacionGuardada
-                        ? isset($evaluado['na'])
-                        : $esNAAutomatico;
+                        'inicio' => [
+                        'titulo' => 'Inicio del Curso',
+                        'items' => [
+                        'instrumentacion',
+                        'reporte_inicio',
+                        'examen_diagnostico',
+                        'analisis_diagnostico',
+                        'acuerdos'
+                        ]
+                        ],
+
+                        'seguimiento' => [
+                        'titulo' => 'Seguimiento',
+                        'items' => [
+                        'avance_programatico',
+                        'instrumentos',
+                        'rubricas',
+                        'calificaciones'
+                        ]
+                        ],
+
+                        'cierre' => [
+                        'titulo' => 'Cierre',
+                        'items' => [
+                        'rac',
+                        'asiste_seguimiento'
+                        ]
+                        ]
+
+                        ];
+
                         @endphp
 
-                        <div class="documento-panel {{ $i != 0 ? 'd-none' : '' }}" id="doc-{{ $doc['key'] }}">
+                        @foreach($grupos as $grupoKey => $grupo)
 
-                            {{-- ============================= --}}
-                            {{-- VISUALIZADOR PDF --}}
-                            {{-- ============================= --}}
-                            <div class="card border-0 shadow-sm mb-3">
+                        <div
+                            class="grupo-panel {{ $loop->first ? '' : 'd-none' }}"
+                            id="grupo-{{ $grupoKey }}">
 
+                            <div class="card border-0 shadow-sm mb-4">
                                 <div class="card-body">
 
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-
-                                        <h5 class="fw-bold text-success mb-0">
-                                            {{ $doc['nombre'] }}
-                                        </h5>
-
-                                        @if(!$esNAAutomatico)
-                                        <a href="
-                                                    @if($doc['key'] == 'instrumentos')
-                                                        {{ asset('storage/' . ($doc['instrumentos'][0] ?? '')) }}
-                                                    @else
-                                                        {{ asset('storage/' . $doc['archivo']) }}
-                                                    @endif
-                                                "
-                                            target="_blank"
-                                            class="btn btn-dark rounded-pill">
-                                            <i class="fa-solid fa-eye"></i> Abrir PDF
-                                        </a>
-                                        @endif
-
-                                    </div>
-
-                                    {{-- INSTRUMENTOS MULTIPLES --}}
-                                    @if($doc['key'] == 'instrumentos')
-
-                                    <div class="row">
-
-                                        @forelse($doc['instrumentos'] as $pdf)
-
-                                        <div class="col-md-4 mb-3">
-                                            <iframe
-                                                src="{{ asset('storage/' . $pdf) }}"
-                                                width="100%"
-                                                height="350"
-                                                style="border:none; border-radius:12px;">
-                                            </iframe>
-                                        </div>
-
-                                        @empty
-
-                                        <div class="col-12">
-                                            <div class="alert alert-secondary mb-0">
-                                                No existen instrumentos cargados
-                                            </div>
-                                        </div>
-
-                                        @endforelse
-
-                                    </div>
-
-                                    {{-- PDF INDIVIDUAL --}}
-                                    @elseif(!empty($doc['archivo']))
-
-                                    <iframe
-                                        src="{{ asset('storage/' . $doc['archivo']) }}"
-                                        width="100%"
-                                        height="550"
-                                        style="border:none; border-radius:12px;">
-                                    </iframe>
-
-                                    @else
-
-                                    <div class="alert alert-secondary mb-0">
-                                        No existe documento
-                                    </div>
-
-                                    @endif
+                                    <h4 class="fw-bold text-primary mb-0">
+                                        {{ $grupo['titulo'] }}
+                                    </h4>
 
                                 </div>
-
                             </div>
 
-                            {{-- ============================= --}}
-                            {{-- FORMULARIO DE EVALUACIÓN --}}
-                            {{-- ============================= --}}
-                            <div class="card border-0 shadow-sm">
+                            <div class="row g-3">
 
-                                <div class="card-body">
+                                @foreach($items as $doc)
 
-                                    <div class="row g-3">
+                                @if(in_array($doc['key'], $grupo['items']))
 
-                                        {{-- SWITCH N/A --}}
-                                        <div class="col-md-12">
-                                            <div class="form-check form-switch">
+                                <div class="col-md-6">
+
+                                    <div class="card h-100 border-0 shadow-sm">
+
+                                        <div class="card-body">
+
+                                            <h6 class="fw-bold mb-3">
+                                                {{ $doc['nombre'] }}
+                                            </h6>
+
+                                            @if($doc['key'] == 'instrumentos' && !empty($doc['instrumentos']))
+
+                                            <div class="d-grid gap-2 mb-3">
+
+                                                @foreach($doc['instrumentos'] as $index => $pdf)
+
+                                                <a
+                                                    href="{{ asset('storage/'.$pdf) }}"
+                                                    target="_blank"
+                                                    class="btn btn-dark btn-sm">
+                                                    Instrumento {{ $index + 1 }}
+                                                </a>
+
+                                                @endforeach
+
+                                            </div>
+
+                                            @elseif(!empty($doc['archivo']))
+
+                                            <a
+                                                href="{{ asset('storage/'.$doc['archivo']) }}"
+                                                target="_blank"
+                                                class="btn btn-dark btn-sm mb-3 w-100">
+                                                Abrir PDF
+                                            </a>
+
+                                            @else
+
+                                            <div class="alert alert-secondary py-2">
+                                                Sin archivo
+                                            </div>
+
+                                            @endif
+
+                                            <div class="form-check form-switch mb-3">
+
                                                 <input
-                                                    class="form-check-input na-switch"
+                                                    class="form-check-input"
                                                     type="checkbox"
-                                                    data-key="{{ $doc['key'] }}"
-                                                    id="na_{{ $doc['key'] }}"
                                                     name="evaluaciones[{{ $doc['key'] }}][na]"
-                                                    value="1"
-                                                    {{ $marcarAsNA ? 'checked' : '' }}>
-                                                <label class="form-check-label fw-bold" for="na_{{ $doc['key'] }}">
+                                                    value="1">
+
+                                                <label class="form-check-label">
                                                     No aplica
                                                 </label>
-                                            </div>
-                                        </div>
 
-                                        {{-- CALIFICACIÓN --}}
-                                        <div class="col-md-4">
-                                            <label class="fw-bold small text-uppercase" for="calificacion_{{ $doc['key'] }}">
-                                                Calificación
-                                            </label>
+                                            </div>
+
                                             <input
                                                 type="number"
-                                                min="0"
-                                                max="100"
-                                                class="form-control calificacion-input"
-                                                id="calificacion_{{ $doc['key'] }}"
-                                                name="evaluaciones[{{ $doc['key'] }}][calificacion]"
-                                                value="{{ $evaluado['calificacion'] ?? '' }}"
-                                                placeholder="0 - 100">
-                                        </div>
+                                                class="form-control mb-2"
+                                                placeholder="Calificación"
+                                                name="evaluaciones[{{ $doc['key'] }}][calificacion]">
 
-                                        {{-- OBSERVACIONES --}}
-                                        <div class="col-md-8">
-                                            <label class="fw-bold small text-uppercase">
-                                                Observaciones
-                                            </label>
                                             <textarea
-                                                class="form-control"
                                                 rows="2"
-                                                name="evaluaciones[{{ $doc['key'] }}][observaciones]"
-                                                placeholder="Escribe observaciones...">{{ $evaluado['observaciones'] ?? '' }}</textarea>
+                                                class="form-control"
+                                                placeholder="Observaciones"
+                                                name="evaluaciones[{{ $doc['key'] }}][observaciones]"></textarea>
+
                                         </div>
 
                                     </div>
 
                                 </div>
+
+                                @endif
+
+                                @endforeach
 
                             </div>
 
@@ -251,73 +176,53 @@
                         @endforeach
 
                     </div>
-
                 </div>
 
-                {{-- ================================= --}}
-                {{-- ACCIONES INTERFAZ --}}
-                {{-- ================================= --}}
-                <div class="mt-4 d-flex gap-2">
-                    <a href="{{ route('seguimiento-academico') }}" class="btn btn-light border rounded-pill px-4">
-                        <i class="fa-solid fa-arrow-left"></i> Regresar
-                    </a>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">
-                        <i class="fa-solid fa-floppy-disk"></i> Guardar evaluación
-                    </button>
+                <div class="mt-4 text-end">
+                    <a href="{{ route('seguimiento-academico') }}" class="btn btn-light border rounded-pill px-4">Regresar</a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 shadow"><i class="bi bi-floppy"></i> Guardar Evaluación</button>
                 </div>
-
             </form>
-
         </div>
-
     </section>
-
 </main>
 
 <script>
-    // =================================
-    // INTERCAMBIO DE PANELES (SIDEBAR)
-    // =================================
-    const botones = document.querySelectorAll('.documento-btn');
-    const paneles = document.querySelectorAll('.documento-panel');
-
-    botones.forEach(btn => {
+    // Lógica para cambiar de panel
+    document.querySelectorAll('.documento-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            botones.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.documento-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.documento-panel').forEach(p => p.classList.add('d-none'));
+
             this.classList.add('active');
-
-            const target = this.dataset.target;
-            paneles.forEach(panel => panel.classList.add('d-none'));
-
-            document.getElementById(target).classList.remove('d-none');
+            document.getElementById(this.getAttribute('data-target')).classList.remove('d-none');
         });
     });
-
-    // =================================
-    // CONTROL DE CONTROLADORES N/A SWITCH
-    // =================================
-    const naSwitches = document.querySelectorAll('.na-switch');
-
-    naSwitches.forEach(sw => {
-        const key = sw.dataset.key;
-        const input = document.getElementById('calificacion_' + key);
-
-        // Estado inicial al cargar la página
-        if (sw.checked && input) {
-            input.disabled = true;
-        }
-
-        // Evento al interactuar dinámicamente
-        sw.addEventListener('change', function() {
-            if (this.checked) {
-                input.disabled = true;
-                input.value = ''; // Opcional: Limpia el valor si se marca N/A
-            } else {
-                input.disabled = false;
-            }
-        });
-    });
-    
 </script>
 
+<style>
+    .documento-panel {
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    .btn-dark {
+        background-color: #212529;
+        border: none;
+    }
+
+    .btn-dark:hover {
+        background-color: #000;
+        transform: translateY(-2px);
+    }
+</style>
 @endsection

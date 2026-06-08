@@ -33,8 +33,7 @@
 
             <a
                 href="{{ route('nueva-materia') }}"
-                class="btn btn-primary rounded-pill px-4 shadow-sm"
-            >
+                class="btn btn-primary rounded-pill px-4 shadow-sm">
                 <i class="fa-solid fa-plus me-2"></i>
                 Nueva Materia
             </a>
@@ -80,8 +79,7 @@
                         <div class="table-responsive">
 
                             <table
-                                class="table table-hover align-middle text-center datatable custom-table"
-                            >
+                                class="table table-hover align-middle text-center datatable custom-table">
 
                                 <thead>
                                     <tr>
@@ -240,7 +238,6 @@
 @push('scripts')
 
 <script>
-
     function recargar_tbody() {
         $('#tbody_materias').html(
             '<tr><td colspan="7" class="text-center py-4">Cargando información...</td></tr>'
@@ -250,11 +247,11 @@
             type: 'GET',
             url: "{{ route('materias.tbody') }}",
 
-            success: function (respuesta) {
+            success: function(respuesta) {
                 $('#tbody_materias').html(respuesta);
             },
 
-            error: function () {
+            error: function() {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -268,60 +265,60 @@
     function cambiar_estado(id, estado) {
 
         fetch("{{ route('materias.estado.ajax') }}", {
-            method: 'POST',
+                method: 'POST',
 
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
 
-            body: JSON.stringify({
-                id: id,
-                estado: estado
+                body: JSON.stringify({
+                    id: id,
+                    estado: estado
+                })
             })
-        })
 
-        .then(res => res.json())
+            .then(res => res.json())
 
-        .then(data => {
+            .then(data => {
 
-            if (data.success) {
+                if (data.success) {
 
-                Swal.fire({
-                    title: 'Éxito',
-                    text: data.mensaje,
-                    icon: 'success'
-                });
+                    Swal.fire({
+                        title: 'Éxito',
+                        text: data.mensaje,
+                        icon: 'success'
+                    });
 
-                recargar_tbody();
+                    recargar_tbody();
 
-            } else {
+                } else {
+
+                    Swal.fire({
+                        title: 'Error',
+                        text: data.mensaje,
+                        icon: 'error'
+                    });
+
+                    recargar_tbody();
+                }
+
+            })
+
+            .catch(err => {
 
                 Swal.fire({
                     title: 'Error',
-                    text: data.mensaje,
+                    text: 'Error de conexión con el servidor.',
                     icon: 'error'
                 });
 
-                recargar_tbody();
-            }
-
-        })
-
-        .catch(err => {
-
-            Swal.fire({
-                title: 'Error',
-                text: 'Error de conexión con el servidor.',
-                icon: 'error'
             });
-
-        });
 
     }
 
 
-    $('#tbody_materias').on("change", ".chkToggle", function () {
+    $('#tbody_materias').on("change", ".chkToggle", function() {
 
         let id = $(this).data("id");
         let estado = $(this).is(":checked") ? 1 : 0;
@@ -329,7 +326,6 @@
         cambiar_estado(id, estado);
 
     });
-
 </script>
 
 @endpush

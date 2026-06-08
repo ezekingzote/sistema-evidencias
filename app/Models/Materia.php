@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Scout\Searchable;
 
 /**
  * @property int $id
@@ -34,6 +35,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Materia extends Model
 {
+    use Searchable;
     protected $table = 'materias';
 
     public function semestres()
@@ -48,9 +50,19 @@ class Materia extends Model
     {
         return $this->hasMany(AsignacionMateria::class, 'materia_id');
     }
-    
+
     public function evidencias()
     {
         return $this->hasMany(Evidencia::class, 'materia_id');
+    }
+
+    public function toSearchableArray()
+    {
+        return [
+            'nombre' => $this->nombre,
+            'clave' => $this->clave,
+            'carrera' => $this->carrera,
+            'semestre' => $this->semestre,
+        ];
     }
 }

@@ -1,373 +1,564 @@
 @extends('layouts.main')
-
 @section('titulo', 'Editar Evidencia')
-
 @section('contenido')
 
-    <main id="main" class="main">
+<main id="main" class="main">
+    <div class="pagetitle mb-4">
+        <h1 class="fw-bold text-primary">Editar Evidencia: {{ $evidencia->materia->nombre }}</h1>
+    </div>
+    <section class="section">
+        <div class="card p-4 shadow-lg border-0" style="border-radius: 18px;">
+            @if ($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
+                <h6 class="fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Por favor corrige los siguientes errores:</h6>
+                <ul class="mb-0 small">
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            @endif
 
-        <div class="pagetitle mb-4">
-            <h1 class="fw-bold text-primary">Editar Evidencia</h1>
+            <form action="{{ route('evidencias.update', $evidencia->id) }}" method="POST" enctype="multipart/form-data" id="form-evidencias">
+                @csrf @method('PUT')
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="fw-bold small text-uppercase text-secondary mb-2 block">Materia</label>
+                        <select id="materia_id" name="materia_id" class="form-select form-select-lg fs-6" required disabled>
+                            <option value="{{ $evidencia->materia->id }}">{{ $evidencia->materia->nombre }}</option>
+                        </select>
+                        <input type="hidden" name="materia_id" value="{{ $evidencia->materia->id }}">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="fw-bold small text-uppercase text-secondary mb-2 block">Revisión</label>
+                        <select id="revision_id" name="revision_id" class="form-select form-select-lg fs-6" required disabled>
+                            <option value="{{ $evidencia->revision->id }}">{{ $evidencia->revision->nombre }}</option>
+                        </select>
+                        <input type="hidden" name="revision_id" value="{{ $evidencia->revision->id }}">
+                    </div>
+                </div>
+
+                <hr class="my-4">
+                <h5 class="fw-bold text-primary mb-3">¿QUÉ UNIDADES EVALUASTE?</h5>
+                <div class="row g-3 mb-4" id="contenedor_tarjetas_unidades">
+                    @php
+                    $unidadesSeleccionadas = $evidencia->documentos['unidades'] ?? [];
+                    $totalUnidadesMateria = $evidencia->materia->unidades;
+                    @endphp
+
+                    @if(in_array(0, $unidadesSeleccionadas))
+                    <div class="col-md-3">
+                        <div class="card card-unidad-check p-3 text-center shadow-sm h-100 d-flex flex-column align-items-center justify-content-center active"
+                            id="card_unidad_0">
+                            <input type="checkbox" name="unidades[]" value="0" class="d-none" checked>
+                            <i class="bi bi-dash-circle fs-3 text-secondary mb-2"></i>
+                            <span class="fw-bold text-dark">Ninguna Unidad</span>
+                        </div>
+                    </div>
+                    @else
+                    @for($i = 1; $i <= $totalUnidadesMateria; $i++)
+                        <div class="col-md-3">
+                        <div class="card card-unidad-check p-3 text-center shadow-sm h-100 d-flex flex-column align-items-center justify-content-center {{ in_array($i, $unidadesSeleccionadas) ? 'active' : '' }}"
+                            id="card_unidad_{{ $i }}" onclick="toggleUnidadTarjeta({{ $i }})">
+                            <input type="checkbox" id="chk_unidad_{{ $i }}" name="unidades[]" value="{{ $i }}" class="d-none" {{ in_array($i, $unidadesSeleccionadas) ? 'checked' : '' }}>
+                            <i class="bi bi-bookmark-check fs-3 text-primary mb-2"></i>
+                            <span class="fw-bold text-dark">Unidad {{ $i }}</span>
+                        </div>
+                </div>
+                @endfor
+                @endif
         </div>
 
-        <section class="section">
-            <div class="card border-0 shadow-lg p-4" style="border-radius:20px;">
-
-                {{-- Alerta de evaluación --}}
-                @if ($evidencia->evaluacion)
-                    <div
-                        class="alert alert-success border-0 shadow-sm rounded-4 mb-4 d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="fw-bold mb-1">Dictamen de Evaluación Disponible</h5>
-                            <small class="text-secondary">Los documentos aprobados no pueden ser editados.</small>
+        <hr class="my-4">
+        <h5 class="fw-bold text-primary mb-3">DOCUMENTOS</h5>
+        <div class="row g-4">
+            <!-- Instrumentación didáctica -->
+            <div class="col-md-6">
+                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="p-2.5 rounded-3 bg-primary-subtle text-primary me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                            <i class="bi bi-book-half"></i>
                         </div>
-                        <a href="{{ route('mis-reportes.pdf', $evidencia->id) }}" target="_blank"
-                            class="btn btn-danger rounded-pill shadow-sm px-4">
-                            <i class="fa-solid fa-file-pdf me-2"></i>Descargar Dictamen PDF
-                        </a>
+                        <label class="form-label fw-bold text-dark fs-5 mb-0">Instrumentación didáctica</label>
                     </div>
-                @endif
-
-                <form action="{{ route('evidencias.update', $evidencia->id) }}" method="POST" enctype="multipart/form-data"
-                    id="form-edit-evidencias">
-                    @csrf
-                    @method('PUT')
-
-                    {{-- SECCIÓN I: DOCUMENTOS --}}
-                    <h4 class="fw-bold text-primary mb-4">DOCUMENTOS</h4>
-                    <div class="row g-4 mb-5">
-                        @foreach ($documentos as $doc)
-                            <div class="col-md-4">
-                                <div
-                                    class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 border-top border-4 {{ $doc['aprobado'] ? 'border-success' : 'border-danger' }}">
-                                    <div class="p-3 bg-white d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 class="fw-bold mb-0 text-dark text-truncate" style="max-width: 190px;">
-                                                {{ $doc['nombre'] }}</h6>
-                                            <small class="{{ $doc['aprobado'] ? 'text-success' : 'text-danger' }} fw-bold">
-                                                <i
-                                                    class="fa-solid {{ $doc['aprobado'] ? 'fa-circle-check' : 'fa-circle-xmark' }} me-1"></i>
-                                                {{ $doc['aprobado'] ? 'Aprobado' : 'Rechazado' }}
-                                            </small>
-                                        </div>
-                                        @if ($doc['existe'])
-                                            <a href="{{ asset('storage/' . $doc['ruta']) }}" target="_blank"
-                                                class="btn btn-light btn-sm rounded-circle shadow-sm text-primary"
-                                                style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;">
-                                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                            </a>
-                                        @endif
-                                    </div>
-
-                                    <div style="height:340px; background:#f8f9fa;">
-                                        @if ($doc['existe'])
-                                            <iframe src="{{ asset('storage/' . $doc['ruta']) }}#toolbar=0" width="100%"
-                                                height="100%" style="border:none;"></iframe>
-                                            @ fittings
-                                        @else
-                                            <div
-                                                class="h-100 d-flex flex-column align-items-center justify-content-center p-4 text-center">
-                                                <i class="fa-regular fa-file-pdf fa-3x text-danger opacity-25 mb-2"></i>
-                                                <div class="fw-semibold text-secondary small">Documento no cargado en
-                                                    servidor</div>
-                                                <span class="text-muted mt-1" style="font-size: 11px;">Pendiente de subir
-                                                    archivo PDF.</span>
-                                            </div>
-                                        @endif
-                                    </div>
-
-                                    <div class="p-3 bg-white border-top">
-                                        <input type="file" name="{{ $doc['key'] }}"
-                                            class="form-control form-control-sm" {{ $doc['aprobado'] ? 'disabled' : '' }}
-                                            accept="application/pdf">
-                                        @if ($doc['aprobado'])
-                                            <small class="text-success d-block mt-1 fw-semibold"
-                                                style="font-size:11px;">Edición deshabilitada por aprobación</small>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-
-                        {{-- Campo Especial: RAC --}}
-                        <div class="col-md-4">
-                            <div
-                                class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 border-top border-4 {{ $racData['aprobado'] ? 'border-success' : 'border-danger' }}">
-                                <div class="p-3 bg-white d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="fw-bold mb-0 text-dark">{{ $racData['nombre'] }}</h6>
-                                        <small class="{{ $racData['aprobado'] ? 'text-success' : 'text-danger' }} fw-bold">
-                                            <i
-                                                class="fa-solid {{ $racData['aprobado'] ? 'fa-circle-check' : 'fa-circle-xmark' }} me-1"></i>
-                                            {{ $racData['aprobado'] ? 'Aprobado' : 'Rechazado' }}
-                                        </small>
-                                    </div>
-                                    @if ($racData['existe'])
-                                        <a href="{{ asset('storage/' . $racData['ruta']) }}" target="_blank"
-                                            class="btn btn-light btn-sm rounded-circle shadow-sm text-primary"
-                                            style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;">
-                                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                        </a>
-                                    @endif
-                                </div>
-
-                                <div style="height:340px; background:#f8f9fa;">
-                                    @if ($racData['na'])
-                                        <div
-                                            class="h-100 d-flex flex-column align-items-center justify-content-center p-4 bg-light text-muted text-center">
-                                            <i class="fa-solid fa-ban fa-2x mb-2 opacity-50"></i>
-                                            <span class="fw-bold small">NO APLICA PARA ESTE CURSO</span>
-                                        </div>
-                                    @elseif ($racData['existe'])
-                                        <iframe src="{{ asset('storage/' . $racData['ruta']) }}#toolbar=0" width="100%"
-                                            height="100%" style="border:none;"></iframe>
-                                    @else
-                                        <div
-                                            class="h-100 d-flex flex-column align-items-center justify-content-center p-4 text-center">
-                                            <i class="fa-regular fa-file-pdf fa-3x text-danger opacity-25 mb-2"></i>
-                                            <div class="fw-semibold text-secondary small">Sin archivo de regularización
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-
-                                <div class="p-3 bg-white border-top">
-                                    @if (!$racData['aprobado'])
-                                        <div class="form-check form-switch mb-2">
-                                            <input class="form-check-input" type="checkbox" id="rac_na" name="rac_na"
-                                                {{ $racData['na'] ? 'checked' : '' }}>
-                                            <label class="form-check-label small text-secondary fw-semibold"
-                                                for="rac_na">No aplica</label>
-                                        </div>
-                                        <input type="file" name="rac" id="rac"
-                                            class="form-control form-control-sm" {{ $racData['na'] ? 'disabled' : '' }}
-                                            accept="application/pdf">
-                                    @else
-                                        <input type="file" class="form-control form-control-sm" disabled>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
+                    @if($evidencia->documentos['documentos']['instrumentacion'] ?? false)
+                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
+                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                        <a href="{{ asset('storage/' . $evidencia->documentos['documentos']['instrumentacion']) }}" target="_blank" class="text-decoration-none small text-truncate">Ver documento actual</a>
                     </div>
-
-                    {{-- SECCIÓN II: EVIDENCIAS --}}
-                    <h4 class="fw-bold text-success mb-4">EVIDENCIAS</h4>
-                    <div class="row g-4 mb-5">
-                        @foreach ($evidencias as $evi)
-                            <div class="col-md-4">
-                                <div
-                                    class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 border-top border-4 {{ $evi['aprobado'] ? 'border-success' : 'border-danger' }}">
-                                    <div class="p-3 bg-white d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 class="fw-bold mb-0 text-dark text-truncate" style="max-width: 190px;">
-                                                {{ $evi['nombre'] }}</h6>
-                                            <small class="{{ $evi['aprobado'] ? 'text-success' : 'text-danger' }} fw-bold">
-                                                <i
-                                                    class="fa-solid {{ $evi['aprobado'] ? 'fa-circle-check' : 'fa-circle-xmark' }} me-1"></i>
-                                                {{ $evi['aprobado'] ? 'Aprobado' : 'Rechazado' }}
-                                            </small>
-                                        </div>
-                                        @if ($evi['existe'])
-                                            <a href="{{ asset('storage/' . $evi['ruta']) }}" target="_blank"
-                                                class="btn btn-light btn-sm rounded-circle shadow-sm text-success"
-                                                style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;">
-                                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                            </a>
-                                        @endif
-                                    </div>
-
-                                    <div style="height:340px; background:#f8f9fa;">
-                                        @if ($evi['existe'])
-                                            <iframe src="{{ asset('storage/' . $evi['ruta']) }}#toolbar=0" width="100%"
-                                                height="100%" style="border:none;"></iframe>
-                                        @else
-                                            <div
-                                                class="h-100 d-flex flex-column align-items-center justify-content-center p-4 text-center">
-                                                <i class="fa-regular fa-file-pdf fa-3x text-muted opacity-25 mb-2"></i>
-                                                <div class="fw-semibold text-secondary small">Archivo no localizado</div>
-                                            </div>
-                                        @endif
-                                    </div>
-
-                                    <div class="p-3 bg-white border-top">
-                                        <input type="file" name="{{ $evi['key'] }}"
-                                            class="form-control form-control-sm" {{ $evi['aprobado'] ? 'disabled' : '' }}
-                                            accept="application/pdf">
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-
-                    {{-- SECCIÓN III: INSTRUMENTOS MULTIPLES --}}
-                    <div class="card border-0 shadow-sm rounded-4 mt-5">
-                        <div class="card-body p-4">
-                            <h4 class="fw-bold text-success mb-1">Evidencias de Instrumentos de Evaluación</h4>
-                            <small class="{{ $instAprobados ? 'text-success' : 'text-danger' }} fw-bold mb-4 d-block">
-                                <i class="fa-solid {{ $instAprobados ? 'fa-circle-check' : 'fa-circle-xmark' }} me-1"></i>
-                                {{ $instAprobados ? 'Instrumentos Aprobados' : 'Instrumentos Rechazados / Modificables' }}
-                            </small>
-
-                            <div class="row g-4 mb-4">
-                                @forelse($instrumentos as $i => $inst)
-                                    <div class="col-md-4" id="pdf-old-{{ $i }}">
-                                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-                                            <div class="p-2 bg-light d-flex justify-content-between align-items-center">
-                                                <small class="fw-bold text-secondary ps-2">Instrumento
-                                                    {{ $i + 1 }}</small>
-                                                <div class="d-flex gap-1">
-                                                    @if ($inst['existe'])
-                                                        <a href="{{ asset('storage/' . $inst['ruta_limpia']) }}"
-                                                            target="_blank"
-                                                            class="btn btn-white btn-sm rounded-circle border text-dark shadow-sm d-flex align-items-center justify-content-center"
-                                                            style="width:32px; height:32px;">
-                                                            <i class="fa-solid fa-expand" style="font-size:12px;"></i>
-                                                        </a>
-                                                    @endif
-                                                    @if (!$instAprobados)
-                                                        <button type="button"
-                                                            class="btn btn-danger btn-sm rounded-circle shadow-sm d-flex align-items-center justify-content-center"
-                                                            style="width:32px; height:32px;"
-                                                            onclick="eliminarViejo({{ $i }}, '{{ $inst['ruta_original'] }}')">
-                                                            <i class="fa-solid fa-trash-can" style="font-size:12px;"></i>
-                                                        </button>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                            <div style="height:300px; background:#f8f9fa;">
-                                                @if ($inst['existe'])
-                                                    <iframe src="{{ asset('storage/' . $inst['ruta_limpia']) }}#toolbar=0"
-                                                        width="100%" height="100%" style="border:none;"></iframe>
-                                                @else
-                                                    <div
-                                                        class="h-100 d-flex align-items-center justify-content-center text-muted small">
-                                                        No se encuentra el archivo físico</div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-                                @empty
-                                    <div class="col-12">
-                                        <div class="alert alert-light border text-center text-muted rounded-4 py-4">No hay
-                                            instrumentos guardados.</div>
-                                    </div>
-                                @endforelse
-                            </div>
-
-                            <div id="contenedor-eliminados"></div>
-
-                            @if (!$instAprobados)
-                                <div class="p-4 rounded-4 border bg-light mt-4">
-                                    <h6 class="fw-bold text-success mb-1">Subir nuevos instrumentos</h6>
-                                    <p class="text-muted small mb-3">Máximo 3 archivos de instrumentos en total.</p>
-                                    <div class="row align-items-center">
-                                        <div class="col-md-4">
-                                            <input type="file" id="file-input-helper" class="d-none"
-                                                accept="application/pdf" multiple>
-                                            <button type="button" class="btn btn-success w-100 rounded-pill fw-bold"
-                                                id="btn-seleccionar">Adjuntar PDFs</button>
-                                        </div>
-                                        <div class="col-md-8">
-                                            <div id="lista-archivos" class="d-flex flex-column gap-2 mt-2 mt-md-0">
-                                                <span class="text-muted small italic">Ningún elemento nuevo
-                                                    seleccionado</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div id="hidden-inputs-container"></div>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2 mt-5 justify-content-end">
-                        <a href="{{ route('evidencias') }}" class="btn btn-light border px-4 rounded-pill"><i class="fa-solid fa-angle-left"></i>Cancelar</a>
-                        <button type="submit" class="btn btn-primary px-5 rounded-pill shadow"><i class="fa-solid fa-floppy-disk"></i>Guardar Cambios</button>
-                    </div>
-                </form>
-
+                    @endif
+                    <input type="file" name="instrumentacion" class="form-control form-control-lg fs-6">
+                    <small class="text-muted mt-1">Dejar vacío para mantener el actual.</small>
+                </div>
             </div>
-        </section>
-    </main>
 
-    <script>
-        const racCheck = document.getElementById('rac_na');
-        const racInput = document.getElementById('rac');
-        if (racCheck && racInput) {
-            racCheck.addEventListener('change', function() {
-                racInput.disabled = this.checked;
-                if (this.checked) racInput.value = '';
+            <!-- Reporte de inicio -->
+            <div class="col-md-6">
+                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="p-2.5 rounded-3 bg-info-subtle text-info me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                            <i class="bi bi-calendar-check"></i>
+                        </div>
+                        <label class="form-label fw-bold text-dark fs-5 mb-0">Reporte de inicio de curso</label>
+                    </div>
+                    @if($evidencia->documentos['documentos']['reporte_inicio'] ?? false)
+                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
+                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                        <a href="{{ asset('storage/' . $evidencia->documentos['documentos']['reporte_inicio']) }}" target="_blank" class="text-decoration-none small text-truncate">Ver documento actual</a>
+                    </div>
+                    @endif
+                    <input type="file" name="reporte_inicio" class="form-control form-control-lg fs-6">
+                    <small class="text-muted mt-1">Dejar vacío para mantener el actual.</small>
+                </div>
+            </div>
+
+            <!-- Acuerdos de clase -->
+            <div class="col-md-6">
+                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                            <i class="bi bi-person-workspace"></i>
+                        </div>
+                        <label class="form-label fw-bold text-dark fs-5 mb-0">Acuerdos de clase</label>
+                    </div>
+                    @if($evidencia->documentos['documentos']['acuerdos'] ?? false)
+                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
+                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                        <a href="{{ asset('storage/' . $evidencia->documentos['documentos']['acuerdos']) }}" target="_blank" class="text-decoration-none small text-truncate">Ver documento actual</a>
+                    </div>
+                    @endif
+                    <input type="file" name="acuerdos" class="form-control form-control-lg fs-6">
+                    <small class="text-muted mt-1">Dejar vacío para mantener el actual.</small>
+                </div>
+            </div>
+
+            <!-- Lista de calificaciones (dinámico por unidad) -->
+            <div class="col-md-6" id="contenedor_calificaciones">
+                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="p-2.5 rounded-3 bg-success-subtle text-success me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                            <i class="bi bi-card-checklist"></i>
+                        </div>
+                        <label class="form-label fw-bold text-dark fs-5 mb-0">Lista de calificaciones</label>
+                    </div>
+                    <div class="wrapper-inputs d-flex flex-column gap-2">
+                        @if(in_array(0, $unidadesSeleccionadas))
+                        <span class="text-muted small">No aplica para esta revisión</span>
+                        <input type="hidden" name="unidades[]" value="0">
+                        @else
+                        @foreach($unidadesSeleccionadas as $unidad)
+                        <div class="mb-2">
+                            <span class="badge bg-secondary mb-1">U{{ $unidad }}</span>
+                            @php
+                            $rutaCal = $evidencia->documentos['documentos']['calificaciones_detalladas']["u{$unidad}"] ?? null;
+                            @endphp
+                            @if($rutaCal)
+                            <div class="d-flex align-items-center bg-light p-1 rounded mb-1">
+                                <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                                <a href="{{ asset('storage/' . $rutaCal) }}" target="_blank" class="text-decoration-none small">Actual</a>
+                            </div>
+                            @endif
+                            <input type="file" name="calificaciones[{{ $unidad }}]" class="form-control form-control-sm fs-6">
+                            <small class="text-muted">Dejar vacío para mantener</small>
+                        </div>
+                        @endforeach
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actividades de Regularización (RAC) -->
+            <div class="col-md-6" id="contenedor_rac">
+                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white" id="rac_card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="p-2.5 rounded-3 bg-secondary-subtle text-secondary me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </div>
+                            <label class="form-label fw-bold text-dark fs-5 mb-0">Actividades de Regularización (RAC)</label>
+                        </div>
+                        <div class="form-check form-switch bg-light border rounded-pill px-3 py-1.5 d-flex align-items-center shadow-sm">
+                            <input class="form-check-input me-2 mt-0" type="checkbox" id="rac_na" name="rac_na" style="cursor: pointer;" {{ ($evidencia->documentos['documentos']['rac']['na'] ?? false) ? 'checked' : '' }}>
+                            <label class="form-check-label small fw-semibold text-secondary" for="rac_na" style="cursor: pointer; user-select: none;">No aplica</label>
+                        </div>
+                    </div>
+                    <div class="wrapper-inputs d-flex flex-column gap-2">
+                        @if(in_array(0, $unidadesSeleccionadas))
+                        <span class="text-muted small">No aplica para esta revisión</span>
+                        @else
+                        @foreach($unidadesSeleccionadas as $unidad)
+                        <div class="mb-2">
+                            <span class="badge bg-secondary mb-1">U{{ $unidad }}</span>
+                            @php
+                            $racData = $evidencia->documentos['documentos']['rac_detallado']["u{$unidad}"] ?? null;
+                            $rutaRac = is_array($racData) ? ($racData['archivo'] ?? null) : null;
+                            @endphp
+                            @if($rutaRac && !($racData['na'] ?? false))
+                            <div class="d-flex align-items-center bg-light p-1 rounded mb-1">
+                                <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                                <a href="{{ asset('storage/' . $rutaRac) }}" target="_blank" class="text-decoration-none small">Actual</a>
+                            </div>
+                            @endif
+                            <input type="file" name="rac[{{ $unidad }}]" class="form-control form-control-sm fs-6" {{ ($evidencia->documentos['documentos']['rac']['na'] ?? false) ? 'disabled' : '' }}>
+                            <small class="text-muted">Dejar vacío para mantener</small>
+                        </div>
+                        @endforeach
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-4">
+        <h5 class="fw-bold text-success mb-3">EVIDENCIAS</h5>
+        <div class="row g-4">
+            <!-- Examen diagnóstico -->
+            <div class="col-md-6">
+                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="p-2.5 rounded-3 bg-primary-subtle text-primary me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                            <i class="bi bi-file-earmark-medical"></i>
+                        </div>
+                        <label class="form-label fw-bold text-dark fs-5 mb-0">Examen diagnóstico</label>
+                    </div>
+                    @if($evidencia->documentos['evidencias']['examen_diagnostico'] ?? false)
+                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
+                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                        <a href="{{ asset('storage/' . $evidencia->documentos['evidencias']['examen_diagnostico']) }}" target="_blank" class="text-decoration-none small text-truncate">Ver documento actual</a>
+                    </div>
+                    @endif
+                    <input type="file" name="examen_diagnostico" class="form-control form-control-lg fs-6">
+                    <small class="text-muted mt-1">Dejar vacío para mantener el actual.</small>
+                </div>
+            </div>
+
+            <!-- Análisis del diagnóstico -->
+            <div class="col-md-6">
+                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="p-2.5 rounded-3 bg-info-subtle text-info me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                            <i class="bi bi-bar-chart-line"></i>
+                        </div>
+                        <label class="form-label fw-bold text-dark fs-5 mb-0">Análisis del diagnóstico</label>
+                    </div>
+                    @if($evidencia->documentos['evidencias']['analisis_diagnostico'] ?? false)
+                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
+                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                        <a href="{{ asset('storage/' . $evidencia->documentos['evidencias']['analisis_diagnostico']) }}" target="_blank" class="text-decoration-none small text-truncate">Ver documento actual</a>
+                    </div>
+                    @endif
+                    <input type="file" name="analisis_diagnostico" class="form-control form-control-lg fs-6">
+                    <small class="text-muted mt-1">Dejar vacío para mantener el actual.</small>
+                </div>
+            </div>
+
+            <!-- Rúbricas del semestre (dinámico por unidad) -->
+            <div class="col-md-6" id="contenedor_rubricas">
+                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                            <i class="bi bi-table"></i>
+                        </div>
+                        <label class="form-label fw-bold text-dark fs-5 mb-0">Rúbricas del semestre</label>
+                    </div>
+                    <div class="wrapper-inputs d-flex flex-column gap-2">
+                        @if(in_array(0, $unidadesSeleccionadas))
+                        <span class="text-muted small">No aplica para esta revisión</span>
+                        @else
+                        @foreach($unidadesSeleccionadas as $unidad)
+                        <div class="mb-2">
+                            <span class="badge bg-secondary mb-1">U{{ $unidad }}</span>
+                            @php
+                            $rutaRub = $evidencia->documentos['evidencias']['rubricas_detalladas']["u{$unidad}"] ?? null;
+                            @endphp
+                            @if($rutaRub)
+                            <div class="d-flex align-items-center bg-light p-1 rounded mb-1">
+                                <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                                <a href="{{ asset('storage/' . $rutaRub) }}" target="_blank" class="text-decoration-none small">Actual</a>
+                            </div>
+                            @endif
+                            <input type="file" name="rubricas[{{ $unidad }}]" class="form-control form-control-sm fs-6">
+                            <small class="text-muted">Dejar vacío para mantener</small>
+                        </div>
+                        @endforeach
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INSTRUMENTOS DE EVALUACIÓN INDIVIDUALES (Dropzones por unidad) -->
+        <hr class="my-4">
+        <div id="seccion_dropzones_dinamicos">
+            <h5 class="fw-bold text-success mb-3">INSTRUMENTOS DE EVALUACIÓN INDIVIDUALES</h5>
+            @if(!in_array(0, $unidadesSeleccionadas))
+            @foreach($unidadesSeleccionadas as $unidad)
+            @php
+            $instrumentosExistentes = $evidencia->documentos['instrumentos'] ?? [];
+            $instrumentosUnidad = array_filter($instrumentosExistentes, function($path) use ($unidad) {
+            return strpos($path, "instrumento_u{$unidad}_") !== false;
             });
+            @endphp
+            <div class="card border border-light-subtle rounded-3 shadow-sm p-4 bg-white style-dropzone mb-3" id="dropzone_u_{{ $unidad }}">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="p-2.5 rounded-3 bg-success-subtle text-success me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                            <i class="bi bi-file-earmark-arrow-up"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold text-dark fs-5 mb-0">Instrumentos de Evaluación - <span class="text-success">Unidad {{ $unidad }}</span></h5>
+                            <p class="text-muted small mb-0">Sube hasta 3 archivos PDF para esta unidad</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-light border-0 p-2 rounded-circle btn-minimizar" onclick="toggleMinimizarDropzone({{ $unidad }}, this)">
+                        <i class="bi bi-chevron-down fs-5 text-secondary"></i>
+                    </button>
+                </div>
+
+                <div class="dropzone-body-collapse mt-3" id="body_dropzone_u_{{ $unidad }}">
+                    <div class="row align-items-center bg-light p-3 rounded-3 g-3">
+                        <div class="col-md-4">
+                            <input type="file" id="helper_file_u_{{ $unidad }}" accept="application/pdf" multiple onchange="agregarArchivosDropzone(this, {{ $unidad }})">
+                            <button type="button" class="btn btn-outline-success rounded-pill fw-semibold small px-4 py-2.5 w-100 shadow-sm d-flex align-items-center justify-content-center gap-2" onclick="document.getElementById('helper_file_u_{{ $unidad }}').click()">
+                                <i class="bi bi-folder2-open"></i> Archivos Unidad {{ $unidad }}
+                            </button>
+                        </div>
+                        <div class="col-md-8">
+                            <div id="lista_archivos_u_{{ $unidad }}" class="d-flex flex-column gap-2 text-start">
+                                @foreach($instrumentosUnidad as $idx => $path)
+                                <div class="archivo-cargado-item d-flex align-items-center justify-content-between p-2.5 bg-white border border-light-subtle rounded-3 shadow-sm">
+                                    <div class="d-flex align-items-center">
+                                        <div class="p-2 rounded-2 bg-danger-subtle text-danger me-2.5 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                            <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
+                                        </div>
+                                        <span class="text-secondary fw-medium small">{{ basename($path) }}</span>
+                                    </div>
+                                    <button type="button" class="btn-eliminar-archivo btn border-0 p-2 text-muted rounded-2 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="eliminarArchivoExistente({{ $unidad }}, '{{ $path }}', this)">
+                                        <i class="bi bi-trash3 fs-5"></i>
+                                    </button>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="hidden_inputs_u_{{ $unidad }}"></div>
+            </div>
+            @endforeach
+            @endif
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <a href="{{ route('evidencias') }}" class="btn btn-light border px-4 rounded-pill">
+                <i class="bi bi-arrow-left me-1"></i> Regresar
+            </a>
+            <button type="submit" class="btn btn-primary px-4 rounded-pill">
+                <i class="bi bi-floppy me-1"></i> Actualizar Evidencia
+            </button>
+        </div>
+        </form>
+        </div>
+    </section>
+</main>
+
+<style>
+    .style-dropzone input[type="file"] {
+        display: none !important;
+    }
+
+    .style-dropzone .row.align-items-center {
+        background-color: #f8f9fa;
+        border: 1px dashed #dee2e6;
+        border-radius: 0.5rem;
+    }
+
+    .card-unidad-check {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid #dee2e6 !important;
+    }
+
+    .card-unidad-check:hover {
+        border-color: #0d6efd !important;
+        background-color: #f8f9fa;
+    }
+
+    .card-unidad-check.active {
+        border-color: #198754 !important;
+        background-color: #f0fdf4;
+    }
+
+    .dropzone-body-collapse {
+        transition: max-height 0.35s ease, opacity 0.3s ease;
+        max-height: 500px;
+        opacity: 1;
+        overflow: hidden;
+    }
+
+    .dropzone-body-collapse.collapsed {
+        max-height: 0px !important;
+        opacity: 0 !important;
+        pointer-events: none;
+    }
+
+    .btn-minimizar {
+        transition: transform 0.25s ease;
+    }
+
+    .btn-minimizar.rotated {
+        transform: rotate(-180deg);
+    }
+
+    .archivo-cargado-item {
+        animation: fadeInItem 0.25s ease-out forwards;
+    }
+
+    .btn-eliminar-archivo:hover {
+        background-color: #fde8e8 !important;
+        color: #dc3545 !important;
+    }
+
+    @keyframes fadeInItem {
+        from {
+            opacity: 0;
+            transform: translateY(4px);
         }
 
-        const helperInput = document.getElementById('file-input-helper');
-        const btnSeleccionar = document.getElementById('btn-seleccionar');
-        const listaArchivos = document.getElementById('lista-archivos');
-        const hiddenContainer = document.getElementById('hidden-inputs-container');
-        const contenedorEliminados = document.getElementById('contenedor-eliminados');
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
 
-        let cantidadExistentes = {{ count($instrumentos) }};
-        let archivosNuevos = [];
+<script>
+    // Variables globales para manejar archivos nuevos por unidad (sustituye a archivosPorUnidad)
+    let nuevosArchivosPorUnidad = {};
+    let archivosExistentesAEliminar = []; // almacenará rutas a eliminar en el servidor
 
-        if (btnSeleccionar && helperInput) {
-            btnSeleccionar.addEventListener('click', () => helperInput.click());
-            helperInput.addEventListener('change', function() {
-                for (let file of this.files) {
-                    if (file.type !== 'application/pdf') continue;
-                    if ((cantidadExistentes + archivosNuevos.length) >= 3) {
-                        alert('Límite rebasado: Solo se permite una colección máxima de 3 instrumentos.');
-                        break;
-                    }
-                    archivosNuevos.push(file);
-                }
-                renderNuevos();
-                this.value = '';
+    // Inicializar estructura para unidades seleccionadas
+    const unidadesSeleccionadas = @json($unidadesSeleccionadas);
+    if (!unidadesSeleccionadas.includes(0)) {
+        unidadesSeleccionadas.forEach(unidad => {
+            nuevosArchivosPorUnidad[unidad] = [];
+        });
+    }
+
+    // Función para agregar nuevos archivos a una unidad (desde el input)
+    window.agregarArchivosDropzone = function(inputElement, unidad) {
+        if (!nuevosArchivosPorUnidad[unidad]) nuevosArchivosPorUnidad[unidad] = [];
+        for (let file of inputElement.files) {
+            if (file.type !== 'application/pdf') continue;
+            if (nuevosArchivosPorUnidad[unidad].length >= 3) break;
+            nuevosArchivosPorUnidad[unidad].push(file);
+        }
+        renderizarDropzoneUnidad(unidad);
+        inputElement.value = '';
+    };
+
+    // Eliminar archivo existente (marcar para borrar físicamente)
+    window.eliminarArchivoExistente = function(unidad, ruta, boton) {
+        if (confirm('¿Eliminar este archivo permanentemente?')) {
+            archivosExistentesAEliminar.push(ruta);
+            // Remover visualmente el elemento
+            const item = boton.closest('.archivo-cargado-item');
+            item.remove();
+            // Agregar input oculto para notificar al servidor qué rutas eliminar
+            const hiddenContainer = document.getElementById(`hidden_inputs_u_${unidad}`);
+            const inputDel = document.createElement('input');
+            inputDel.type = 'hidden';
+            inputDel.name = `eliminar_instrumentos[${unidad}][]`;
+            inputDel.value = ruta;
+            hiddenContainer.appendChild(inputDel);
+        }
+    };
+
+    // Renderizar los archivos nuevos (no los existentes) en la lista de cada dropzone
+    function renderizarDropzoneUnidad(unidad) {
+        const lista = document.getElementById(`lista_archivos_u_${unidad}`);
+        const hiddenContainer = document.getElementById(`hidden_inputs_u_${unidad}`);
+        const files = nuevosArchivosPorUnidad[unidad] || [];
+
+        // Eliminar los elementos que representan archivos nuevos (para evitar duplicados)
+        const nuevosItems = lista.querySelectorAll('.archivo-nuevo');
+        nuevosItems.forEach(el => el.remove());
+
+        files.forEach((file, index) => {
+            const nuevoDiv = document.createElement('div');
+            nuevoDiv.className = 'archivo-cargado-item archivo-nuevo d-flex align-items-center justify-content-between p-2.5 bg-white border border-light-subtle rounded-3 shadow-sm';
+            nuevoDiv.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="p-2 rounded-2 bg-danger-subtle text-danger me-2.5 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
+                    </div>
+                    <span class="text-secondary fw-medium small">${file.name}</span>
+                </div>
+                <button type="button" class="btn-eliminar-archivo btn border-0 p-2 text-muted rounded-2 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="eliminarArchivoNuevo(${unidad}, ${index})">
+                    <i class="bi bi-trash3 fs-5"></i>
+                </button>
+            `;
+            lista.appendChild(nuevoDiv);
+        });
+
+        // Crear input múltiple con los archivos nuevos
+        const dt = new DataTransfer();
+        files.forEach(f => dt.items.add(f));
+        let realInput = hiddenContainer.querySelector('input[type="file"][name^="instrumentos"]');
+        if (!realInput) {
+            realInput = document.createElement('input');
+            realInput.type = 'file';
+            realInput.name = `instrumentos[${unidad}][]`;
+            realInput.multiple = true;
+            realInput.className = 'd-none';
+            hiddenContainer.appendChild(realInput);
+        }
+        realInput.files = dt.files;
+    }
+
+    window.eliminarArchivoNuevo = function(unidad, index) {
+        nuevosArchivosPorUnidad[unidad].splice(index, 1);
+        renderizarDropzoneUnidad(unidad);
+    };
+
+    window.toggleMinimizarDropzone = function(unidad, boton) {
+        const cuerpo = document.getElementById(`body_dropzone_u_${unidad}`);
+        cuerpo.classList.toggle('collapsed');
+        boton.classList.toggle('rotated');
+    };
+
+    // Manejo del switch RAC
+    const racCheck = document.getElementById('rac_na');
+    const racCard = document.getElementById('rac_card');
+
+    function aplicarRacDisabled() {
+        const inputsRac = document.querySelectorAll('#contenedor_rac .wrapper-inputs input[type="file"]');
+        if (racCheck.checked) {
+            inputsRac.forEach(input => {
+                input.disabled = true;
+                input.value = '';
             });
-        }
-
-        function renderNuevos() {
-            if (!listaArchivos || !hiddenContainer) return;
-            listaArchivos.innerHTML = archivosNuevos.length === 0 ?
-                '<span class="text-muted small italic">Ningún elemento nuevo seleccionado</span>' : '';
-
-            archivosNuevos.forEach((file, i) => {
-                listaArchivos.innerHTML += `
-                <div class="d-flex justify-content-between align-items-center border px-3 py-2 rounded-3 bg-white shadow-sm small">
-                    <span class="text-truncate text-secondary"><i class="fa-regular fa-file-pdf text-danger me-2"></i>${file.name}</span>
-                    <button type="button" class="btn-close small" style="font-size:10px;" onclick="removeNuevoFile(${i})"></button>
-                </div>`;
+            racCard.style.opacity = '0.6';
+        } else {
+            inputsRac.forEach(input => {
+                input.disabled = false;
             });
-
-            const dt = new DataTransfer();
-            archivosNuevos.forEach(f => dt.items.add(f));
-
-            hiddenContainer.innerHTML = '';
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.name = 'instrumentos[]';
-            input.multiple = true;
-            input.files = dt.files;
-            input.className = 'd-none';
-            hiddenContainer.appendChild(input);
+            racCard.style.opacity = '1';
         }
+    }
+    racCheck.addEventListener('change', aplicarRacDisabled);
+    aplicarRacDisabled();
 
-        function removeNuevoFile(index) {
-            archivosNuevos.splice(index, 1);
-            renderNuevos();
-        }
-
-        function eliminarViejo(index, rutaOriginal) {
-            if (confirm('¿Confirmas la remoción de este archivo?')) {
-                document.getElementById(`pdf-old-${index}`)?.remove();
-                cantidadExistentes--;
-
-                const hidden = document.createElement('input');
-                hidden.type = 'hidden';
-                hidden.name = 'instrumentos_eliminados[]';
-                hidden.value = rutaOriginal;
-                contenedorEliminados.appendChild(hidden);
-            }
-        }
-    </script>
-
+    // Unidades: como la materia y revisión están fijas, solo permitimos cambiar las unidades seleccionadas
+    // pero hay que sincronizar los campos dinámicos al cambiar las tarjetas.
+    // Para simplificar, no permitimos cambiar las unidades en edición (por coherencia con los archivos ya subidos).
+    // Si quieres habilitarlo, necesitarías una lógica más compleja. Por ahora dejamos las tarjetas sin evento de toggle
+    // y deshabilitamos los clicks para evitar inconsistencia.
+    document.querySelectorAll('.card-unidad-check').forEach(card => {
+        card.style.cursor = 'default';
+        card.removeAttribute('onclick');
+    });
+</script>
 @endsection
