@@ -5,8 +5,8 @@
 @section('contenido')
 
 @php
-    $primeraRevision = $revisiones->firstWhere('id', 1) ?? $revisiones->first();
-    $primeraRevisionId = $primeraRevision->id ?? 1;
+$primeraRevision = $revisiones->firstWhere('id', 1) ?? $revisiones->first();
+$primeraRevisionId = $primeraRevision->id ?? 1;
 @endphp
 
 <main id="main" class="main">
@@ -22,20 +22,20 @@
         <div class="card p-4 shadow-lg border-0" style="border-radius: 18px;">
 
             @if ($errors->any())
-                <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
-                    <h6 class="fw-bold">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        Por favor corrige los siguientes errores:
-                    </h6>
+            <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
+                <h6 class="fw-bold">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Por favor corrige los siguientes errores:
+                </h6>
 
-                    <ul class="mb-0 small">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
+                <ul class="mb-0 small">
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
 
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
             @endif
 
             <form action="{{ route('evidencias.store') }}" method="POST" enctype="multipart/form-data" id="form-evidencias">
@@ -52,9 +52,9 @@
                             <option value="">Seleccione</option>
 
                             @foreach ($materias as $materia)
-                                <option value="{{ $materia->id }}" data-unidades="{{ $materia->unidades }}">
-                                    {{ $materia->nombre }}
-                                </option>
+                            <option value="{{ $materia->id }}" data-unidades="{{ $materia->unidades }}">
+                                {{ $materia->nombre }}
+                            </option>
                             @endforeach
                         </select>
                     </div>
@@ -68,9 +68,9 @@
                             <option value="">Seleccione</option>
 
                             @foreach ($revisiones as $revision)
-                                <option value="{{ $revision->id }}" data-es-primera="{{ $revision->id == $primeraRevisionId ? '1' : '0' }}">
-                                    {{ $revision->nombre }}
-                                </option>
+                            <option value="{{ $revision->id }}" data-es-primera="{{ $revision->id == $primeraRevisionId ? '1' : '0' }}">
+                                {{ $revision->nombre }}
+                            </option>
                             @endforeach
                         </select>
                     </div>
@@ -584,9 +584,9 @@
         const materiaId = this.value;
         const optionSeleccionada = this.options[this.selectedIndex];
 
-        totalUnidadesMateria = optionSeleccionada
-            ? parseInt(optionSeleccionada.getAttribute('data-unidades'))
-            : 0;
+        totalUnidadesMateria = optionSeleccionada ?
+            parseInt(optionSeleccionada.getAttribute('data-unidades')) :
+            0;
 
         selectRevision.innerHTML = `<option value="">Seleccione</option>`;
         limpiarTodoAEstadoBase();
@@ -628,8 +628,8 @@
 
         const revisionId = parseInt(this.value);
 
-        if (revisionId === parseInt(primeraRevisionId)) {
-            contenedorUnidades.innerHTML += `
+
+        contenedorUnidades.innerHTML += `
                 <div class="col-md-3">
                     <div class="card card-unidad-check p-3 text-center shadow-sm h-100 d-flex flex-column align-items-center justify-content-center"
                          id="card_unidad_0"
@@ -649,7 +649,7 @@
                     </div>
                 </div>
             `;
-        }
+
 
         let unidadesDisponibles = 0;
 

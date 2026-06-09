@@ -283,7 +283,7 @@
 
             <p class="texto-oficio" style="margin-top: 5px; line-height: 1.2;">
                 <span class="bold" style="text-transform: uppercase;">{{ $admin->name }}</span><br>
-                <span class="bold" style="text-transform: uppercase;">{{ $admin->cargo }}</span><br>
+                <span class="bold" style="text-transform: uppercase;">{{ optional($evidencia->evaluador->docente)->cargo ?? 'No definido' }}</span><br>
             </p>
         </div>
 

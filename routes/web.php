@@ -160,7 +160,7 @@ Route::middleware('auth')->group(function () {
         });
 
         Route::prefix('mis-reportes')->group(function () {
-            Route::get('/{id}', [Reportes::class, 'reportePdfDocente'])->name('mis-reportes.pdf');
+            Route::get('/{id}', [Reportes::class, 'reportePdfDocente'])->name('mis-reportes');
         });
     });
 });

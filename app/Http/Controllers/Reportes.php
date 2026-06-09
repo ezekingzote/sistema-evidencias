@@ -113,7 +113,7 @@ class Reportes extends Controller
             'revision',
             'asignacion.docente',
             'asignacionMateria.semestre',
-            'admin'
+            'evaluador.docente'
         ])->findOrFail($id);
 
         $evaluacion = $evidencia->evaluacion ?? [];

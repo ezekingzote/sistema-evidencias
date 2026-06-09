@@ -166,14 +166,6 @@ class Evidencias extends Controller
                 ->withInput();
         }
 
-        if ($esNingunaUnidad && !$esPrimeraRevision && !$sinUnidadesDisponibles) {
-            return back()
-                ->withErrors([
-                    'unidades' => 'La opción Ninguna Unidad solo está permitida en la primera revisión o cuando ya no hay unidades disponibles.',
-                ])
-                ->withInput();
-        }
-
         foreach ($unidadesInput as $unidadSeleccionada) {
             if ($unidadSeleccionada === 0) {
                 continue;
@@ -502,7 +494,6 @@ class Evidencias extends Controller
             ->with('success', 'Evidencia guardada correctamente');
     }
 
-
     public function edit($id)
     {
         $evidencia = Evidencia::with([
@@ -511,6 +502,7 @@ class Evidencias extends Controller
         ])->findOrFail($id);
 
         $docenteId = Auth::id();
+        $item = Evidencia::findOrFail($id);
 
         $asignacion = AsignacionMateria::where('id', $evidencia->asignacion_materia_id)
             ->where('docente_id', $docenteId)
@@ -584,14 +576,24 @@ class Evidencias extends Controller
             'unidades',
             'documentos',
             'evidencias',
-            'unidadesOcupadas'
+            'unidadesOcupadas',
+            'item'
         ));
     }
 
 
     public function update(Request $request, $id)
     {
-        $evidencia = Evidencia::findOrFail($id);
+        $evidencia = Evidencia::with([
+            'materia',
+            'revision'
+        ])->findOrFail($id);
+
+        if ($this->tieneCalificacionAprobatoria($evidencia)) {
+            return back()->withErrors([
+                'estado' => 'No es posible modificar los archivos porque la evidencia ya cuenta con una evaluación aprobatoria.'
+            ]);
+        }
 
         $estadoActual = strtolower((string) ($evidencia->estado ?? ''));
 
@@ -1212,42 +1214,60 @@ class Evidencias extends Controller
     public function destroy($id)
     {
         $evidencia = Evidencia::findOrFail($id);
-        $data = $evidencia->documentos ?? [];
 
-        if (!empty($data['documentos'])) {
-            foreach ($data['documentos'] as $key => $path) {
-                if ($key === 'rac' && is_array($path)) {
-                    if (!empty($path['archivo'])) Storage::disk('public')->delete($path['archivo']);
-                } elseif (is_string($path)) {
-                    Storage::disk('public')->delete($path);
-                } elseif (is_array($path)) {
-                    foreach ($path as $subPath) {
-                        if (is_string($subPath)) Storage::disk('public')->delete($subPath);
-                    }
+        if ($this->tieneCalificacionAprobatoria($evidencia)) {
+            return redirect()
+                ->route('evidencias')
+                ->with(
+                    'error',
+                    'No es posible eliminar la evidencia porque ya cuenta con una evaluación aprobatoria.'
+                );
+        }
+
+        $estadoActual = strtolower((string) ($evidencia->estado ?? ''));
+
+        if (in_array($estadoActual, ['1', 'aprobado', 'aprobada'], true)) {
+            return redirect()
+                ->route('evidencias')
+                ->with(
+                    'error',
+                    'La evidencia ya fue aprobada y no puede eliminarse.'
+                );
+        }
+
+        $datos = is_array($evidencia->documentos)
+            ? $evidencia->documentos
+            : json_decode($evidencia->documentos ?? '{}', true);
+
+        $eliminarArchivos = function ($item) use (&$eliminarArchivos) {
+
+            if (is_string($item) && !empty($item)) {
+                Storage::disk('public')->delete($item);
+                return;
+            }
+
+            if (is_array($item)) {
+
+                if (isset($item['archivo']) && !empty($item['archivo'])) {
+                    Storage::disk('public')->delete($item['archivo']);
+                }
+
+                foreach ($item as $valor) {
+                    $eliminarArchivos($valor);
                 }
             }
-        }
+        };
 
-        if (!empty($data['evidencias'])) {
-            foreach ($data['evidencias'] as $path) {
-                if (is_string($path)) Storage::disk('public')->delete($path);
-                if (is_array($path)) {
-                    foreach ($path as $subPath) {
-                        if (is_string($subPath)) Storage::disk('public')->delete($subPath);
-                    }
-                }
-            }
-        }
-
-        if (!empty($data['instrumentos'])) {
-            foreach ($data['instrumentos'] as $path) {
-                if (is_string($path)) Storage::disk('public')->delete($path);
-            }
-        }
+        $eliminarArchivos($datos);
 
         $evidencia->delete();
 
-        return redirect()->route('evidencias')->with('success', 'Evidencia eliminada del sistema y sus archivos borrados.');
+        return redirect()
+            ->route('evidencias')
+            ->with(
+                'success',
+                'La evidencia y todos sus archivos fueron eliminados correctamente.'
+            );
     }
 
     private function limpiarNombre($texto)
@@ -1255,5 +1275,23 @@ class Evidencias extends Controller
         $texto = trim($texto);
         $texto = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '', $texto);
         return str_replace(' ', '_', $texto);
+    }
+
+    private function tieneCalificacionAprobatoria(Evidencia $evidencia): bool
+    {
+        $evaluaciones = $evidencia->evaluacion ?? [];
+
+        foreach ($evaluaciones as $evaluacion) {
+
+            if (
+                !($evaluacion['na'] ?? false) &&
+                isset($evaluacion['calificacion']) &&
+                (float)$evaluacion['calificacion'] >= 70
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
