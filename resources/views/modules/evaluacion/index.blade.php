@@ -4,6 +4,23 @@
 
 @section('contenido')
 
+    @php
+        $datosEvidencia = is_array($evidencia->documentos)
+            ? $evidencia->documentos
+            : json_decode($evidencia->documentos ?? '[]', true);
+
+        if (!is_array($datosEvidencia)) {
+            $datosEvidencia = [];
+        }
+
+        $documentosEvidencia = $datosEvidencia['documentos'] ?? [];
+
+        $motivoNoEvaluoGeneral = $datosEvidencia['motivo_no_evaluo']
+            ?? ($documentosEvidencia['calificaciones']['motivo'] ?? null)
+            ?? ($documentosEvidencia['calificaciones_detalladas']['u0']['motivo'] ?? null)
+            ?? null;
+    @endphp
+
     <main id="main" class="main">
         <div class="pagetitle mb-4">
             <h1 class="fw-bold text-primary">
@@ -141,11 +158,19 @@
                                                     if (!$hayArchivoMultiple && $hayNaMultiple) {
                                                         $documentoNa = true;
                                                     }
+
+                                                    $motivoNoEvaluoCalificaciones = null;
+
+                                                    if (($doc['key'] ?? '') === 'calificaciones') {
+                                                        $motivoNoEvaluoCalificaciones = $doc['motivo_no_evaluo']
+                                                            ?? $motivoNoEvaluoGeneral
+                                                            ?? null;
+                                                    }
                                                 @endphp
 
                                                 @if ($documentoNa)
                                                     <div class="d-flex align-items-center justify-content-center h-100 bg-light">
-                                                        <div class="text-center px-4">
+                                                        <div class="text-center px-4" style="max-width: 650px;">
                                                             <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-secondary-subtle text-secondary mb-3"
                                                                 style="width: 72px; height: 72px;">
                                                                 <i class="bi bi-dash-circle fs-1"></i>
@@ -155,9 +180,22 @@
                                                                 No aplica (N/A)
                                                             </h5>
 
-                                                            <p class="mb-0 text-muted">
-                                                                Este apartado fue marcado como no aplicable por el docente.
-                                                            </p>
+                                                            @if (($doc['key'] ?? '') === 'calificaciones' && !empty($motivoNoEvaluoCalificaciones))
+                                                                <div class="alert alert-warning text-start border-0 shadow-sm rounded-3 mt-3 mb-0">
+                                                                    <h6 class="fw-bold mb-2 text-dark">
+                                                                        <i class="bi bi-exclamation-circle-fill me-1 text-warning"></i>
+                                                                        Motivo por el que no se evaluó ninguna unidad
+                                                                    </h6>
+
+                                                                    <p class="mb-0 text-dark">
+                                                                        {{ $motivoNoEvaluoCalificaciones }}
+                                                                    </p>
+                                                                </div>
+                                                            @else
+                                                                <p class="mb-0 text-muted">
+                                                                    Este apartado fue marcado como no aplicable por el docente.
+                                                                </p>
+                                                            @endif
                                                         </div>
                                                     </div>
                                                 @elseif (count($archivosMultiples) > 1)

@@ -17,10 +17,28 @@ class Evaluaciones extends Controller
             'asignacionMateria.docente'
         ])->findOrFail($id);
 
-        $data = $evidencia->documentos ?? [];
+        $data = is_array($evidencia->documentos)
+            ? $evidencia->documentos
+            : json_decode($evidencia->documentos ?? '[]', true);
+
+        if (!is_array($data)) {
+            $data = [];
+        }
+
         $documentos = $data['documentos'] ?? [];
         $evidencias = $data['evidencias'] ?? [];
         $instrumentos = $data['instrumentos'] ?? [];
+
+        $motivoNoEvaluo = $data['motivo_no_evaluo']
+            ?? ($documentos['calificaciones']['motivo'] ?? null)
+            ?? ($documentos['calificaciones_detalladas']['u0']['motivo'] ?? null)
+            ?? null;
+
+        $calificacionesArchivo = $documentos['calificaciones'] ?? null;
+
+        $calificacionesNa = is_array($calificacionesArchivo)
+            && !empty($calificacionesArchivo['na']);
+
         $items = [
             [
                 'key' => 'instrumentacion',
@@ -56,25 +74,35 @@ class Evaluaciones extends Controller
                 'key' => 'instrumentos',
                 'nombre' => 'Evidencias de instrumentos de evaluación',
                 'archivo' => null,
-                'archivos_multiples' => $instrumentos
+                'archivos_multiples' => $instrumentos,
             ],
             [
                 'key' => 'rubricas',
                 'nombre' => 'Rúbricas del semestre',
                 'archivo' => $evidencias['rubricas'] ?? null,
-                'archivos_multiples' => isset($evidencias['rubricas_detalladas']) ? array_values($evidencias['rubricas_detalladas']) : []
+                'archivos_multiples' => isset($evidencias['rubricas_detalladas'])
+                    ? array_values($evidencias['rubricas_detalladas'])
+                    : [],
             ],
             [
                 'key' => 'calificaciones',
                 'nombre' => 'Lista de calificaciones',
-                'archivo' => $documentos['calificaciones'] ?? null,
-                'archivos_multiples' => isset($documentos['calificaciones_detalladas']) ? array_values($documentos['calificaciones_detalladas']) : []
+                'archivo' => $calificacionesArchivo,
+                'documento_na' => $calificacionesNa,
+                'motivo_no_evaluo' => $motivoNoEvaluo,
+                'archivos_multiples' => isset($documentos['calificaciones_detalladas'])
+                    ? array_values($documentos['calificaciones_detalladas'])
+                    : [],
             ],
             [
                 'key' => 'rac',
                 'nombre' => 'Actividades de regularización',
-                'archivo' => $documentos['rac']['archivo'] ?? null,
-                'na' => $documentos['rac']['na'] ?? false,
+                'archivo' => is_array($documentos['rac'] ?? null)
+                    ? ($documentos['rac']['archivo'] ?? null)
+                    : ($documentos['rac'] ?? null),
+                'na' => is_array($documentos['rac'] ?? null)
+                    ? ($documentos['rac']['na'] ?? false)
+                    : false,
             ],
             [
                 'key' => 'asiste_seguimiento',

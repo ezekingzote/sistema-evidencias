@@ -442,6 +442,18 @@ $primeraRevisionId = $primeraRevision->id ?? 1;
         opacity: 0.75;
     }
 
+    .motivo-no-unidad-box {
+        background-color: #f8f9fa;
+        border: 1px dashed #ced4da;
+        border-radius: 12px;
+        padding: 14px;
+    }
+
+    .motivo-no-unidad-box textarea {
+        resize: vertical;
+        min-height: 110px;
+    }
+
     @media (max-width: 768px) {
         .rac-row {
             flex-direction: column;
@@ -472,6 +484,7 @@ $primeraRevisionId = $primeraRevision->id ?? 1;
     const revisionesOriginales = @json($revisiones);
     const unidadesUtilizadas = @json($unidadesUtilizadasPorMateria);
     const primeraRevisionId = @json($primeraRevisionId);
+    const motivoNoEvaluoOld = @json(old('motivo_no_evaluo'));
 
     const selectMateria = document.getElementById('materia_id');
     const selectRevision = document.getElementById('revision_id');
@@ -484,6 +497,19 @@ $primeraRevisionId = $primeraRevision->id ?? 1;
 
     let archivosPorUnidad = {};
     let totalUnidadesMateria = 0;
+
+    function escaparHtml(texto) {
+        if (texto === null || texto === undefined) {
+            return '';
+        }
+
+        return String(texto)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
 
     function esPrimeraRevision() {
         const option = selectRevision.options[selectRevision.selectedIndex];
@@ -626,30 +652,26 @@ $primeraRevisionId = $primeraRevision->id ?? 1;
 
         contenedorUnidades.innerHTML = '';
 
-        const revisionId = parseInt(this.value);
-
-
         contenedorUnidades.innerHTML += `
-                <div class="col-md-3">
-                    <div class="card card-unidad-check p-3 text-center shadow-sm h-100 d-flex flex-column align-items-center justify-content-center"
-                         id="card_unidad_0"
-                         onclick="toggleUnidadTarjeta(0)">
+            <div class="col-md-3">
+                <div class="card card-unidad-check p-3 text-center shadow-sm h-100 d-flex flex-column align-items-center justify-content-center"
+                     id="card_unidad_0"
+                     onclick="toggleUnidadTarjeta(0)">
 
-                        <input type="checkbox"
-                               id="chk_unidad_0"
-                               name="unidades[]"
-                               value="0"
-                               class="d-none">
+                    <input type="checkbox"
+                           id="chk_unidad_0"
+                           name="unidades[]"
+                           value="0"
+                           class="d-none">
 
-                        <i class="bi bi-dash-circle fs-3 text-secondary mb-2"></i>
+                    <i class="bi bi-dash-circle fs-3 text-secondary mb-2"></i>
 
-                        <span class="fw-bold text-dark">
-                            Ninguna Unidad
-                        </span>
-                    </div>
+                    <span class="fw-bold text-dark">
+                        Ninguna Unidad
+                    </span>
                 </div>
-            `;
-
+            </div>
+        `;
 
         let unidadesDisponibles = 0;
 
@@ -697,6 +719,10 @@ $primeraRevisionId = $primeraRevision->id ?? 1;
         const checkbox = document.getElementById(`chk_unidad_${num}`);
         const tarjeta = document.getElementById(`card_unidad_${num}`);
 
+        if (!checkbox || !tarjeta) {
+            return;
+        }
+
         if (num === 0) {
             for (let i = 1; i <= totalUnidadesMateria; i++) {
                 const chk = document.getElementById(`chk_unidad_${i}`);
@@ -740,9 +766,29 @@ $primeraRevisionId = $primeraRevision->id ?? 1;
         const chkNinguna = document.getElementById('chk_unidad_0');
 
         if (chkNinguna && chkNinguna.checked) {
-            wrapperCalificaciones.innerHTML =
-                `<span class="text-muted small">No aplica para esta revisión</span>
-                 <input type="hidden" name="unidades[]" value="0">`;
+            wrapperCalificaciones.innerHTML = `
+                <input type="hidden" name="unidades[]" value="0">
+
+                <div class="motivo-no-unidad-box">
+                    <label for="motivo_no_evaluo" class="form-label fw-bold text-dark mb-2">
+                        Motivo por el que no se evaluó ninguna unidad
+                    </label>
+
+                    <textarea
+                        name="motivo_no_evaluo"
+                        id="motivo_no_evaluo"
+                        class="form-control fs-6"
+                        rows="4"
+                        maxlength="1000"
+                        required
+                        placeholder="Escribe el motivo por el que no se evaluó ninguna unidad...">${escaparHtml(motivoNoEvaluoOld ?? '')}</textarea>
+
+                    <small class="text-muted d-block mt-2">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Este motivo quedará registrado junto con la evidencia.
+                    </small>
+                </div>
+            `;
 
             wrapperRac.innerHTML =
                 `<span class="text-muted small">No aplica para esta revisión</span>`;

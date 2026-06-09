@@ -166,6 +166,14 @@ class Evidencias extends Controller
                 ->withInput();
         }
 
+        if ($esNingunaUnidad && !$esPrimeraRevision && !$sinUnidadesDisponibles) {
+            return back()
+                ->withErrors([
+                    'unidades' => 'La opción Ninguna Unidad solo está permitida en la primera revisión o cuando ya no hay unidades disponibles.',
+                ])
+                ->withInput();
+        }
+
         foreach ($unidadesInput as $unidadSeleccionada) {
             if ($unidadSeleccionada === 0) {
                 continue;
@@ -198,6 +206,10 @@ class Evidencias extends Controller
             'unidades' => 'required|array',
             'unidades.*' => 'integer',
 
+            'motivo_no_evaluo' => $esNingunaUnidad
+                ? 'required|string|min:5|max:1000'
+                : 'nullable|string|max:1000',
+
             'instrumentacion' => $reglaArchivoGeneral,
             'reporte_inicio' => $reglaArchivoGeneral,
             'acuerdos' => $reglaArchivoGeneral,
@@ -224,6 +236,10 @@ class Evidencias extends Controller
             '*.mimes' => 'Todos los archivos deben estar en formato PDF.',
             '*.max' => 'Cada archivo PDF no debe pesar más de 5 MB.',
 
+            'motivo_no_evaluo.required' => 'Debes escribir el motivo por el que no se evaluó ninguna unidad.',
+            'motivo_no_evaluo.min' => 'El motivo debe tener al menos 5 caracteres.',
+            'motivo_no_evaluo.max' => 'El motivo no debe superar los 1000 caracteres.',
+
             'instrumentacion.required' => 'La instrumentación didáctica es obligatoria en la primera revisión.',
             'reporte_inicio.required' => 'El reporte de inicio de curso es obligatorio en la primera revisión.',
             'acuerdos.required' => 'Los acuerdos de clase son obligatorios en la primera revisión.',
@@ -233,6 +249,10 @@ class Evidencias extends Controller
             'calificaciones.required' => 'Debes subir la lista de calificaciones de las unidades seleccionadas.',
             'rubricas.required' => 'Debes subir las rúbricas de las unidades seleccionadas.',
         ]);
+
+        $motivoNoEvaluo = $esNingunaUnidad
+            ? trim((string) $request->input('motivo_no_evaluo'))
+            : null;
 
         if (!$esNingunaUnidad) {
             $racNaUnidades = $request->input('rac_na', []);
@@ -333,12 +353,14 @@ class Evidencias extends Controller
             $documentos['calificaciones'] = [
                 'na' => true,
                 'archivo' => null,
+                'motivo' => $motivoNoEvaluo,
             ];
 
             $documentos['calificaciones_detalladas'] = [
                 'u0' => [
                     'na' => true,
                     'archivo' => null,
+                    'motivo' => $motivoNoEvaluo,
                 ],
             ];
 
@@ -471,6 +493,7 @@ class Evidencias extends Controller
 
         $json = [
             'unidades' => $unidades,
+            'motivo_no_evaluo' => $motivoNoEvaluo,
             'documentos' => $documentos,
             'evidencias' => $evidencias,
             'instrumentos' => $instrumentosGrupales,
@@ -501,11 +524,20 @@ class Evidencias extends Controller
             'revision',
         ])->findOrFail($id);
 
-        $docenteId = Auth::id();
-        $item = Evidencia::findOrFail($id);
+        $user = Auth::user();
+
+        $docente = Docente::where('user_id', $user->id)->first();
+
+        $idsDocentePermitidos = [$user->id];
+
+        if ($docente) {
+            $idsDocentePermitidos[] = $docente->id;
+        }
+
+        $item = $evidencia;
 
         $asignacion = AsignacionMateria::where('id', $evidencia->asignacion_materia_id)
-            ->where('docente_id', $docenteId)
+            ->whereIn('docente_id', array_unique($idsDocentePermitidos))
             ->firstOrFail();
 
         $datos = is_array($evidencia->documentos)
@@ -519,6 +551,11 @@ class Evidencias extends Controller
         $unidades = $datos['unidades'] ?? [];
         $documentos = $datos['documentos'] ?? [];
         $evidencias = $datos['evidencias'] ?? [];
+
+        $motivoNoEvaluo = $datos['motivo_no_evaluo']
+            ?? ($documentos['calificaciones']['motivo'] ?? null)
+            ?? ($documentos['calificaciones_detalladas']['u0']['motivo'] ?? null)
+            ?? '';
 
         $unidades = array_values(array_map('intval', $unidades));
 
@@ -559,8 +596,8 @@ class Evidencias extends Controller
         $unidadesDisponiblesParaEditar = [];
 
         for ($i = 1; $i <= $totalUnidadesMateria; $i++) {
-            $unidadEstaOcupada = in_array($i, $unidadesOcupadas);
-            $unidadEsActual = in_array($i, $unidadesActualesSinCero);
+            $unidadEstaOcupada = in_array($i, $unidadesOcupadas, true);
+            $unidadEsActual = in_array($i, $unidadesActualesSinCero, true);
 
             if (!$unidadEstaOcupada || $unidadEsActual) {
                 $unidadesDisponiblesParaEditar[] = $i;
@@ -577,7 +614,8 @@ class Evidencias extends Controller
             'documentos',
             'evidencias',
             'unidadesOcupadas',
-            'item'
+            'item',
+            'motivoNoEvaluo'
         ));
     }
 
@@ -588,12 +626,6 @@ class Evidencias extends Controller
             'materia',
             'revision'
         ])->findOrFail($id);
-
-        if ($this->tieneCalificacionAprobatoria($evidencia)) {
-            return back()->withErrors([
-                'estado' => 'No es posible modificar los archivos porque la evidencia ya cuenta con una evaluación aprobatoria.'
-            ]);
-        }
 
         $estadoActual = strtolower((string) ($evidencia->estado ?? ''));
 
