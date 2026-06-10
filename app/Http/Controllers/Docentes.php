@@ -257,7 +257,7 @@ class Docentes extends Controller
 
     public function estado($id, $estado)
     {
-        $user = User::find($id);
+        $user = Docente::find($id);
 
         if ($user) {
             $user->activo = $estado;

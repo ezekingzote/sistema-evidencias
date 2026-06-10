@@ -31,9 +31,12 @@ $totalUnidadesMateria = (int) ($evidencia->materia->unidades ?? 0);
 
 $primeraRevisionId = 1;
 $esPrimeraRevision = (int) ($evidencia->revision->id ?? 0) === $primeraRevisionId;
+$esCuartaRevision = (int) ($evidencia->revision->id ?? 0) === 4;
 
 $estadoActual = strtolower((string) ($evidencia->estado ?? ''));
-$evidenciaAprobada = in_array($estadoActual, ['1', 'aprobado', 'aprobada'], true);
+$evidenciaAprobada = in_array($estadoActual, ['2', 'aprobado', 'aprobada'], true);
+$evidenciaRechazada = in_array($estadoActual, ['4', 'rechazado', 'rechazada'], true);
+$evidenciaEvaluada = $evidenciaAprobada || $evidenciaRechazada;
 
 $unidadesOcupadas = array_values(array_unique(array_map('intval', $unidadesOcupadas ?? [])));
 $unidadesSeleccionadas = array_values(array_map('intval', $unidadesSeleccionadas ?? []));
@@ -84,6 +87,10 @@ $acuerdosActual = $obtenerArchivo($documentosData['acuerdos'] ?? null);
 $examenDiagnosticoActual = $obtenerArchivo($evidenciasData['examen_diagnostico'] ?? null);
 $analisisDiagnosticoActual = $obtenerArchivo($evidenciasData['analisis_diagnostico'] ?? null);
 
+// Datos para Revisión 4
+$actaActual = $obtenerArchivo($documentosData['acta'] ?? null);
+$evidenciasSegundaOportunidad = $evidenciasData['segunda_oportunidad'] ?? [];
+
 $evaluaciones = $evidencia->evaluacion ?? [];
 
 function documentoAprobado($evaluaciones, $key) {
@@ -111,6 +118,8 @@ $calificacionesAprobadas = documentoAprobado($evaluaciones, 'calificaciones');
 $racAprobado = documentoAprobado($evaluaciones, 'rac');
 $rubricasAprobadas = documentoAprobado($evaluaciones, 'rubricas');
 $instrumentosAprobados = documentoAprobado($evaluaciones, 'instrumentos');
+$actaAprobada = documentoAprobado($evaluaciones, 'acta');
+$segundaOportunidadAprobada = documentoAprobado($evaluaciones, 'segunda_oportunidad');
 @endphp
 
 <main id="main" class="main">
@@ -128,6 +137,23 @@ $instrumentosAprobados = documentoAprobado($evaluaciones, 'instrumentos');
                         <span class="badge bg-light text-dark border px-3 py-2">
                             {{ $evidencia->revision->nombre }}
                         </span>
+
+                        @if($evidenciaAprobada)
+                            <span class="badge bg-success px-3 py-2">
+                                <i class="bi bi-check-circle-fill me-1"></i>
+                                Aprobada
+                            </span>
+                        @elseif($evidenciaRechazada)
+                            <span class="badge bg-danger px-3 py-2">
+                                <i class="bi bi-x-circle-fill me-1"></i>
+                                Rechazada
+                            </span>
+                        @else
+                            <span class="badge bg-warning text-dark px-3 py-2">
+                                <i class="bi bi-clock-history me-1"></i>
+                                Pendiente de evaluación
+                            </span>
+                        @endif
                     </div>
 
                     <h2 class="fw-bold text-primary mb-1">
@@ -141,28 +167,74 @@ $instrumentosAprobados = documentoAprobado($evaluaciones, 'instrumentos');
                 </div>
 
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="{{ route('mis-reportes', $evidencia->id) }}"
-                       target="_blank"
-                       class="btn btn-outline-success shadow-sm px-4">
-                        <i class="bi bi-file-earmark-pdf-fill me-2"></i>
-                        Imprimir Reporte
-                    </a>
+                    <!-- Botón Imprimir Comprobante - Solo si ya fue evaluada -->
+                    @if($evidenciaEvaluada)
+                        <a href="{{ route('mis-reportes', $evidencia->id) }}"
+                           target="_blank"
+                           class="btn btn-outline-success shadow-sm px-4">
+                            <i class="bi bi-file-earmark-pdf-fill me-2"></i>
+                            Imprimir Comprobante
+                        </a>
+                    @else
+                        <button type="button"
+                                class="btn btn-outline-secondary shadow-sm px-4"
+                                disabled
+                                title="La evidencia aún no ha sido evaluada">
+                            <i class="bi bi-file-earmark-pdf-fill me-2"></i>
+                            Imprimir Comprobante
+                            <small class="d-block small text-muted">(No evaluada)</small>
+                        </button>
+                    @endif
 
-                    @if(!in_array(strtolower((string)$evidencia->estado), ['1','aprobado','aprobada']))
-                    <form action="{{ route('evidencias.destroy', $evidencia->id) }}"
-                          method="POST"
-                          onsubmit="return confirm('¿Deseas eliminar esta evidencia y todos sus archivos?')">
-                        @csrf
-                        @method('DELETE')
-
-                        <button type="submit" class="btn btn-outline-danger shadow-sm px-4">
+                    <!-- Botón Eliminar - Solo si NO está aprobada -->
+                    @if(!$evidenciaAprobada)
+                        <form action="{{ route('evidencias.destroy', $evidencia->id) }}"
+                            method="POST"
+                            id="form-eliminar-evidencia"
+                            class="d-inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="button" 
+                                    class="btn btn-outline-danger shadow-sm px-4"
+                                    onclick="confirmarEliminar(event)">
+                                <i class="bi bi-trash-fill me-2"></i>
+                                Eliminar Evidencia
+                                @if($evidenciaRechazada)
+                                    <small class="d-block small text-muted">(Rechazada)</small>
+                                @endif
+                            </button>
+                        </form>
+                    @else
+                        <button type="button"
+                                class="btn btn-outline-secondary shadow-sm px-4"
+                                disabled
+                                title="La evidencia ya fue aprobada y no puede eliminarse">
                             <i class="bi bi-trash-fill me-2"></i>
                             Eliminar Evidencia
+                            <small class="d-block small text-muted">(Aprobada)</small>
                         </button>
-                    </form>
                     @endif
                 </div>
             </div>
+
+            @if($evidenciaEvaluada)
+                <div class="alert alert-{{ $evidenciaAprobada ? 'success' : 'danger' }} mt-3 mb-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-{{ $evidenciaAprobada ? 'check-circle-fill' : 'x-circle-fill' }} fs-4"></i>
+                        <div>
+                            <strong class="d-block">
+                                {{ $evidenciaAprobada ? 'EVIDENCIA APROBADA' : 'EVIDENCIA RECHAZADA' }}
+                            </strong>
+                            <small>
+                                Fecha de revisión: {{ $evidencia->fecha_revision ? \Carbon\Carbon::parse($evidencia->fecha_revision)->format('d/m/Y H:i') : 'No disponible' }}
+                                @if($evidencia->admin_id)
+                                    | Revisado por: {{ $evidencia->admin->name ?? 'Administrador' }}
+                                @endif
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -700,11 +772,165 @@ $instrumentosAprobados = documentoAprobado($evaluaciones, 'instrumentos');
                         </div>
                     </div>
 
+                    <div class="col-md-6" id="contenedor_rubricas">
+                        <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                     style="width: 45px; height: 45px;">
+                                    <i class="bi bi-table"></i>
+                                </div>
+
+                                <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                    Rúbricas del semestre
+                                </label>
+                            </div>
+
+                            <div id="seccion_dropzones_dinamicos"></div>
+                        </div>
+                    </div>
+
                 </div>
+
+                <!-- CAMPOS PARA REVISIÓN 4 -->
+                @if($esCuartaRevision)
+                <div id="campos_revision_4">
+                    <hr class="my-4">
+                    
+                    <h5 class="fw-bold text-warning mb-3">
+                        <i class="bi bi-star-fill me-2"></i>
+                        DOCUMENTOS DE REVISIÓN 4
+                    </h5>
+                    
+                    <div class="row g-4">
+                        <!-- Acta -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="p-2.5 rounded-3 bg-danger-subtle text-danger me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                         style="width: 45px; height: 45px;">
+                                        <i class="bi bi-file-text-fill"></i>
+                                    </div>
+                                    
+                                    <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                        Adjuntar Actas
+                                        <span class="text-danger ms-1">*</span>
+                                    </label>
+                                </div>
+                                
+                                @if($actaActual)
+                                <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
+                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                                    <a href="{{ asset('storage/' . $actaActual) }}"
+                                       target="_blank"
+                                       class="text-decoration-none small text-truncate">
+                                        Ver acta actual
+                                    </a>
+                                    @if($actaAprobada)
+                                    <span class="badge bg-success ms-2">
+                                        Aprobado
+                                    </span>
+                                    @endif
+                                </div>
+                                @endif
+                                
+                                @if(!$evidenciaAprobada && !$actaAprobada)
+                                    <input type="file"
+                                           name="actas"
+                                           id="actas_file"
+                                           class="form-control form-control-lg fs-6 archivo-pdf-5mb input-revision-4"
+                                           accept="application/pdf">
+                                    
+                                    <small class="text-muted d-block mt-2">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        @if($actaActual)
+                                        Dejar vacío para mantener el actual. 
+                                        @endif
+                                        Solo PDF, máximo 5 MB.
+                                    </small>
+                                @elseif($actaAprobada)
+                                    <div class="alert alert-success mt-3 mb-0">
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                        Este documento ya fue aprobado y no puede ser modificado.
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                        
+                        <!-- Evidencias de segunda oportunidad -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                         style="width: 45px; height: 45px;">
+                                        <i class="bi bi-clock-history"></i>
+                                    </div>
+                                    
+                                    <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                        Evidencias de Segunda Oportunidad
+                                        <span class="text-danger ms-1">*</span>
+                                    </label>
+                                </div>
+                                
+                                @if(!$evidenciaAprobada && !$segundaOportunidadAprobada)
+                                <div id="contenedor_evidencias_segunda_oportunidad_edit">
+                                    @php
+                                        $evidenciasExistentes = $evidenciasSegundaOportunidad;
+                                    @endphp
+                                    
+                                    @foreach($evidenciasExistentes as $index => $ruta)
+                                    <div class="row g-2 mb-2 evidencia-existente" data-ruta="{{ $ruta }}">
+                                        <div class="col-8">
+                                            <div class="d-flex align-items-center bg-light p-2 rounded border">
+                                                <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                                                <a href="{{ asset('storage/' . $ruta) }}"
+                                                   target="_blank"
+                                                   class="text-decoration-none small text-truncate">
+                                                    {{ basename($ruta) }}
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <button type="button"
+                                                    class="btn btn-outline-danger w-100 btn-sm"
+                                                    onclick="marcarEliminarEvidenciaSegundaOportunidad(this, '{{ $ruta }}')">
+                                                <i class="bi bi-trash"></i> Eliminar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                    
+                                    <div id="nuevas_evidencias_container_edit"></div>
+                                    
+                                    <div class="row g-2 mt-2">
+                                        <div class="col-12">
+                                            <button type="button"
+                                                    class="btn btn-outline-success w-100"
+                                                    onclick="agregarCampoEvidenciaSegundaOportunidadEdit()">
+                                                <i class="bi bi-plus-circle"></i> Agregar nueva evidencia
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <small class="text-muted d-block mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Sube al menos una evidencia. Solo PDF, máximo 5 MB por archivo.
+                                </small>
+                                @elseif($segundaOportunidadAprobada)
+                                <div class="alert alert-success mt-3 mb-0">
+                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                    Estas evidencias ya fueron aprobadas y no pueden ser modificadas.
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
 
                 <hr class="my-4">
 
-                <div id="seccion_dropzones_dinamicos"></div>
+                
 
                 <div class="mt-4 d-flex gap-2">
                     <a href="{{ route('evidencias') }}" class="btn btn-light border px-4 rounded-pill">
@@ -893,6 +1119,10 @@ $instrumentosAprobados = documentoAprobado($evaluaciones, 'instrumentos');
         cursor: not-allowed;
     }
 
+    .evidencia-eliminada {
+        display: none !important;
+    }
+
     @media (max-width: 768px) {
         .rac-edit-row {
             flex-direction: column;
@@ -921,6 +1151,7 @@ $instrumentosAprobados = documentoAprobado($evaluaciones, 'instrumentos');
 <script>
     const evidenciaAprobada = @json($evidenciaAprobada);
     const esPrimeraRevision = @json($esPrimeraRevision);
+    const esCuartaRevision = @json($esCuartaRevision);
     const totalUnidadesMateria = @json($totalUnidadesMateria);
     const unidadesOcupadas = @json($unidadesOcupadas);
     const sinUnidadesDisponibles = @json($sinUnidadesDisponibles);
@@ -938,6 +1169,7 @@ $instrumentosAprobados = documentoAprobado($evaluaciones, 'instrumentos');
     let unidadesSeleccionadas = @json(array_values($unidadesSeleccionadas));
     let nuevosArchivosPorUnidad = {};
     let archivosExistentesAEliminar = [];
+    let evidenciasSegundaOportunidadAEliminar = [];
 
     const wrapperCalificaciones = document.getElementById('wrapper_calificaciones');
     const wrapperRac = document.getElementById('wrapper_rac');
@@ -967,6 +1199,28 @@ $instrumentosAprobados = documentoAprobado($evaluaciones, 'instrumentos');
         }
 
         return null;
+    }
+
+    // Función para confirmar eliminación con SweetAlert
+    function confirmarEliminar(event) {
+        event.preventDefault();
+        
+        Swal.fire({
+            title: '¿Eliminar evidencia?',
+            text: 'Esta acción eliminará la evidencia y TODOS sus archivos adjuntos. No podrás recuperarlos después.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Enviar el formulario
+                document.getElementById('form-eliminar-evidencia').submit();
+            }
+        });
     }
 
     function obtenerNa(valor) {
@@ -1624,6 +1878,84 @@ $instrumentosAprobados = documentoAprobado($evaluaciones, 'instrumentos');
             inputFile.disabled = evidenciaAprobada ? true : false;
         }
     }
+
+    // Funciones para Revisión 4 - Evidencias de segunda oportunidad
+    function agregarCampoEvidenciaSegundaOportunidadEdit() {
+        const container = document.getElementById('nuevas_evidencias_container_edit');
+        
+        if (!container) return;
+        
+        const currentInputs = container.querySelectorAll('.row.g-2');
+        const existentes = document.querySelectorAll('.evidencia-existente');
+        const totalActuales = existentes.length + currentInputs.length;
+        
+        if (totalActuales >= 10) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Límite alcanzado',
+                text: 'Solo puedes subir hasta 10 evidencias de segunda oportunidad en total.'
+            });
+            return;
+        }
+        
+        const newRow = document.createElement('div');
+        newRow.className = 'row g-2 mb-2';
+        newRow.innerHTML = `
+            <div class="col-8">
+                <input type="file"
+                    name="evidencias_segunda_oportunidad_nuevas[]"
+                    class="form-control archivo-pdf-5mb"
+                    accept="application/pdf"
+                    required>
+            </div>
+            <div class="col-4">
+                <button type="button"
+                    class="btn btn-outline-danger w-100 btn-sm"
+                    onclick="eliminarCampoEvidenciaSegundaOportunidadEdit(this)">
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(newRow);
+    }
+    
+    function eliminarCampoEvidenciaSegundaOportunidadEdit(button) {
+        const row = button.closest('.row.g-2');
+        row.remove();
+    }
+    
+    window.marcarEliminarEvidenciaSegundaOportunidad = function(button, ruta) {
+        Swal.fire({
+            icon: 'warning',
+            title: '¿Eliminar evidencia?',
+            text: 'Esta evidencia se eliminará al actualizar.',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                return;
+            }
+            
+            evidenciasSegundaOportunidadAEliminar.push(ruta);
+            
+            const row = button.closest('.row');
+            row.classList.add('evidencia-eliminada');
+            
+            const hiddenContainer = document.getElementById('nuevas_evidencias_container_edit');
+            if (hiddenContainer) {
+                const inputDel = document.createElement('input');
+                inputDel.type = 'hidden';
+                inputDel.name = `eliminar_evidencias_segunda_oportunidad[]`;
+                inputDel.value = ruta;
+                hiddenContainer.appendChild(inputDel);
+            }
+        });
+    };
+    
+    window.agregarCampoEvidenciaSegundaOportunidadEdit = agregarCampoEvidenciaSegundaOportunidadEdit;
+    window.eliminarCampoEvidenciaSegundaOportunidadEdit = eliminarCampoEvidenciaSegundaOportunidadEdit;
 
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('archivo-pdf-5mb')) {

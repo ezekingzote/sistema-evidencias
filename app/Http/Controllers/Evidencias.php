@@ -106,6 +106,7 @@ class Evidencias extends Controller
 
         $primeraRevisionId = (int) Revision::orderBy('id', 'asc')->value('id');
         $esPrimeraRevision = (int) $revision->id === $primeraRevisionId;
+        $esCuartaRevision = (int) $revision->id === 4;
 
         $otrasEvidencias = Evidencia::where('asignacion_materia_id', $asignacion->id)
             ->get();
@@ -166,12 +167,21 @@ class Evidencias extends Controller
                 ->withInput();
         }
 
-        if ($esNingunaUnidad && !$esPrimeraRevision && !$sinUnidadesDisponibles) {
-            return back()
-                ->withErrors([
-                    'unidades' => 'La opción Ninguna Unidad solo está permitida en la primera revisión o cuando ya no hay unidades disponibles.',
-                ])
-                ->withInput();
+        if ($esCuartaRevision) {
+            $reglaArchivosCuarta = 'required|file|mimes:pdf|max:5120';
+
+            $request->validate([
+                'actas' => $reglaArchivosCuarta,
+                'evidencias_segunda_oportunidad' => 'required|array|min:1',
+                'evidencias_segunda_oportunidad.*' => 'file|mimes:pdf|max:5120',
+            ], [
+                'actas.required' => 'El archivo de Actas es obligatorio en la Revisión 4.',
+                'actas.mimes' => 'El archivo de Actas debe estar en formato PDF.',
+                'actas.max' => 'El archivo de Actas no debe pesar más de 5 MB.',
+                'evidencias_segunda_oportunidad.required' => 'Debes subir al menos una evidencia de segunda oportunidad.',
+                'evidencias_segunda_oportunidad.*.mimes' => 'Todas las evidencias deben estar en formato PDF.',
+                'evidencias_segunda_oportunidad.*.max' => 'Cada evidencia no debe pesar más de 5 MB.',
+            ]);
         }
 
         foreach ($unidadesInput as $unidadSeleccionada) {
@@ -292,6 +302,24 @@ class Evidencias extends Controller
         $evidencias = [];
         $instrumentosGrupales = [];
         $instrumentosNa = false;
+
+        if ($esCuartaRevision) {
+            $documentos['acta'] = $request->file('actas')->storeAs(
+                $basePath . '/documentos',
+                'acta_revision_4.pdf',
+                'public'
+            );
+
+            $evidenciasSegundaOportunidad = [];
+            foreach ($request->file('evidencias_segunda_oportunidad') as $index => $file) {
+                $evidenciasSegundaOportunidad[] = $file->storeAs(
+                    $basePath . '/evidencias_segunda_oportunidad',
+                    "evidencia_segunda_oportunidad_" . ($index + 1) . ".pdf",
+                    'public'
+                );
+            }
+            $evidencias['segunda_oportunidad'] = $evidenciasSegundaOportunidad;
+        }
 
         if ($esPrimeraRevision) {
             $globalDocs = [
@@ -522,6 +550,7 @@ class Evidencias extends Controller
         $evidencia = Evidencia::with([
             'materia',
             'revision',
+            'admin'
         ])->findOrFail($id);
 
         $user = Auth::user();
@@ -619,7 +648,6 @@ class Evidencias extends Controller
         ));
     }
 
-
     public function update(Request $request, $id)
     {
         $evidencia = Evidencia::with([
@@ -629,7 +657,8 @@ class Evidencias extends Controller
 
         $estadoActual = strtolower((string) ($evidencia->estado ?? ''));
 
-        if (in_array($estadoActual, ['1', 'aprobado', 'aprobada'], true)) {
+        // No permitir modificar si está aprobada (estado 2) o rechazada (estado 4)
+        if (in_array($estadoActual, ['2', 'aprobado', 'aprobada'], true)) {
             return back()
                 ->withErrors([
                     'estado' => 'Esta evidencia ya fue aprobada y no puede modificarse.',
@@ -1242,23 +1271,14 @@ class Evidencias extends Controller
             ->with('success', 'Evidencia actualizada correctamente');
     }
 
-
     public function destroy($id)
     {
         $evidencia = Evidencia::findOrFail($id);
 
-        if ($this->tieneCalificacionAprobatoria($evidencia)) {
-            return redirect()
-                ->route('evidencias')
-                ->with(
-                    'error',
-                    'No es posible eliminar la evidencia porque ya cuenta con una evaluación aprobatoria.'
-                );
-        }
-
         $estadoActual = strtolower((string) ($evidencia->estado ?? ''));
 
-        if (in_array($estadoActual, ['1', 'aprobado', 'aprobada'], true)) {
+        // No permitir eliminar si está aprobada (estado 2)
+        if (in_array($estadoActual, ['2', 'aprobado', 'aprobada'], true)) {
             return redirect()
                 ->route('evidencias')
                 ->with(
@@ -1267,19 +1287,20 @@ class Evidencias extends Controller
                 );
         }
 
+        // Si está rechazada, permitir eliminar
+        $esRechazada = in_array($estadoActual, ['4', 'rechazado', 'rechazada'], true);
+        
         $datos = is_array($evidencia->documentos)
             ? $evidencia->documentos
             : json_decode($evidencia->documentos ?? '{}', true);
 
         $eliminarArchivos = function ($item) use (&$eliminarArchivos) {
-
             if (is_string($item) && !empty($item)) {
                 Storage::disk('public')->delete($item);
                 return;
             }
 
             if (is_array($item)) {
-
                 if (isset($item['archivo']) && !empty($item['archivo'])) {
                     Storage::disk('public')->delete($item['archivo']);
                 }
@@ -1291,15 +1312,15 @@ class Evidencias extends Controller
         };
 
         $eliminarArchivos($datos);
-
         $evidencia->delete();
+
+        $mensaje = $esRechazada
+            ? 'La evidencia rechazada fue eliminada correctamente. Ya puedes subir una nueva versión corregida.'
+            : 'La evidencia y todos sus archivos fueron eliminados correctamente.';
 
         return redirect()
             ->route('evidencias')
-            ->with(
-                'success',
-                'La evidencia y todos sus archivos fueron eliminados correctamente.'
-            );
+            ->with('success', $mensaje);
     }
 
     private function limpiarNombre($texto)
@@ -1314,7 +1335,6 @@ class Evidencias extends Controller
         $evaluaciones = $evidencia->evaluacion ?? [];
 
         foreach ($evaluaciones as $evaluacion) {
-
             if (
                 !($evaluacion['na'] ?? false) &&
                 isset($evaluacion['calificacion']) &&

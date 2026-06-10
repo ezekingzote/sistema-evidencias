@@ -146,6 +146,7 @@
                                                     $archivoPrincipal = $doc['archivo'] ?? null;
                                                     $documentoNa = !empty($doc['documento_na']);
 
+                                                    // Si el archivo principal es un array con 'na', marcamos como N/A solo si no es automático
                                                     if (is_array($archivoPrincipal)) {
                                                         $documentoNa = $documentoNa || !empty($archivoPrincipal['na']);
                                                         $archivoPrincipal = $archivoPrincipal['archivo'] ?? null;
@@ -153,6 +154,11 @@
 
                                                     if (!is_string($archivoPrincipal)) {
                                                         $archivoPrincipal = null;
+                                                    }
+
+                                                    // Para documentos automáticos (provenientes de Revisión 1), ignoramos la marca NA
+                                                    if (isset($doc['automatico']) && $doc['automatico']) {
+                                                        $documentoNa = false;
                                                     }
 
                                                     if (!$hayArchivoMultiple && $hayNaMultiple) {
@@ -272,7 +278,11 @@
                                                         <div class="text-center">
                                                             <i class="bi bi-file-earmark-x fs-1 mb-2 d-block"></i>
                                                             <p class="mb-0">
-                                                                El docente no adjuntó este documento.
+                                                                @if(isset($doc['automatico']) && $doc['automatico'])
+                                                                    Documento no disponible en Revisión 1.
+                                                                @else
+                                                                    El docente no adjuntó este documento.
+                                                                @endif
                                                             </p>
                                                         </div>
                                                     </div>
@@ -284,56 +294,66 @@
                                                 $checkNa = !empty($evaluacionActual['na']) || $documentoNa;
                                             @endphp
 
-                                            <div class="bg-primary-subtle p-3 rounded-3 form-evaluacion"
-                                                data-key="{{ $doc['key'] }}">
+                                            <div class="bg-primary-subtle p-3 rounded-3 form-evaluacion" data-key="{{ $doc['key'] }}">
 
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <h6 class="fw-bold text-primary mb-0">
-                                                        <i class="bi bi-pencil-square me-2"></i>
-                                                        Calificación del panel
-                                                    </h6>
+                                                @if(isset($doc['automatico']) && $doc['automatico'])
+                                                    <div class="alert alert-info mb-3">
+                                                        <i class="bi bi-info-circle-fill me-2"></i>
+                                                        Este criterio se evalúa automáticamente con base en la calificación de la Revisión 1.
+                                                        <strong>Calificación asignada: {{ $doc['calificacion_auto'] ?? 0 }}</strong>
+                                                    </div>
+                                                    <input type="hidden" name="evaluaciones[{{ $doc['key'] }}][calificacion]" value="{{ $doc['calificacion_auto'] ?? 0 }}">
+                                                    <input type="hidden" name="evaluaciones[{{ $doc['key'] }}][na]" value="0">
+                                                    <input type="hidden" name="evaluaciones[{{ $doc['key'] }}][observaciones]" value="Automático desde Revisión 1">
+                                                @else
+                                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                                        <h6 class="fw-bold text-primary mb-0">
+                                                            <i class="bi bi-pencil-square me-2"></i>
+                                                            Calificación del panel
+                                                        </h6>
 
-                                                    <span
-                                                        class="badge rounded-pill bg-success d-none status-badge shadow-sm transition-all"
-                                                        id="status-{{ $doc['key'] }}">
-                                                        Guardado ✓
-                                                    </span>
-                                                </div>
-
-                                                <div class="form-check form-switch mb-3">
-                                                    <input class="form-check-input auto-save-input na-toggle"
-                                                        type="checkbox"
-                                                        name="evaluaciones[{{ $doc['key'] }}][na]"
-                                                        value="1"
-                                                        id="na-{{ $doc['key'] }}"
-                                                        data-key="{{ $doc['key'] }}"
-                                                        {{ $checkNa ? 'checked' : '' }}>
-
-                                                    <label class="form-check-label fw-semibold text-secondary"
-                                                        for="na-{{ $doc['key'] }}">
-                                                        No aplica (N/A)
-                                                    </label>
-                                                </div>
-
-                                                <div class="row g-3">
-                                                    <div class="col-md-3">
-                                                        <input type="number"
-                                                            class="form-control auto-save-input calificacion-input"
-                                                            placeholder="Calificación (0-100)"
-                                                            name="evaluaciones[{{ $doc['key'] }}][calificacion]"
-                                                            id="calificacion-{{ $doc['key'] }}"
-                                                            value="{{ $evidencia->evaluacion[$doc['key']]['calificacion'] ?? '' }}"
-                                                            min="0"
-                                                            max="100">
+                                                        <span
+                                                            class="badge rounded-pill bg-success d-none status-badge shadow-sm transition-all"
+                                                            id="status-{{ $doc['key'] }}">
+                                                            Guardado ✓
+                                                        </span>
                                                     </div>
 
-                                                    <div class="col-md-9">
-                                                        <textarea rows="2"
-                                                            class="form-control auto-save-input"
-                                                            placeholder="Escribe tus observaciones aquí..."
-                                                            name="evaluaciones[{{ $doc['key'] }}][observaciones]">{{ $evidencia->evaluacion[$doc['key']]['observaciones'] ?? '' }}</textarea>
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input auto-save-input na-toggle"
+                                                            type="checkbox"
+                                                            name="evaluaciones[{{ $doc['key'] }}][na]"
+                                                            value="1"
+                                                            id="na-{{ $doc['key'] }}"
+                                                            data-key="{{ $doc['key'] }}"
+                                                            {{ $checkNa ? 'checked' : '' }}>
+
+                                                        <label class="form-check-label fw-semibold text-secondary"
+                                                            for="na-{{ $doc['key'] }}">
+                                                            No aplica (N/A)
+                                                        </label>
                                                     </div>
-                                                </div>
+
+                                                    <div class="row g-3">
+                                                        <div class="col-md-3">
+                                                            <input type="number"
+                                                                class="form-control auto-save-input calificacion-input"
+                                                                placeholder="Calificación (0-100)"
+                                                                name="evaluaciones[{{ $doc['key'] }}][calificacion]"
+                                                                id="calificacion-{{ $doc['key'] }}"
+                                                                value="{{ $evidencia->evaluacion[$doc['key']]['calificacion'] ?? '' }}"
+                                                                min="0"
+                                                                max="100">
+                                                        </div>
+
+                                                        <div class="col-md-9">
+                                                            <textarea rows="2"
+                                                                class="form-control auto-save-input"
+                                                                placeholder="Escribe tus observaciones aquí..."
+                                                                name="evaluaciones[{{ $doc['key'] }}][observaciones]">{{ $evidencia->evaluacion[$doc['key']]['observaciones'] ?? '' }}</textarea>
+                                                        </div>
+                                                    </div>
+                                                @endif
                                             </div>
 
                                         </div>

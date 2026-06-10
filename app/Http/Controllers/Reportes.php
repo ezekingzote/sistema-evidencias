@@ -106,6 +106,9 @@ class Reportes extends Controller
         );
     }
 
+    /**
+     * Reporte para administrador (toda la evidencia)
+     */
     public function reportePdf($id)
     {
         $evidencia = Evidencia::with([
@@ -117,88 +120,10 @@ class Reportes extends Controller
         ])->findOrFail($id);
 
         $evaluacion = $evidencia->evaluacion ?? [];
+        $esRevision4 = (int) $evidencia->revision->id === 4;
 
+        // Criterios base
         $criterios = [
-
-            'instrumentacion'      => 'Instrumentación didáctica',
-            'reporte_inicio'       => 'Reporte inicio de curso',
-            'examen_diagnostico'   => 'Examen diagnóstico',
-            'analisis_diagnostico' => 'Análisis del diagnóstico',
-            'acuerdos'             => 'Acuerdos de clase',
-            'avance_programatico'  => 'Avance programático',
-            'instrumentos'         => 'Evidencia de instrumentos de evaluación (3 muestras)',
-            'rubricas'             => 'Rúbricas del semestre',
-            'calificaciones'       => 'Lista de calificaciones con índice de aprobación',
-            'rac'                  => 'Actividades de regularización en caso de haber superado el 50% de índice de reprobación.',
-            'asiste_seguimiento'   => 'Asiste al seguimiento',
-        ];
-
-        $promedio = 0;
-        $contador = 0;
-
-        foreach ($criterios as $key => $nombre) {
-
-            $item = $evaluacion[$key] ?? [];
-
-            $na = !empty($item['na']);
-
-            $calificacion = $item['calificacion'] ?? null;
-
-            if (!$na && $calificacion !== null && $calificacion !== '') {
-
-                $promedio += floatval($calificacion);
-
-                $contador++;
-            }
-        }
-
-        $promedioFinal = $contador > 0
-            ? round($promedio / $contador, 2)
-            : 0;
-
-        $pdf = Pdf::loadView(
-            'modules.reportes.pdf',
-            [
-                'evidencia'      => $evidencia,
-                'evaluacion'     => $evaluacion,
-                'criterios'      => $criterios,
-                'promedioFinal'  => $promedioFinal,
-                'admin'          => Auth::user(),
-            ]
-        );
-
-        $pdf->setPaper('letter');
-
-        return $pdf->stream('reporte-seguimiento.pdf');
-    }
-
-    public function reporteVacio($materiaId, $revisionId)
-    {
-        $materia = Materia::findOrFail($materiaId);
-
-        $revision = Revision::findOrFail($revisionId);
-
-        $docente = $materia->asignaciones->first()?->docente;
-
-        $semestre = $materia->asignaciones->first()?->semestre;
-
-        $evidencia = (object)[
-
-            'materia' => $materia,
-
-            'revision' => $revision,
-
-            'asignacion' => (object)[
-                'docente' => $docente
-            ],
-
-            'asignacionMateria' => (object)[
-                'semestre' => $semestre
-            ]
-        ];
-
-        $criterios = [
-
             'instrumentacion'      => 'Instrumentación didáctica',
             'reporte_inicio'       => 'Reporte inicio de curso',
             'examen_diagnostico'   => 'Examen diagnóstico',
@@ -212,16 +137,88 @@ class Reportes extends Controller
             'asiste_seguimiento'   => 'Asiste al seguimiento',
         ];
 
-        $evaluacion = [];
+        // Si es revisión 4, agregamos los dos criterios extra
+        if ($esRevision4) {
+            $criterios['acta'] = 'Acta de revisión';
+            $criterios['segunda_oportunidad'] = 'Evidencias de segunda oportunidad';
+        }
+
+        $promedio = 0;
+        $contador = 0;
 
         foreach ($criterios as $key => $nombre) {
+            $item = $evaluacion[$key] ?? [];
+            $na = !empty($item['na']);
+            $calificacion = $item['calificacion'] ?? null;
 
+            if (!$na && $calificacion !== null && $calificacion !== '') {
+                $promedio += floatval($calificacion);
+                $contador++;
+            }
+        }
+
+        $promedioFinal = $contador > 0 ? round($promedio / $contador, 2) : 0;
+
+        $pdf = Pdf::loadView(
+            'modules.reportes.pdf',
+            [
+                'evidencia'      => $evidencia,
+                'evaluacion'     => $evaluacion,
+                'criterios'      => $criterios,
+                'promedioFinal'  => $promedioFinal,
+                'admin'          => Auth::user(), // El administrador que genera el reporte
+            ]
+        );
+
+        $pdf->setPaper('letter');
+        return $pdf->stream('reporte-seguimiento.pdf');
+    }
+
+    /**
+     * Reporte para cuando no existe evidencia (vacío)
+     */
+    public function reporteVacio($materiaId, $revisionId)
+    {
+        $materia = Materia::findOrFail($materiaId);
+        $revision = Revision::findOrFail($revisionId);
+        $docente = $materia->asignaciones->first()?->docente;
+        $semestre = $materia->asignaciones->first()?->semestre;
+
+        $evidencia = (object)[
+            'materia' => $materia,
+            'revision' => $revision,
+            'asignacion' => (object)['docente' => $docente],
+            'asignacionMateria' => (object)['semestre' => $semestre],
+            'admin' => null,
+        ];
+
+        $esRevision4 = (int) $revision->id === 4;
+
+        $criterios = [
+            'instrumentacion'      => 'Instrumentación didáctica',
+            'reporte_inicio'       => 'Reporte inicio de curso',
+            'examen_diagnostico'   => 'Examen diagnóstico',
+            'analisis_diagnostico' => 'Análisis del diagnóstico',
+            'acuerdos'             => 'Acuerdos de clase',
+            'avance_programatico'  => 'Avance programático',
+            'instrumentos'         => 'Evidencia de instrumentos de evaluación (3 muestras)',
+            'rubricas'             => 'Rúbricas del semestre',
+            'calificaciones'       => 'Lista de calificaciones con índice de aprobación',
+            'rac'                  => 'Actividades de regularización',
+            'asiste_seguimiento'   => 'Asiste al seguimiento',
+        ];
+
+        if ($esRevision4) {
+            $criterios['acta'] = 'Acta de revisión';
+            $criterios['segunda_oportunidad'] = 'Evidencias de segunda oportunidad';
+        }
+
+        $evaluacion = [];
+        foreach ($criterios as $key => $nombre) {
             $evaluacion[$key] = [
-
                 'calificacion' => 0,
                 'observaciones' => 'SIN ENTREGAR EVIDENCIA',
-                'na' => false
-
+                'na' => false,
             ];
         }
 
@@ -232,13 +229,16 @@ class Reportes extends Controller
                 'evaluacion' => $evaluacion,
                 'criterios' => $criterios,
                 'promedioFinal' => 0,
-                'admin' => $evidencia->admin,
+                'admin' => Auth::user(),
             ]
         );
 
         return $pdf->stream('reporte-sin-evaluacion.pdf');
     }
 
+    /**
+     * Reporte para el docente (solo sus propias evidencias)
+     */
     public function reportePdfDocente($id)
     {
         $evidencia = Evidencia::with([
@@ -249,16 +249,15 @@ class Reportes extends Controller
             'admin'
         ])->findOrFail($id);
 
-        if (
-            $evidencia->asignacionMateria->docente_id != Auth::id()
-        ) {
+        // Verificar que el docente sea el propietario
+        if ($evidencia->asignacionMateria->docente_id != Auth::id()) {
             abort(403);
         }
 
         $evaluacion = $evidencia->evaluacion ?? [];
+        $esRevision4 = (int) $evidencia->revision->id === 4;
 
         $criterios = [
-
             'instrumentacion'      => 'Instrumentación didáctica',
             'reporte_inicio'       => 'Reporte inicio de curso',
             'examen_diagnostico'   => 'Examen diagnóstico',
@@ -272,28 +271,26 @@ class Reportes extends Controller
             'asiste_seguimiento'   => 'Asiste al seguimiento',
         ];
 
+        if ($esRevision4) {
+            $criterios['acta'] = 'Acta de revisión';
+            $criterios['segunda_oportunidad'] = 'Evidencias de segunda oportunidad';
+        }
+
         $promedio = 0;
         $contador = 0;
 
         foreach ($criterios as $key => $nombre) {
-
             $item = $evaluacion[$key] ?? [];
-
             $na = !empty($item['na']);
-
             $calificacion = $item['calificacion'] ?? null;
 
             if (!$na && $calificacion !== null && $calificacion !== '') {
-
                 $promedio += floatval($calificacion);
-
                 $contador++;
             }
         }
 
-        $promedioFinal = $contador > 0
-            ? round($promedio / $contador, 2)
-            : 0;
+        $promedioFinal = $contador > 0 ? round($promedio / $contador, 2) : 0;
 
         $pdf = Pdf::loadView(
             'modules.reportes.pdf',
