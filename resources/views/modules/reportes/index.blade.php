@@ -235,53 +235,41 @@
 
                                                         </button>
 
-                                                    {{-- EXISTE EVIDENCIA --}}
-                                                    @elseif($evidencia)
-                                                        @php
+                                                    {{-- EXISTE EVIDENCIA Y ESTÁ EVALUADA (aprobada/rechazada) --}}
+                                                    @elseif($evidencia && in_array($evidencia->estado, [2, 4]))
+                                                        <a href="{{ route('reportes-generar', $evidencia->id) }}"
+                                                           target="_blank">
 
-                                                            $estado = $evidencia->estado;
+                                                            <button class="estadoBtn 
+                                                                @if($evidencia->estado == 2) aprobado @else rechazada @endif">
 
-                                                        @endphp
-
-                                                        @if($estado == 3)
-                                                            {{-- PENDIENTE SIN EVALUAR: botón deshabilitado gris con tooltip --}}
-                                                            <button class="estadoBtn sin-evaluar" 
-                                                                    style="background: linear-gradient(135deg, #9ca3af, #6b7280); cursor: not-allowed;"
-                                                                    data-bs-toggle="tooltip" 
-                                                                    data-bs-placement="top" 
-                                                                    title="Revisión sin evaluar"
-                                                                    disabled>
                                                                 <i class="bi bi-file-earmark-pdf-fill"></i>
+
                                                             </button>
-                                                        @else
-                                                            <a href="{{ route('reportes-generar', $evidencia->id) }}"
-                                                               target="_blank">
 
-                                                                <button class="estadoBtn 
-                                                                    @switch($estado)
-                                                                        @case(2) aprobado @break
-                                                                        @case(4) rechazada @break
-                                                                        @default vacio
-                                                                    @endswitch">
+                                                        </a>
 
-                                                                    <i class="bi bi-file-earmark-pdf-fill"></i>
-
-                                                                </button>
-
-                                                            </a>
-                                                        @endif
+                                                    {{-- EXISTE EVIDENCIA PERO ESTÁ PENDIENTE (estado=3) --}}
+                                                    @elseif($evidencia && $evidencia->estado == 3)
+                                                        <button class="estadoBtn pendiente" 
+                                                                style="background: linear-gradient(135deg, #f59e0b, #d97706); cursor: not-allowed;"
+                                                                data-bs-toggle="tooltip" 
+                                                                data-bs-placement="top" 
+                                                                title="Evidencia subida pero aún no evaluada. No se puede generar reporte."
+                                                                disabled>
+                                                            <i class="bi bi-hourglass-split"></i>
+                                                        </button>
 
                                                     {{-- NO EXISTE EVIDENCIA --}}
                                                     @else
-                                                        <a href="{{ route('reportes-vacio', [
-                                                            'materia' => $materia->id,
-                                                            'revision' => $revision->id,
-                                                        ]) }}"
-                                                           class="btn btn-secondary rounded-circle generar-vacio">
-
-                                                            <i class="bi bi-file-earmark-pdf-fill"></i>
-
-                                                        </a>
+                                                        <button class="estadoBtn vacio" 
+                                                                style="cursor: not-allowed; opacity: 0.7;"
+                                                                data-bs-toggle="tooltip" 
+                                                                data-bs-placement="top" 
+                                                                title="PDF NO DISPONIBLE - Revisión no evaluada"
+                                                                disabled>
+                                                            <i class="fa-solid fa-file-excel"></i>
+                                                        </button>
                                                     @endif
 
                                                 </td>
@@ -308,23 +296,17 @@
                                                             ->where('revision_id', $revision->id)
                                                             ->first();
 
-                                                        if ($evidencia) {
-                                                            $pdf = route('reportes-generar', $evidencia->id);
-                                                        } else {
-                                                            $pdf = route('reportes-vacio', [
-                                                                'materia' => $materia->id,
-                                                                'revision' => $revision->id,
-                                                            ]);
+                                                        // Solo se puede enviar el PDF si la evidencia existe y está evaluada (aprobada o rechazada)
+                                                        if ($evidencia && in_array($evidencia->estado, [2, 4])) {
+                                                            $pdfUrl = route('reportes-generar', $evidencia->id);
+
+                                                            $mensaje = "Hola {$docente?->name}, comparto el reporte de {$materia->nombre} correspondiente a {$revision->nombre}: {$pdfUrl}";
+
+                                                            $revisionesDisponibles[] = [
+                                                                'nombre' => $revision->nombre,
+                                                                'url' => "https://wa.me/52{$telefono}?text=" . urlencode($mensaje),
+                                                            ];
                                                         }
-
-                                                        $mensaje = "Hola {$docente?->name}, comparto el reporte de {$materia->nombre} correspondiente a {$revision->nombre}: {$pdf}";
-
-                                                        $revisionesDisponibles[] = [
-                                                            'nombre' => $revision->nombre,
-                                                            'url' =>
-                                                                "https://wa.me/52{$telefono}?text=" .
-                                                                urlencode($mensaje),
-                                                        ];
                                                     }
                                                 @endphp
 
@@ -449,6 +431,21 @@
         background: linear-gradient(135deg, #3b82f6, #2563eb);
     }
 
+    .pendiente {
+        background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+        cursor: not-allowed;
+        opacity: 0.9;
+    }
+
+    .pendiente i {
+        font-size: 18px;
+    }
+
+    /* Permitir tooltips en botones deshabilitados */
+    [data-bs-toggle="tooltip"]:disabled {
+        pointer-events: auto !important;
+    }
+
     table thead th {
         background: linear-gradient(135deg, #0a2342, #102c57) !important;
         color: white !important;
@@ -485,39 +482,7 @@
         });
     });
 
-    // Confirmación para reporte vacío
-    document.querySelectorAll('.generar-vacio').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const url = this.href;
-            Swal.fire({
-                icon: 'warning',
-                title: 'Sin evaluación',
-                html: `
-                    Esta revisión se encuentra activa pero el docente
-                    <b>no ha entregado evidencia</b>.
-                    <br><br>
-                    El reporte se generará con:
-                    <ul style="text-align:left;margin-top:10px;">
-                        <li>Todas las calificaciones en 0</li>
-                        <li>Observación: "SIN ENTREGAR EVIDENCIA"</li>
-                    </ul>
-                    ¿Deseas generar el PDF?
-                `,
-                showCancelButton: true,
-                confirmButtonText: 'Sí, generar PDF',
-                cancelButtonText: 'No',
-                confirmButtonColor: '#198754',
-                cancelButtonColor: '#dc3545'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.open(url, '_blank');
-                }
-            });
-        });
-    });
-
-    // Envío por WhatsApp
+    // Envío por WhatsApp (solo para los PDFs reales)
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('enviarWhatsapp')) {
             const url = e.target.value;

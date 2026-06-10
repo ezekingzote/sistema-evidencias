@@ -119,10 +119,10 @@
                                 <table class="table table-hover align-middle">
                                     <thead>
                                         <tr>
-                                            <th class="text-center">Docente</th>
-                                            <th class="text-center">Asignatura</th>
+                                            <th class="text-center" style="width: 30%;">Docente</th>
+                                            <th class="text-center" style="width: 30%;">Asignatura</th>
                                             @foreach ($revisiones as $revision)
-                                                <th class="text-center" style="min-width:160px;">
+                                                <th class="text-center" style="min-width:10%;">
                                                     <div class="fw-bold">{{ $revision->nombre }}</div>
                                                     @if ($revision->fecha_limite)
                                                         <small class="d-block mt-1 text-white-50" style="font-size: 11px;">
@@ -157,10 +157,10 @@
                                                 $porcentaje = (int) round($porcentaje);
                                             @endphp
                                             <tr>
-                                                <td class="fw-semibold text-start text-dark">
-                                                    {{ $materia->asignaciones->first()?->docente?->name ?? 'Sin Docente Asignado' }}
+                                                <td class="fw-semibold text-center text-dark">
+                                                    {{ $materia->asignaciones->first()?->docente?->user?->name ?? 'Sin Docente Asignado' }}
                                                 </td>
-                                                <td class="fw-semibold text-start text-secondary">
+                                                <td class="fw-semibold text-center text-secondary">
                                                     {{ $materia->nombre }}
                                                 </td>
 

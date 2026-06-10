@@ -1271,25 +1271,44 @@ class Evidencias extends Controller
             ->with('success', 'Evidencia actualizada correctamente');
     }
 
-    public function destroy($id)
+    private function limpiarNombre($texto)
+    {
+        $texto = trim($texto);
+        $texto = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '', $texto);
+        return str_replace(' ', '_', $texto);
+    }
+
+    private function tieneCalificacionAprobatoria(Evidencia $evidencia): bool
+    {
+        $evaluaciones = $evidencia->evaluacion ?? [];
+
+        foreach ($evaluaciones as $evaluacion) {
+            if (
+                !($evaluacion['na'] ?? false) &&
+                isset($evaluacion['calificacion']) &&
+                (float)$evaluacion['calificacion'] >= 70
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function destroy($id, $force = false)
     {
         $evidencia = Evidencia::findOrFail($id);
 
         $estadoActual = strtolower((string) ($evidencia->estado ?? ''));
 
-        // No permitir eliminar si está aprobada (estado 2)
-        if (in_array($estadoActual, ['2', 'aprobado', 'aprobada'], true)) {
+        if (!$force && in_array($estadoActual, ['2', 'aprobado', 'aprobada'], true)) {
             return redirect()
                 ->route('evidencias')
-                ->with(
-                    'error',
-                    'La evidencia ya fue aprobada y no puede eliminarse.'
-                );
+                ->with('error', 'La evidencia ya fue aprobada y no puede eliminarse.');
         }
 
-        // Si está rechazada, permitir eliminar
         $esRechazada = in_array($estadoActual, ['4', 'rechazado', 'rechazada'], true);
-        
+
         $datos = is_array($evidencia->documentos)
             ? $evidencia->documentos
             : json_decode($evidencia->documentos ?? '{}', true);
@@ -1314,6 +1333,15 @@ class Evidencias extends Controller
         $eliminarArchivos($datos);
         $evidencia->delete();
 
+        // Redirección según el rol o el flag force
+        if ($force) {
+            // Admin: redirige al seguimiento académico
+            return redirect()
+                ->route('seguimiento-academico')
+                ->with('success', 'La evidencia (incluyendo aprobadas) fue eliminada permanentemente.');
+        }
+
+        // Docente: redirige a su lista de evidencias
         $mensaje = $esRechazada
             ? 'La evidencia rechazada fue eliminada correctamente. Ya puedes subir una nueva versión corregida.'
             : 'La evidencia y todos sus archivos fueron eliminados correctamente.';
@@ -1323,27 +1351,130 @@ class Evidencias extends Controller
             ->with('success', $mensaje);
     }
 
-    private function limpiarNombre($texto)
+    public function rechazarSinEvidencia(Request $request)
     {
-        $texto = trim($texto);
-        $texto = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '', $texto);
-        return str_replace(' ', '_', $texto);
-    }
+        $asignacionMateriaId = $request->asignacion_materia_id;
+        $materiaId = $request->materia_id;
+        $revisionId = $request->revision_id;
 
-    private function tieneCalificacionAprobatoria(Evidencia $evidencia): bool
-    {
-        $evaluaciones = $evidencia->evaluacion ?? [];
+        $revision = Revision::findOrFail($revisionId);
 
-        foreach ($evaluaciones as $evaluacion) {
-            if (
-                !($evaluacion['na'] ?? false) &&
-                isset($evaluacion['calificacion']) &&
-                (float)$evaluacion['calificacion'] >= 70
-            ) {
-                return true;
+        // Obtener los datos de evaluación de seguimiento enviados desde el Swal
+        $avanceProgramatico = $request->input('evaluaciones.avance_programatico', []);
+        $asisteSeguimiento = $request->input('evaluaciones.asiste_seguimiento', []);
+
+        // Construir la estructura base de evaluación (según lógica original)
+        $evaluacion = [];
+
+        if ((int)$revision->numero === 1) {
+            $evaluacion = [
+                'instrumentacion' => [
+                    'calificacion' => 0,
+                    'observaciones' => 'No se entregó evidencia',
+                ],
+                'reporte_inicio' => [
+                    'calificacion' => 0,
+                    'observaciones' => 'No se entregó evidencia',
+                ],
+                'examen_diagnostico' => [
+                    'calificacion' => 0,
+                    'observaciones' => 'No se entregó evidencia',
+                ],
+                'analisis_diagnostico' => [
+                    'calificacion' => 0,
+                    'observaciones' => 'No se entregó evidencia',
+                ],
+                'acuerdos' => [
+                    'calificacion' => 0,
+                    'observaciones' => 'No se entregó evidencia',
+                ],
+                'calificaciones' => [
+                    'calificacion' => 0,
+                    'observaciones' => 'No se entregó evidencia',
+                ],
+                'rac' => [
+                    'calificacion' => 0,
+                    'observaciones' => 'No se entregó evidencia',
+                ],
+                'rubricas' => [
+                    'calificacion' => 0,
+                    'observaciones' => 'No se entregó evidencia',
+                ],
+                'instrumentos' => [
+                    'calificacion' => 0,
+                    'observaciones' => 'No se entregó evidencia',
+                ],
+            ];
+        } else {
+            $revision1 = Revision::where('numero', 1)->first();
+            $evaluacionRevision1 = [];
+
+            if ($revision1) {
+                $evidenciaRev1 = Evidencia::where('asignacion_materia_id', $asignacionMateriaId)
+                    ->where('revision_id', $revision1->id)
+                    ->first();
+                $evaluacionRevision1 = $evidenciaRev1?->evaluacion ?? [];
             }
+
+            $camposAuto = [
+                'instrumentacion',
+                'reporte_inicio',
+                'acuerdos',
+                'examen_diagnostico',
+                'analisis_diagnostico'
+            ];
+
+            foreach ($camposAuto as $campo) {
+                $evaluacion[$campo] = $evaluacionRevision1[$campo] ?? [
+                    'calificacion' => 0,
+                    'observaciones' => 'No existe evaluación en revisión 1'
+                ];
+            }
+
+            $evaluacion['calificaciones'] = [
+                'calificacion' => 0,
+                'observaciones' => 'No se entregó evidencia',
+            ];
+            $evaluacion['rac'] = [
+                'calificacion' => 0,
+                'observaciones' => 'No se entregó evidencia',
+            ];
+            $evaluacion['rubricas'] = [
+                'calificacion' => 0,
+                'observaciones' => 'No se entregó evidencia',
+            ];
+            $evaluacion['instrumentos'] = [
+                'calificacion' => 0,
+                'observaciones' => 'No se entregó evidencia',
+            ];
         }
 
-        return false;
+        // Agregar los dos campos de seguimiento (si vienen del frontend)
+        $evaluacion['avance_programatico'] = [
+            'calificacion' => $avanceProgramatico['calificacion'] ?? '',
+            'observaciones' => $avanceProgramatico['observaciones'] ?? '',
+            'na' => $avanceProgramatico['na'] ?? 0,
+        ];
+
+        $evaluacion['asiste_seguimiento'] = [
+            'calificacion' => $asisteSeguimiento['calificacion'] ?? '',
+            'observaciones' => $asisteSeguimiento['observaciones'] ?? '',
+            'na' => $asisteSeguimiento['na'] ?? 0,
+        ];
+
+        // Crear la evidencia con estado 4 (rechazada)
+        Evidencia::create([
+            'asignacion_materia_id' => $asignacionMateriaId,
+            'materia_id' => $materiaId,
+            'revision_id' => $revisionId,
+            'estado' => 4,
+            'documentos' => [],
+            'evaluacion' => $evaluacion,
+            'observaciones' => 'No se entregó evidencia',
+            'admin_id' => Auth::id(),
+            'fecha_revision' => now(),
+        ]);
+
+        return response()->json(['success' => true]);
     }
 }

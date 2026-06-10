@@ -1,6 +1,5 @@
 @forelse ($items as $item)
 <tr>
-
     <td>
         <span class="fw-semibold text-dark">
             {{ $item->semestre->nombre }}
@@ -42,29 +41,25 @@
     <td>
         <div class="d-flex justify-content-center gap-2">
             <a href="{{ route('asignar-materias.edit', $item->id) }}"
-                class="btn btn-outline-warning btn-sm"
-                style="border-radius: 8px;">
+                class="btn btn-outline-warning btn-sm">
                 <i class="bi bi-pencil"></i>
             </a>
 
             <a href="{{ route('asignar-materias.show', $item->id) }}"
-                class="btn btn-outline-danger btn-sm"
-                style="border-radius: 8px;">
+                class="btn btn-outline-danger btn-sm">
                 <i class="fa-solid fa-trash-can"></i>
             </a>
         </div>
     </td>
-
 </tr>
-
 @empty
-
 <tr>
-    <td colspan="7" class="text-center py-5">
-        <div class="text-muted fw-bold">
-            No hay asignaciones registradas
-        </div>
-    </td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td class="text-center"><strong>Sin registros</strong></td>
+    <td></td>
+    <td></td>
+    <td></td>
 </tr>
-
 @endforelse

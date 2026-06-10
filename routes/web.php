@@ -118,12 +118,13 @@ Route::middleware('auth')->group(function () {
             Route::get('/{id}', [Evaluaciones::class, 'show'])->name('evaluaciones.show');
             Route::put('/{id}', [Evaluaciones::class, 'update'])->name('evaluaciones.update');
             Route::post('/{id}/autosave', [Evaluaciones::class, 'autoSave'])->name('evaluaciones.autosave');
+            Route::delete('/eliminar/{id}', [Evidencias::class, 'destroy'])->name('evaluaciones.destroy')->defaults('force', true);
+            Route::post('/rechazar-sin-evidencia',[Evidencias::class, 'rechazarSinEvidencia'])->name('evaluaciones.rechazarSinEvidencia');
         });
 
         Route::prefix('reportes')->group(function () {
             Route::get('/', [Reportes::class, 'index'])->name('reportes');
             Route::get('/{id}', [Reportes::class, 'reportePdf'])->name('reportes-generar');
-            Route::get('/vacio/{materia}/{revision}', [Reportes::class, 'reporteVacio'])->name('reportes-vacio');
         });
 
         Route::prefix('imagenes')->group(function () {

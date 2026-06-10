@@ -107,6 +107,62 @@ class Reportes extends Controller
     }
 
     /**
+     * Obtiene la evaluación completa para una evidencia, fusionando
+     * los datos de la Revisión 1 cuando la revisión actual no es la 1.
+     *
+     * @param Evidencia $evidencia
+     * @return array
+     */
+    private function obtenerEvaluacionCompleta($evidencia)
+    {
+        $evaluacionActual = $evidencia->evaluacion ?? [];
+        $esRevision1 = (int) $evidencia->revision->id === 1;
+
+        // Si es Revisión 1, devolvemos la evaluación tal cual
+        if ($esRevision1) {
+            return $evaluacionActual;
+        }
+
+        // Buscar la evidencia de Revisión 1 para esta misma materia/docente
+        $revision1 = Revision::where('numero', 1)->first();
+        if (!$revision1) {
+            // Si no existe Revisión 1, devolvemos la actual (no hay datos anteriores)
+            return $evaluacionActual;
+        }
+
+        $evidenciaRev1 = Evidencia::where('materia_id', $evidencia->materia_id)
+            ->where('revision_id', $revision1->id)
+            ->where('asignacion_materia_id', $evidencia->asignacion_materia_id)
+            ->first();
+
+        if (!$evidenciaRev1) {
+            return $evaluacionActual;
+        }
+
+        $evaluacionRev1 = $evidenciaRev1->evaluacion ?? [];
+
+        // Campos que vienen de Revisión 1 (los exclusivos)
+        $camposAuto = ['instrumentacion', 'reporte_inicio', 'acuerdos', 'examen_diagnostico', 'analisis_diagnostico'];
+
+        // Fusionar: los valores de Revisión 1 tienen prioridad sobre los actuales
+        // porque en revisiones posteriores estos campos no se muestran ni se editan.
+        foreach ($camposAuto as $campo) {
+            if (isset($evaluacionRev1[$campo])) {
+                $evaluacionActual[$campo] = $evaluacionRev1[$campo];
+            } else {
+                // Si no existe en Rev1, creamos un registro por defecto (0, sin N/A)
+                $evaluacionActual[$campo] = [
+                    'na' => false,
+                    'calificacion' => 0,
+                    'observaciones' => 'Sin evaluación en Revisión 1'
+                ];
+            }
+        }
+
+        return $evaluacionActual;
+    }
+
+    /**
      * Reporte para administrador (toda la evidencia)
      */
     public function reportePdf($id)
@@ -119,10 +175,11 @@ class Reportes extends Controller
             'evaluador.docente'
         ])->findOrFail($id);
 
-        $evaluacion = $evidencia->evaluacion ?? [];
+        // Obtener evaluación completa (con datos de Revisión 1 si aplica)
+        $evaluacion = $this->obtenerEvaluacionCompleta($evidencia);
         $esRevision4 = (int) $evidencia->revision->id === 4;
 
-        // Criterios base
+        // Criterios base (todos los posibles, el orden puede ser el mismo que en la evaluación)
         $criterios = [
             'instrumentacion'      => 'Instrumentación didáctica',
             'reporte_inicio'       => 'Reporte inicio de curso',
@@ -174,71 +231,6 @@ class Reportes extends Controller
         return $pdf->stream('reporte-seguimiento.pdf');
     }
 
-    /**
-     * Reporte para cuando no existe evidencia (vacío)
-     */
-    public function reporteVacio($materiaId, $revisionId)
-    {
-        $materia = Materia::findOrFail($materiaId);
-        $revision = Revision::findOrFail($revisionId);
-        $docente = $materia->asignaciones->first()?->docente;
-        $semestre = $materia->asignaciones->first()?->semestre;
-
-        $evidencia = (object)[
-            'materia' => $materia,
-            'revision' => $revision,
-            'asignacion' => (object)['docente' => $docente],
-            'asignacionMateria' => (object)['semestre' => $semestre],
-            'admin' => null,
-        ];
-
-        $esRevision4 = (int) $revision->id === 4;
-
-        $criterios = [
-            'instrumentacion'      => 'Instrumentación didáctica',
-            'reporte_inicio'       => 'Reporte inicio de curso',
-            'examen_diagnostico'   => 'Examen diagnóstico',
-            'analisis_diagnostico' => 'Análisis del diagnóstico',
-            'acuerdos'             => 'Acuerdos de clase',
-            'avance_programatico'  => 'Avance programático',
-            'instrumentos'         => 'Evidencia de instrumentos de evaluación (3 muestras)',
-            'rubricas'             => 'Rúbricas del semestre',
-            'calificaciones'       => 'Lista de calificaciones con índice de aprobación',
-            'rac'                  => 'Actividades de regularización',
-            'asiste_seguimiento'   => 'Asiste al seguimiento',
-        ];
-
-        if ($esRevision4) {
-            $criterios['acta'] = 'Acta de revisión';
-            $criterios['segunda_oportunidad'] = 'Evidencias de segunda oportunidad';
-        }
-
-        $evaluacion = [];
-        foreach ($criterios as $key => $nombre) {
-            $evaluacion[$key] = [
-                'calificacion' => 0,
-                'observaciones' => 'SIN ENTREGAR EVIDENCIA',
-                'na' => false,
-            ];
-        }
-
-        $pdf = Pdf::loadView(
-            'modules.reportes.pdf',
-            [
-                'evidencia' => $evidencia,
-                'evaluacion' => $evaluacion,
-                'criterios' => $criterios,
-                'promedioFinal' => 0,
-                'admin' => Auth::user(),
-            ]
-        );
-
-        return $pdf->stream('reporte-sin-evaluacion.pdf');
-    }
-
-    /**
-     * Reporte para el docente (solo sus propias evidencias)
-     */
     public function reportePdfDocente($id)
     {
         $evidencia = Evidencia::with([
@@ -254,7 +246,8 @@ class Reportes extends Controller
             abort(403);
         }
 
-        $evaluacion = $evidencia->evaluacion ?? [];
+        // Obtener evaluación completa (con datos de Revisión 1 si aplica)
+        $evaluacion = $this->obtenerEvaluacionCompleta($evidencia);
         $esRevision4 = (int) $evidencia->revision->id === 4;
 
         $criterios = [

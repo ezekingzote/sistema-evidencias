@@ -91,13 +91,13 @@
 
                         <thead>
                             <tr>
-                                <th>SEMESTRE</th>
-                                <th>MATERIA</th>
-                                <th>DOCENTE</th>
-                                <th>GRUPO</th>
-                                <th>N. ALUMNOS</th>
-                                <th>ACTIVO</th>
-                                <th>ACCIONES</th>
+                                <th class="text-center">SEMESTRE</th>
+                                <th class="text-center">MATERIA</th>
+                                <th class="text-center">DOCENTE</th>
+                                <th class="text-center">GRUPO</th>
+                                <th class="text-center">N. ALUMNOS</th>
+                                <th class="text-center">ACTIVO</th>
+                                <th class="text-center">ACCIONES</th>
                             </tr>
                         </thead>
 
