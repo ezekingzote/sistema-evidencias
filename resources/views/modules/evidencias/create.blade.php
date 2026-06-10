@@ -19,7 +19,7 @@
 
         <section class="section">
 
-            <div class="card p-4 shadow-lg border-0" style="border-radius: 18px;">
+            <div class="card p-4 p-lg-5 shadow-lg border-0 usuario-card">
 
                 @if ($errors->any())
                     <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
@@ -42,14 +42,15 @@
                     id="form-evidencias">
                     @csrf
 
-                    <div class="row g-3 mb-4">
+                    <div class="row g-4 mb-4">
 
                         <div class="col-md-6">
                             <label class="fw-bold small text-uppercase text-secondary mb-2 block">
                                 Materia
                             </label>
 
-                            <select id="materia_id" name="materia_id" class="form-select form-select-lg fs-6" required>
+                            <select id="materia_id" name="materia_id" class="form-select form-select-lg fs-6 custom-input"
+                                required>
                                 <option value="">Seleccione</option>
 
                                 @foreach ($materias as $materia)
@@ -65,8 +66,8 @@
                                 Revisión
                             </label>
 
-                            <select id="revision_id" name="revision_id" class="form-select form-select-lg fs-6" required
-                                disabled>
+                            <select id="revision_id" name="revision_id" class="form-select form-select-lg fs-6 custom-input"
+                                required disabled>
                                 <option value="">Seleccione</option>
 
                                 @foreach ($revisiones as $revision)
@@ -106,8 +107,8 @@
                         <div class="col-md-6 campo-solo-revision-1">
                             <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
                                 <div class="d-flex align-items-center mb-3">
-                                    <div class="p-2.5 rounded-3 bg-primary-subtle text-primary me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                        style="width: 45px; height: 45px;">
+                                    <div
+                                        class="p-2.5 rounded-3 bg-primary-subtle text-primary me-3 fs-4 d-inline-flex align-items-center justify-content-center header-icon-box">
                                         <i class="bi bi-book-half"></i>
                                     </div>
 
@@ -117,7 +118,7 @@
                                 </div>
 
                                 <input type="file" name="instrumentacion"
-                                    class="form-control form-control-lg fs-6 input-solo-revision-1 archivo-pdf-5mb"
+                                    class="form-control form-control-lg fs-6 input-solo-revision-1 archivo-pdf-5mb custom-input"
                                     accept="application/pdf" required>
 
                                 <small class="text-muted d-block mt-2">
@@ -130,8 +131,8 @@
                         <div class="col-md-6 campo-solo-revision-1">
                             <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
                                 <div class="d-flex align-items-center mb-3">
-                                    <div class="p-2.5 rounded-3 bg-info-subtle text-info me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                        style="width: 45px; height: 45px;">
+                                    <div
+                                        class="p-2.5 rounded-3 bg-info-subtle text-info me-3 fs-4 d-inline-flex align-items-center justify-content-center header-icon-box">
                                         <i class="bi bi-calendar-check"></i>
                                     </div>
 
@@ -141,7 +142,7 @@
                                 </div>
 
                                 <input type="file" name="reporte_inicio"
-                                    class="form-control form-control-lg fs-6 input-solo-revision-1 archivo-pdf-5mb"
+                                    class="form-control form-control-lg fs-6 input-solo-revision-1 archivo-pdf-5mb custom-input"
                                     accept="application/pdf" required>
 
                                 <small class="text-muted d-block mt-2">
@@ -154,8 +155,8 @@
                         <div class="col-md-6 campo-solo-revision-1">
                             <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
                                 <div class="d-flex align-items-center mb-3">
-                                    <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                        style="width: 45px; height: 45px;">
+                                    <div
+                                        class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center header-icon-box">
                                         <i class="bi bi-person-workspace"></i>
                                     </div>
 
@@ -165,7 +166,7 @@
                                 </div>
 
                                 <input type="file" name="acuerdos"
-                                    class="form-control form-control-lg fs-6 input-solo-revision-1 archivo-pdf-5mb"
+                                    class="form-control form-control-lg fs-6 input-solo-revision-1 archivo-pdf-5mb custom-input"
                                     accept="application/pdf" required>
 
                                 <small class="text-muted d-block mt-2">
@@ -178,8 +179,8 @@
                         <div class="col-md-6" id="contenedor_calificaciones">
                             <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
                                 <div class="d-flex align-items-center mb-3">
-                                    <div class="p-2.5 rounded-3 bg-success-subtle text-success me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                        style="width: 45px; height: 45px;">
+                                    <div
+                                        class="p-2.5 rounded-3 bg-success-subtle text-success me-3 fs-4 d-inline-flex align-items-center justify-content-center header-icon-box">
                                         <i class="bi bi-card-checklist"></i>
                                     </div>
 
@@ -201,8 +202,8 @@
                                 id="rac_card" style="transition: all 0.3s ease;">
 
                                 <div class="d-flex align-items-center mb-3">
-                                    <div class="p-2.5 rounded-3 bg-secondary-subtle text-secondary me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                        style="width: 45px; height: 45px;">
+                                    <div
+                                        class="p-2.5 rounded-3 bg-secondary-subtle text-secondary me-3 fs-4 d-inline-flex align-items-center justify-content-center header-icon-box">
                                         <i class="bi bi-arrow-repeat"></i>
                                     </div>
 
@@ -233,8 +234,8 @@
                         <div class="col-md-6 campo-solo-revision-1">
                             <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
                                 <div class="d-flex align-items-center mb-3">
-                                    <div class="p-2.5 rounded-3 bg-primary-subtle text-primary me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                        style="width: 45px; height: 45px;">
+                                    <div
+                                        class="p-2.5 rounded-3 bg-primary-subtle text-primary me-3 fs-4 d-inline-flex align-items-center justify-content-center header-icon-box">
                                         <i class="bi bi-file-earmark-medical"></i>
                                     </div>
 
@@ -244,7 +245,7 @@
                                 </div>
 
                                 <input type="file" name="examen_diagnostico"
-                                    class="form-control form-control-lg fs-6 input-solo-revision-1 archivo-pdf-5mb"
+                                    class="form-control form-control-lg fs-6 input-solo-revision-1 archivo-pdf-5mb custom-input"
                                     accept="application/pdf" required>
 
                                 <small class="text-muted d-block mt-2">
@@ -257,8 +258,8 @@
                         <div class="col-md-6 campo-solo-revision-1">
                             <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
                                 <div class="d-flex align-items-center mb-3">
-                                    <div class="p-2.5 rounded-3 bg-info-subtle text-info me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                        style="width: 45px; height: 45px;">
+                                    <div
+                                        class="p-2.5 rounded-3 bg-info-subtle text-info me-3 fs-4 d-inline-flex align-items-center justify-content-center header-icon-box">
                                         <i class="bi bi-bar-chart-line"></i>
                                     </div>
 
@@ -268,7 +269,7 @@
                                 </div>
 
                                 <input type="file" name="analisis_diagnostico"
-                                    class="form-control form-control-lg fs-6 input-solo-revision-1 archivo-pdf-5mb"
+                                    class="form-control form-control-lg fs-6 input-solo-revision-1 archivo-pdf-5mb custom-input"
                                     accept="application/pdf" required>
 
                                 <small class="text-muted d-block mt-2">
@@ -278,10 +279,13 @@
                             </div>
                         </div>
 
-                        <div class="col-md-6" id="contenedor_rubricas">
+                    </div>
+
+                    <div class="row g-4 mt-1">
+                        <div class="col-lg-6" id="contenedor_rubricas">
                             <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
                                 <div class="d-flex align-items-center mb-3">
-                                    <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                    <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center header-icon-box"
                                         style="width: 45px; height: 45px;">
                                         <i class="bi bi-table"></i>
                                     </div>
@@ -299,11 +303,12 @@
                             </div>
                         </div>
 
+                        <div class="col-lg-6">
+                            <div class="h-100" id="seccion_dropzones_dinamicos">
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="mt-4" id="seccion_dropzones_dinamicos"></div>
-
-                    <!-- CAMPOS PARA REVISIÓN 4 -->
                     <div id="campos_revision_4" class="d-none">
                         <hr class="my-4">
 
@@ -313,12 +318,11 @@
                         </h5>
 
                         <div class="row g-4">
-                            <!-- Acta -->
                             <div class="col-md-6">
                                 <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
                                     <div class="d-flex align-items-center mb-3">
-                                        <div class="p-2.5 rounded-3 bg-danger-subtle text-danger me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                            style="width: 45px; height: 45px;">
+                                        <div
+                                            class="p-2.5 rounded-3 bg-danger-subtle text-danger me-3 fs-4 d-inline-flex align-items-center justify-content-center header-icon-box">
                                             <i class="bi bi-file-text-fill"></i>
                                         </div>
 
@@ -329,7 +333,7 @@
                                     </div>
 
                                     <input type="file" name="actas" id="actas_file"
-                                        class="form-control form-control-lg fs-6 archivo-pdf-5mb input-revision-4"
+                                        class="form-control form-control-lg fs-6 archivo-pdf-5mb input-revision-4 custom-input"
                                         accept="application/pdf">
 
                                     <small class="text-muted d-block mt-2">
@@ -339,12 +343,11 @@
                                 </div>
                             </div>
 
-                            <!-- Evidencias de segunda oportunidad -->
                             <div class="col-md-6">
                                 <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
                                     <div class="d-flex align-items-center mb-3">
-                                        <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center"
-                                            style="width: 45px; height: 45px;">
+                                        <div
+                                            class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center header-icon-box">
                                             <i class="bi bi-clock-history"></i>
                                         </div>
 
@@ -358,11 +361,11 @@
                                         <div class="row g-2 mb-2">
                                             <div class="col-8">
                                                 <input type="file" name="evidencias_segunda_oportunidad[]"
-                                                    class="form-control archivo-pdf-5mb input-revision-4"
+                                                    class="form-control archivo-pdf-5mb input-revision-4 custom-input-sm"
                                                     accept="application/pdf">
                                             </div>
                                             <div class="col-4">
-                                                <button type="button" class="btn btn-outline-success w-100"
+                                                <button type="button" class="btn btn-outline-success w-100 h-100"
                                                     onclick="agregarCampoEvidenciaSegundaOportunidad()">
                                                     <i class="bi bi-plus-circle"></i> Agregar
                                                 </button>
@@ -381,13 +384,13 @@
 
                     <hr class="my-4">
 
-                    <div class="d-flex gap-2">
-                        <a href="{{ route('evidencias') }}" class="btn btn-light border px-4 rounded-pill">
+                    <div class="d-flex gap-3 justify-content-end">
+                        <a href="{{ route('evidencias') }}" class="btn btn-outline-secondary px-4 rounded-pill">
                             <i class="bi bi-arrow-left me-1"></i>
                             Regresar
                         </a>
 
-                        <button type="submit" class="btn btn-primary px-4 rounded-pill">
+                        <button type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm fw-bold">
                             <i class="bi bi-floppy me-1"></i>
                             Guardar Evidencia
                         </button>
@@ -402,6 +405,56 @@
     </main>
 
     <style>
+        /* ==========================================================================
+           1. ESTILOS BASE DEL CONTENEDOR PRINCIPAL (CONSISTENCIA VISUAL)
+           ========================================================================== */
+        .usuario-card {
+            border-radius: 22px !important;
+            background: #ffffff;
+        }
+
+        .custom-input {
+            min-height: 50px;
+            border-radius: 12px !important;
+            border: 1px solid #dee2e6;
+            padding-left: 14px;
+        }
+
+        .custom-input-sm {
+            min-height: 36px !important;
+            border-radius: 10px !important;
+            border: 1px solid #dee2e6;
+            font-size: 13px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.15);
+        }
+
+        .header-icon-box {
+            width: 45px;
+            height: 45px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            transition: 0.25s;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 10px 20px rgba(13, 110, 253, 0.20);
+        }
+
+        /* ==========================================================================
+           2. DROPZONE E INPUTS DINÁMICOS
+           ========================================================================== */
         .style-dropzone input[type="file"] {
             display: none !important;
         }
@@ -412,10 +465,50 @@
             border-radius: 0.5rem;
         }
 
+        .border-dashed {
+            border-style: dashed !important;
+            border-color: #ced4da !important;
+        }
+
+        /* ==========================================================================
+           3. FORZAR 7 CARDS EN UNA SOLA FILA (NUEVO AJUSTE)
+           ========================================================================== */
+        /* Asegúrate de ponerle el id "contenedor_tarjetas_unidades" al div padre */
+        #contenedor_tarjetas_unidades {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            /* Evita que salten de línea */
+            gap: 10px !important;
+            /* Espaciado controlado entre las 7 cards */
+            overflow-x: auto;
+            /* Si la pantalla es muy chica, permite scroll horizontal en vez de romperse */
+            padding-bottom: 5px;
+        }
+
+        /* Modificación de las tarjetas para que se repartan el espacio equitativamente */
+        #contenedor_tarjetas_unidades>div {
+            flex: 1 1 0% !important;
+            /* Fuerza a las 7 a medir exactamente lo mismo */
+            min-width: 100px;
+            /* Evita que se colapsen por completo */
+            width: auto !important;
+        }
+
         .card-unidad-check {
             cursor: pointer;
             transition: all 0.2s ease;
             border: 2px solid #dee2e6 !important;
+            padding: 12px 8px !important;
+            /* Padding vertical óptimo y horizontal recortado */
+            font-size: 13px;
+            /* Texto ligeramente más compacto para que entre el título */
+            text-align: center;
+            height: 100%;
+            /* Mismo alto para todas */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .card-unidad-check:hover {
@@ -428,6 +521,97 @@
             background-color: #f0fdf4;
         }
 
+        /* Achicar un poco los iconos decorativos de tu imagen */
+        .card-unidad-check i,
+        .card-unidad-check svg {
+            font-size: 20px !important;
+            margin-bottom: 6px;
+        }
+
+        /* ==========================================================================
+           4. COMPONENTES INTERNOS DE LAS TARJETAS
+           ========================================================================== */
+        .rac-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .rac-row .unidad-badge {
+            min-width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            margin-top: 2px;
+            font-size: 13px;
+        }
+
+        .rac-row .rac-file-wrapper {
+            flex: 1;
+        }
+
+        .rac-row .rac-file {
+            width: 100%;
+            min-height: 36px !important;
+            font-size: 13px;
+            padding: 4px 10px;
+        }
+
+        .rac-file:disabled {
+            background-color: #e9ecef !important;
+            cursor: not-allowed;
+            opacity: 0.75;
+        }
+
+        .rac-na-box {
+            min-width: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 999px;
+            padding: 4px 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+            margin-top: 2px;
+        }
+
+        .rac-na-box .form-check-input {
+            margin-top: 0;
+            cursor: pointer;
+            width: 0.9em;
+            height: 0.9em;
+        }
+
+        .rac-na-box .form-check-label {
+            cursor: pointer;
+            user-select: none;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6c757d;
+        }
+
+        .motivo-no-unidad-box {
+            background-color: #f8f9fa;
+            border: 1px dashed #ced4da;
+            border-radius: 12px;
+            padding: 10px;
+            margin-top: 6px !important;
+        }
+
+        .motivo-no-unidad-box textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-size: 13px;
+        }
+
+        /* ==========================================================================
+           5. ANIMACIONES Y COLAPSO
+           ========================================================================== */
         .dropzone-body-collapse {
             transition: max-height 0.35s ease, opacity 0.3s ease;
             max-height: 500px;
@@ -458,84 +642,6 @@
             color: #dc3545 !important;
         }
 
-        .rac-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            width: 100%;
-        }
-
-        .rac-row .unidad-badge {
-            min-width: 38px;
-            text-align: center;
-            margin-top: 7px;
-        }
-
-        .rac-row .rac-file-wrapper {
-            flex: 1;
-        }
-
-        .rac-row .rac-file {
-            width: 100%;
-        }
-
-        .rac-na-box {
-            min-width: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 999px;
-            padding: 6px 12px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-            margin-top: 1px;
-        }
-
-        .rac-na-box .form-check-input {
-            margin-top: 0;
-            cursor: pointer;
-        }
-
-        .rac-na-box .form-check-label {
-            cursor: pointer;
-            user-select: none;
-            font-size: 13px;
-            font-weight: 600;
-            color: #6c757d;
-        }
-
-        .rac-file:disabled {
-            background-color: #e9ecef !important;
-            cursor: not-allowed;
-            opacity: 0.75;
-        }
-
-        .motivo-no-unidad-box {
-            background-color: #f8f9fa;
-            border: 1px dashed #ced4da;
-            border-radius: 12px;
-            padding: 14px;
-        }
-
-        .motivo-no-unidad-box textarea {
-            resize: vertical;
-            min-height: 110px;
-        }
-
-        @media (max-width: 768px) {
-            .rac-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .rac-na-box {
-                width: 100%;
-                justify-content: flex-start;
-            }
-        }
-
         @keyframes fadeInItem {
             from {
                 opacity: 0;
@@ -547,8 +653,32 @@
                 transform: translateY(0);
             }
         }
-    </style>
 
+        /* ==========================================================================
+           6. RESPONSIVE (Móviles vuelven a bloque para que no se aplasten)
+           ========================================================================== */
+        @media (max-width: 768px) {
+            #contenedor_tarjetas_unidades {
+                flex-wrap: wrap !important;
+                /* En celulares sí permite bajar de línea para que sea usable */
+            }
+
+            #contenedor_tarjetas_unidades>div {
+                flex: 1 1 45% !important;
+                /* Se ponen de 2 en 2 en pantallas chicas */
+            }
+
+            .rac-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .rac-na-box {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+    </style>
     <script>
         const combinacionesSubidas = @json($subidasArray);
         const revisionesOriginales = @json($revisiones);

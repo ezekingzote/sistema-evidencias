@@ -63,6 +63,11 @@
                 @if(count($carpetas) > 0)
                 <div class="row g-3">
                     @foreach($carpetas as $carpeta)
+                    {{-- IGNORAR CARPETAS OCULTAS --}}
+                    @if(str_starts_with($carpeta['nombre'], '.'))
+                        @continue
+                    @endif
+
                     <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
                         <div class="card folder-card border-0 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between folder-link"
                             data-url="{{ route('archivos', ['ruta' => $carpeta['ruta_completa']]) }}">
@@ -109,6 +114,11 @@
                 @if(count($archivos) > 0)
                 <div class="row g-4">
                     @foreach($archivos as $archivo)
+                    {{-- IGNORAR ARCHIVOS OCULTOS --}}
+                    @if(str_starts_with($archivo['nombre'], '.'))
+                        @continue
+                    @endif
+
                     @php
                     $rutaSegura = base64_encode($archivo['ruta_completa']);
                     $urlVerPdf = route('archivos.ver', ['ruta' => $rutaSegura]);
@@ -168,7 +178,7 @@
 
                                 <div class="d-flex justify-content-between align-items-center">
 
-                                    {{-- BOTÓN CON DATA-ATTRIBUTES (Cero conflictos de comillas en JS) --}}
+                                    {{-- BOTÓN CON DATA-ATTRIBUTES --}}
                                     @if($archivo['extension'] === 'pdf')
                                     <button type="button"
                                         class="btn btn-sm btn-outline-primary rounded-pill px-3 btn-preview-pdf"
