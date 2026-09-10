@@ -104,13 +104,12 @@
             </a>
         </li>
 
-        <li class="nav-item">
+       {{-- <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('planes-estudio*') || request()->routeIs('agregar-plan-estudio') || request()->routeIs('editar-plan-estudio') || request()->routeIs('ver-plan-estudio') ? '' : 'collapsed' }}" href="{{ route('planes-estudio') }}">
                 <i class="fa-solid fa-file-signature"></i>
                 <span>Mis Planes de Estudio</span>
             </a>
-        </li>
-
+        </li> --}}
         <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('evidencias*') || request()->routeIs('evaluaciones.*') ? '' : 'collapsed' }}" href="{{ route('evidencias') }}">
                 <i class="fa-solid fa-receipt"></i>

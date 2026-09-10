@@ -13,7 +13,8 @@
         style="display:none;">
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    {{-- CABECERA CON BOTÓN DE AYUDA ALINEADO A LA DERECHA --}}
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
             <h3 class="fw-bold text-dark mb-1">
                 @if($rutaActual)
@@ -48,6 +49,13 @@
                     @endforeach
                 </ol>
             </nav>
+        </div>
+
+        {{-- BOTÓN DE AYUDA --}}
+        <div>
+            <button type="button" class="btn btn-info text-white rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalManualMiUnidad">
+                <i class="bi bi-question-circle me-1"></i> Ayuda
+            </button>
         </div>
     </div>
 
@@ -212,198 +220,14 @@
         </div>
     </div>
 </main>
-
-<script>
-    // Manejo seguro del click para abrir SweetAlert2 sin romper comillas HTML
-    document.querySelectorAll('.btn-preview-pdf').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const pdfUrl = this.getAttribute('data-url');
-            const pdfName = this.getAttribute('data-name');
-
-            Swal.fire({
-                title: `<span class="fs-5 text-dark fw-bold text-truncate d-block px-3">${pdfName}</span>`,
-                html: `
-                    <div style="width: 100%; height: 72vh; overflow: hidden; border-radius: 8px; border: 1px solid #dee2e6;">
-                        <iframe src="${pdfUrl}#toolbar=1" width="100%" height="100%" style="border: none;"></iframe>
-                    </div>
-                `,
-                width: '85%',
-                showCloseButton: true,
-                showConfirmButton: false,
-                focusConfirm: false,
-                customClass: {
-                    popup: 'rounded-4 shadow-lg'
-                }
-            });
-        });
-    });
-
-    // Redirección de carpetas
-    document.querySelectorAll('.folder-link').forEach(folder => {
-        folder.addEventListener('click', function() {
-            window.location.href = this.getAttribute('data-url');
-        });
-    });
-</script>
-
-<style>
-    .folder-card {
-        border: 1px solid #e5e7eb !important;
-        border-radius: 16px;
-        transition: all .2s ease;
-        cursor: pointer;
-        background: #ffffff;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .folder-card::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 12px;
-        bottom: 12px;
-        width: 4px;
-        border-radius: 0 8px 8px 0;
-        background: #ffc107;
-        opacity: .95;
-    }
-
-    .folder-card:hover {
-        background: #fffdf6;
-        border-color: #ffd76a !important;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 24px rgba(15, 23, 42, .08) !important;
-    }
-
-    .folder-main {
-        min-width: 0;
-        flex: 1;
-        padding-left: 4px;
-    }
-
-    .folder-icon-box {
-        width: 44px;
-        height: 44px;
-        min-width: 44px;
-        border-radius: 14px;
-        background: #fff6d9;
-        color: #f5b400;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.65rem;
-    }
-
-    .folder-text-box {
-        min-width: 0;
-    }
-
-    .folder-hint {
-        display: block;
-        font-size: 11px;
-        color: #6c757d;
-        margin-top: 2px;
-    }
-
-    .download-zip-btn {
-        min-width: 58px;
-        height: 42px;
-        padding: 6px 11px;
-        gap: 5px;
-        border: 2px solid #0d6efd !important;
-        background: #eef5ff !important;
-        color: #0d6efd !important;
-        font-weight: 700;
-        transition: all .2s ease;
-        box-shadow: 0 4px 10px rgba(13, 110, 253, .10);
-        z-index: 2;
-    }
-
-    .download-zip-btn:hover {
-        background: #0d6efd !important;
-        color: #ffffff !important;
-        border-color: #0d6efd !important;
-        transform: scale(1.05);
-        box-shadow: 0 8px 18px rgba(13, 110, 253, .22);
-    }
-
-    .download-zip-btn .zip-icon {
-        font-size: 1.1rem;
-    }
-
-    .download-zip-btn .zip-label {
-        font-size: 11px;
-        letter-spacing: .4px;
-    }
-
-    .file-card {
-        border: 1px solid #dadce0 !important;
-        border-radius: 14px;
-        overflow: hidden;
-        transition: all .2s ease;
-        background: white;
-    }
-
-    .file-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, .08);
-    }
-
-    .file-preview {
-        height: 160px;
-        background: #f8f9fa;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-bottom: 1px solid #f1f3f4;
-    }
-
-    .iframe-container {
-        position: relative;
-        width: 100%;
-        height: 100%;
-    }
-
-    .iframe-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0);
-        z-index: 10;
-    }
-
-    .pointer-events-none {
-        pointer-events: none;
-    }
-
-    .object-fit-cover {
-        object-fit: cover;
-    }
-
-    .truncate-box {
-        min-width: 0;
-    }
-
-    .x-small {
-        font-size: 11px;
-    }
-
-    @media (max-width: 576px) {
-        .download-zip-btn {
-            min-width: 42px;
-            width: 42px;
-            padding: 0;
-            border-radius: 50% !important;
-        }
-
-        .download-zip-btn .zip-label {
-            display: none;
-        }
-    }
-</style>
+@include('modules.archivos.manual')
 
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/custom-tables.css') }}">
+@endpush
+
+@push('scripts')
+    @include('modules.archivos.scripts')
+@endpush

@@ -6,26 +6,33 @@
 
     <main id="main" class="main">
 
-        <div class="pagetitle">
+        <div class="pagetitle mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h1 class="fw-bold text-primary mb-1">
+                        Configuración de PDF
+                    </h1>
+                    <nav>
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item">
+                                <a href="#">
+                                    Home
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active">
+                                Configuración PDF
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
 
-            <h1 class="fw-bold text-primary">
-                Configuración de PDF
-            </h1>
-
-            <nav>
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item">
-                        <a href="#">
-                            Home
-                        </a>
-                    </li>
-
-                    <li class="breadcrumb-item active">
-                        Configuración PDF
-                    </li>
-                </ol>
-            </nav>
-
+                {{-- Botón de Ayuda --}}
+                <div>
+                    <button type="button" class="btn btn-info text-white rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalManualConfigPdf">
+                        <i class="bi bi-question-circle me-1"></i> Ayuda
+                    </button>
+                </div>
+            </div>
         </div>
 
         <section class="section">
@@ -154,6 +161,8 @@
         </section>
 
     </main>
+
+    @include('modules.imagenes.manual')
 
     <style>
         .pdf-card {

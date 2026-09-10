@@ -6,24 +6,31 @@
 
 <main id="main" class="main">
 
-    <div class="pagetitle">
-        <h1 class="fw-bold text-primary">
-            Reportes de Evaluación
-        </h1>
+    <div class="pagetitle mb-4">
+        {{-- Alineación premium del título y botón de ayuda --}}
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="fw-bold text-primary mb-1">
+                    Reportes de Evaluación
+                </h1>
+                <nav>
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item">
+                            <a href="" class="text-decoration-none text-secondary">Home</a>
+                        </li>
+                        <li class="breadcrumb-item active text-primary fw-semibold">
+                            Reportes
+                        </li>
+                    </ol>
+                </nav>
+            </div>
 
-        <nav>
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item">
-                    <a href="" class="text-decoration-none text-secondary">
-                        Home
-                    </a>
-                </li>
-
-                <li class="breadcrumb-item active text-primary fw-semibold">
-                    Reportes
-                </li>
-            </ol>
-        </nav>
+            <div>
+                <button type="button" class="btn btn-info text-white rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalManualReportes">
+                    <i class="bi bi-question-circle me-1"></i> Ayuda
+                </button>
+            </div>
+        </div>
     </div>
 
     <section class="section">
@@ -366,132 +373,14 @@
 
 </main>
 
-<style>
-    .reportes-card {
-        border-radius: 24px;
-        overflow: hidden;
-        background: white;
-    }
-
-    .reportes-header {
-        background: linear-gradient(135deg, #f8fbff, #eef5ff);
-        border-bottom: 1px solid #e8eef7;
-        padding: 25px;
-    }
-
-    .infoCard {
-        background: white;
-        border-radius: 18px;
-        padding: 18px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        border: 1px solid #e5e7eb;
-    }
-
-    .infoIcon {
-        width: 60px;
-        height: 60px;
-        border-radius: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 24px;
-    }
-
-    .estadoBtn {
-        width: 46px;
-        height: 46px;
-        border-radius: 50%;
-        border: none;
-        color: white;
-        font-size: 18px;
-        box-shadow: 0 6px 14px rgba(0, 0, 0, .1);
-        transition: .3s ease;
-    }
-
-    .estadoBtn:hover:not(:disabled) {
-        transform: translateY(-3px);
-    }
-
-    .aprobado {
-        background: linear-gradient(135deg, #10b981, #059669);
-    }
-
-    .rechazada {
-        background: linear-gradient(135deg, #ef4444, #dc2626);
-    }
-
-    .vacio {
-        background: linear-gradient(135deg, #9ca3af, #6b7280);
-    }
-
-    .asignada {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-    }
-
-    .pendiente {
-        background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-        cursor: not-allowed;
-        opacity: 0.9;
-    }
-
-    .pendiente i {
-        font-size: 18px;
-    }
-
-    /* Permitir tooltips en botones deshabilitados */
-    [data-bs-toggle="tooltip"]:disabled {
-        pointer-events: auto !important;
-    }
-
-    table thead th {
-        background: linear-gradient(135deg, #0a2342, #102c57) !important;
-        color: white !important;
-        border: none;
-        padding: 16px;
-        font-weight: 700;
-        vertical-align: middle;
-    }
-
-    table tbody td {
-        padding: 16px 12px;
-        vertical-align: middle;
-    }
-
-    table tbody tr:hover {
-        background: rgba(15, 23, 42, .03);
-    }
-
-    table thead tr th:first-child {
-        border-top-left-radius: 12px;
-    }
-
-    table thead tr th:last-child {
-        border-top-right-radius: 12px;
-    }
-</style>
-
-<script>
-    // Inicializar tooltips de Bootstrap
-    document.addEventListener('DOMContentLoaded', function() {
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-    });
-
-    // Envío por WhatsApp (solo para los PDFs reales)
-    document.addEventListener('change', function(e) {
-        if (e.target.classList.contains('enviarWhatsapp')) {
-            const url = e.target.value;
-            if (url) {
-                window.open(url, '_blank');
-                e.target.selectedIndex = 0;
-            }
-        }
-    });
-</script>
+@include('modules.reportes.manual')
 
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/custom-tables.css') }}">
+@endpush
+
+@push('scripts')
+    @include('modules.reportes.scripts')
+@endpush

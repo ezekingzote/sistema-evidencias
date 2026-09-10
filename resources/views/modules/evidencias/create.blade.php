@@ -11,10 +11,16 @@
 
     <main id="main" class="main">
 
-        <div class="pagetitle mb-4">
+        <div class="d-flex justify-content-between pagetitle mb-4">
             <h1 class="fw-bold text-primary">
                 Crear Evidencia
             </h1>
+            <div>
+                <button type="button" class="btn btn-info text-white rounded-pill px-4 shadow-sm" data-bs-toggle="modal"
+                    data-bs-target="#modalManualEvidenciasDocente">
+                    <i class="bi bi-question-circle me-1"></i> Ayuda
+                </button>
+            </div>
         </div>
 
         <section class="section">
@@ -406,8 +412,8 @@
 
     <style>
         /* ==========================================================================
-           1. ESTILOS BASE DEL CONTENEDOR PRINCIPAL (CONSISTENCIA VISUAL)
-           ========================================================================== */
+                   1. ESTILOS BASE DEL CONTENEDOR PRINCIPAL (CONSISTENCIA VISUAL)
+                   ========================================================================== */
         .usuario-card {
             border-radius: 22px !important;
             background: #ffffff;
@@ -453,8 +459,8 @@
         }
 
         /* ==========================================================================
-           2. DROPZONE E INPUTS DINÁMICOS
-           ========================================================================== */
+                   2. DROPZONE E INPUTS DINÁMICOS
+                   ========================================================================== */
         .style-dropzone input[type="file"] {
             display: none !important;
         }
@@ -471,8 +477,8 @@
         }
 
         /* ==========================================================================
-           3. FORZAR 7 CARDS EN UNA SOLA FILA (NUEVO AJUSTE)
-           ========================================================================== */
+                   3. FORZAR 7 CARDS EN UNA SOLA FILA (NUEVO AJUSTE)
+                   ========================================================================== */
         /* Asegúrate de ponerle el id "contenedor_tarjetas_unidades" al div padre */
         #contenedor_tarjetas_unidades {
             display: flex !important;
@@ -529,8 +535,8 @@
         }
 
         /* ==========================================================================
-           4. COMPONENTES INTERNOS DE LAS TARJETAS
-           ========================================================================== */
+                   4. COMPONENTES INTERNOS DE LAS TARJETAS
+                   ========================================================================== */
         .rac-row {
             display: flex;
             align-items: flex-start;
@@ -610,8 +616,8 @@
         }
 
         /* ==========================================================================
-           5. ANIMACIONES Y COLAPSO
-           ========================================================================== */
+                   5. ANIMACIONES Y COLAPSO
+                   ========================================================================== */
         .dropzone-body-collapse {
             transition: max-height 0.35s ease, opacity 0.3s ease;
             max-height: 500px;
@@ -655,8 +661,8 @@
         }
 
         /* ==========================================================================
-           6. RESPONSIVE (Móviles vuelven a bloque para que no se aplasten)
-           ========================================================================== */
+                   6. RESPONSIVE (Móviles vuelven a bloque para que no se aplasten)
+                   ========================================================================== */
         @media (max-width: 768px) {
             #contenedor_tarjetas_unidades {
                 flex-wrap: wrap !important;
@@ -1443,5 +1449,6 @@
         actualizarCamposSoloRevisionUno();
         actualizarCamposRevisionCuatro();
     </script>
-
+    @include('modules.evidencias.manual-crear')
 @endsection
+

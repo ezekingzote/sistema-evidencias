@@ -6,20 +6,31 @@
 
     <main id="main" class="main">
 
-        <div class="pagetitle">
-            <h1 class="fw-bold text-primary">
-                Administración de Evidencias
-            </h1>
-            <nav>
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item">
-                        <a href="" class="text-decoration-none text-secondary">Home</a>
-                    </li>
-                    <li class="breadcrumb-item active text-primary fw-semibold">
-                        Evidencias
-                    </li>
-                </ol>
-            </nav>
+        <div class="pagetitle mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h1 class="fw-bold text-primary mb-1">
+                        Administración de Evidencias
+                    </h1>
+                    <nav>
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item">
+                                <a href="" class="text-decoration-none text-secondary">Home</a>
+                            </li>
+                            <li class="breadcrumb-item active text-primary fw-semibold">
+                                Evidencias
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
+
+                {{-- Botón de Ayuda --}}
+                <div>
+                    <button type="button" class="btn btn-info text-white rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalManualEvidenciasDocente">
+                        <i class="bi bi-question-circle me-1"></i> Ayuda
+                    </button>
+                </div>
+            </div>
         </div>
 
         <section class="section">
@@ -144,10 +155,7 @@
                                                 $evidenciasSubidas = $materia->evidencias;
                                                 $totalRevisiones = $revisiones->where('activo', 1)->count();
 
-                                                // 1. Contamos únicamente las que estén APROBADAS (estado 2) para el avance real
                                                 $cantidadAprobadas = $evidenciasSubidas->where('estado', 2)->count();
-
-                                                // Comprobamos si tiene alguna rechazada (estado 4) para alertar visualmente en la barra
                                                 $tieneRechazadas = $evidenciasSubidas->where('estado', 4)->count() > 0;
 
                                                 $porcentaje =
@@ -208,7 +216,6 @@
                                                             @break
 
                                                             @case(3)
-                                                                {{-- Pendiente: Redirecciona al EDIT --}}
                                                                 <a href="{{ url('/evidencias/edit/' . $evidenciaActual->id) }}"
                                                                     class="d-inline-block"
                                                                     title="Evidencia Pendiente. Click para gestionar u optimizar.">
@@ -219,7 +226,6 @@
                                                             @break
 
                                                             @case(4)
-                                                                {{-- Rechazada: Redirecciona al EDIT --}}
                                                                 <a href="{{ url('/evidencias/edit/' . $evidenciaActual->id) }}"
                                                                     class="d-inline-block"
                                                                     title="Evidencia Rechazada. Click para corregir u observar anomalías.">
@@ -234,7 +240,6 @@
 
                                                 <td class="text-center align-middle">
                                                     @php
-                                                        // Determinación dinámica del color de la barra
                                                         if ($tieneRechazadas) {
                                                             $colorBarra = 'bg-danger';
                                                         } elseif ($porcentaje >= 100) {
@@ -261,162 +266,29 @@
                                                     </div>
                                                 </td>
                                             </tr>
-                                            @empty
-                                                <tr>
-                                                    <td colspan="{{ $revisiones->count() + 3 }}"
-                                                        class="text-center py-5 text-muted">
-                                                        <i class="bi bi-folder-x display-4 d-block mb-3"></i>
-                                                        No existen asignaturas ni evidencias registradas en este bloque.
-                                                    </td>
-                                                </tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
-                                </div>
-
+                                        @empty
+                                            <tr>
+                                                <td colspan="{{ $revisiones->count() + 3 }}"
+                                                    class="text-center py-5 text-muted">
+                                                    <i class="bi bi-folder-x display-4 d-block mb-3"></i>
+                                                    No existen asignaturas ni evidencias registradas en este bloque.
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
                             </div>
+
                         </div>
                     </div>
                 </div>
-            </section>
-        </main>
+            </div>
+        </section>
+    </main>
+    @include('modules.evidencias.manual-index')
 
-        <style>
-            .evidencia-card {
-                border-radius: 24px;
-                overflow: hidden;
-                background: white;
-            }
+@endsection
 
-            .evidencia-header {
-                background: linear-gradient(135deg, #f8fbff, #eef5ff);
-                border-bottom: 1px solid #e8eef7;
-                padding: 25px;
-            }
-
-            .estadoLegend {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 18px;
-            }
-
-            .estadoCard {
-                background: white;
-                border-radius: 18px;
-                padding: 14px 18px;
-                display: flex;
-                align-items: center;
-                gap: 14px;
-                border: 1px solid #e5e7eb;
-                box-shadow: 0 8px 20px rgba(0, 0, 0, .05);
-                transition: .3s ease;
-            }
-
-            .estadoCard:hover {
-                transform: translateY(-4px);
-            }
-
-            .estadoIcon {
-                width: 55px;
-                height: 55px;
-                border-radius: 50%;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                color: white;
-                font-size: 22px;
-                box-shadow: 0 8px 18px rgba(0, 0, 0, .12);
-            }
-
-            .estadoCard h6 {
-                margin: 0;
-                font-weight: 700;
-                font-size: 14px;
-            }
-
-            .estadoCard small {
-                color: #6b7280;
-            }
-
-            .aprobado {
-                background: linear-gradient(135deg, #10b981, #059669);
-            }
-
-            .asignada {
-                background: linear-gradient(135deg, #3b82f6, #2563eb);
-            }
-
-            .pendiente {
-                background: linear-gradient(135deg, #f59e0b, #d97706);
-            }
-
-            .rechazada {
-                background: linear-gradient(135deg, #ef4444, #dc2626);
-            }
-
-            .vacio {
-                background: linear-gradient(135deg, #9ca3af, #6b7280);
-            }
-
-            table thead th {
-                background: linear-gradient(135deg, #0a2342, #102c57) !important;
-                color: white !important;
-                border: none;
-                padding: 16px;
-                text-align: center;
-                vertical-align: middle;
-                font-size: 15px;
-                font-weight: 700;
-            }
-
-            table tbody tr:hover {
-                background: rgba(15, 23, 42, .03);
-            }
-
-            table tbody td {
-                padding: 14px 10px;
-                vertical-align: middle;
-            }
-
-            .estadoBtn {
-                width: 46px;
-                height: 46px;
-                border-radius: 50%;
-                border: none;
-                color: white;
-                font-size: 18px;
-                box-shadow: 0 6px 14px rgba(0, 0, 0, .1);
-                transition: .3s ease;
-            }
-
-            a .estadoBtn:hover {
-                transform: translateY(-3px) scale(1.05);
-                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-            }
-
-            .progress-custom {
-                height: 18px;
-                border-radius: 30px;
-                background: #edf2f7;
-                overflow: hidden;
-            }
-
-            .progress-bar {
-                border-radius: 30px;
-                font-weight: 700;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: width .6s ease;
-            }
-
-            table thead tr th:first-child {
-                border-top-left-radius: 12px;
-            }
-
-            table thead tr th:last-child {
-                border-top-right-radius: 12px;
-            }
-        </style>
-
-    @endsection
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/custom-tables.css') }}">
+@endpush
