@@ -400,8 +400,6 @@ $seguimientoObs = $evaluacionSeguimiento['observaciones'] ?? '';
         </div>
     </section>
 </main>
-
-
 @push('scripts')
     @include('modules.evaluacion.scripts')
 @endpush
