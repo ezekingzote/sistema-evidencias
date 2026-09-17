@@ -167,20 +167,27 @@ class Evidencias extends Controller
                 ->withInput();
         }
 
+        // Validaciones exclusivas para la Cuarta Revisión (Actas, Calificaciones Finales y 2da Oportunidad a 2MB)
         if ($esCuartaRevision) {
-            $reglaArchivosCuarta = 'required|file|mimes:pdf|max:5120';
+            $reglaArchivosCuarta = 'required|file|mimes:pdf|max:2048';
 
             $request->validate([
                 'actas' => $reglaArchivosCuarta,
+                'calificaciones_finales' => $reglaArchivosCuarta,
                 'evidencias_segunda_oportunidad' => 'required|array|min:1',
-                'evidencias_segunda_oportunidad.*' => 'file|mimes:pdf|max:5120',
+                'evidencias_segunda_oportunidad.*' => 'file|mimes:pdf|max:2048',
             ], [
                 'actas.required' => 'El archivo de Actas es obligatorio en la Revisión 4.',
-                'actas.mimes' => 'El archivo de Actas debe estar en formato PDF.',
-                'actas.max' => 'El archivo de Actas no debe pesar más de 5 MB.',
+                'actas.mimes' => 'El archivo de Actas debe estar en formato PDF válido.',
+                'actas.max' => 'El archivo de Actas no debe pesar más de 2 MB.',
+
+                'calificaciones_finales.required' => 'La lista de calificaciones finales es obligatoria en la Revisión 4.',
+                'calificaciones_finales.mimes' => 'La lista de calificaciones finales debe estar en formato PDF válido.',
+                'calificaciones_finales.max' => 'La lista de calificaciones finales no debe pesar más de 2 MB.',
+
                 'evidencias_segunda_oportunidad.required' => 'Debes subir al menos una evidencia de segunda oportunidad.',
-                'evidencias_segunda_oportunidad.*.mimes' => 'Todas las evidencias deben estar en formato PDF.',
-                'evidencias_segunda_oportunidad.*.max' => 'Cada evidencia no debe pesar más de 5 MB.',
+                'evidencias_segunda_oportunidad.*.mimes' => 'Todas las evidencias deben estar en formato PDF válido.',
+                'evidencias_segunda_oportunidad.*.max' => 'Cada evidencia no debe pesar más de 2 MB.',
             ]);
         }
 
@@ -207,8 +214,8 @@ class Evidencias extends Controller
         }
 
         $reglaArchivoGeneral = $esPrimeraRevision
-            ? 'required|file|mimes:pdf|max:5120'
-            : 'nullable|file|mimes:pdf|max:5120';
+            ? 'required|file|mimes:pdf|max:2048'
+            : 'nullable|file|mimes:pdf|max:2048';
 
         $request->validate([
             'materia_id' => 'required|exists:materias,id',
@@ -225,10 +232,10 @@ class Evidencias extends Controller
             'acuerdos' => $reglaArchivoGeneral,
 
             'calificaciones' => $esNingunaUnidad ? 'nullable|array' : 'required|array',
-            'calificaciones.*' => 'file|mimes:pdf|max:5120',
+            'calificaciones.*' => 'file|mimes:pdf|max:2048',
 
             'rac' => 'nullable|array',
-            'rac.*' => 'nullable|file|mimes:pdf|max:5120',
+            'rac.*' => 'nullable|file|mimes:pdf|max:2048',
 
             'rac_na' => 'nullable|array',
             'rac_na.*' => 'nullable|boolean',
@@ -237,14 +244,14 @@ class Evidencias extends Controller
             'analisis_diagnostico' => $reglaArchivoGeneral,
 
             'rubricas' => $esNingunaUnidad ? 'nullable|array' : 'required|array',
-            'rubricas.*' => 'file|mimes:pdf|max:5120',
+            'rubricas.*' => 'file|mimes:pdf|max:2048',
 
             'instrumentos' => 'nullable|array',
             'instrumentos.*' => 'array',
-            'instrumentos.*.*' => 'file|mimes:pdf|max:5120',
+            'instrumentos.*.*' => 'file|mimes:pdf|max:2048',
         ], [
-            '*.mimes' => 'Todos los archivos deben estar en formato PDF.',
-            '*.max' => 'Cada archivo PDF no debe pesar más de 5 MB.',
+            '*.mimes' => 'Todos los archivos deben ser documentos PDF válidos.',
+            '*.max' => 'Cada archivo PDF no debe pesar más de 2 MB.',
 
             'motivo_no_evaluo.required' => 'Debes escribir el motivo por el que no se evaluó ninguna unidad.',
             'motivo_no_evaluo.min' => 'El motivo debe tener al menos 5 caracteres.',
@@ -303,10 +310,17 @@ class Evidencias extends Controller
         $instrumentosGrupales = [];
         $instrumentosNa = false;
 
+        // Almacenamiento de Cuarta Revisión (Actas, Calificaciones Finales y 2da Oportunidad)
         if ($esCuartaRevision) {
             $documentos['acta'] = $request->file('actas')->storeAs(
                 $basePath . '/documentos',
                 'acta_revision_4.pdf',
+                'public'
+            );
+
+            $documentos['calificaciones_finales'] = $request->file('calificaciones_finales')->storeAs(
+                $basePath . '/documentos',
+                'calificaciones_finales_revision_4.pdf',
                 'public'
             );
 

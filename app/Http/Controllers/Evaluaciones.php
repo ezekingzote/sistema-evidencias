@@ -88,8 +88,24 @@ class Evaluaciones extends Controller
         }
 
         if ($esRevision4) {
-            $items[] = ['key' => 'acta', 'nombre' => 'Acta de revisión', 'archivo' => $documentos['acta'] ?? null];
-            $items[] = ['key' => 'segunda_oportunidad', 'nombre' => 'Evidencias de segunda oportunidad', 'archivo' => null, 'archivos_multiples' => $evidencias['segunda_oportunidad'] ?? []];
+            $items[] = [
+                'key' => 'acta',
+                'nombre' => 'Acta de revisión',
+                'archivo' => $documentos['acta'] ?? null
+            ];
+
+            $items[] = [
+                'key' => 'calificaciones_finales',
+                'nombre' => 'Lista de calificaciones finales',
+                'archivo' => $documentos['calificaciones_finales'] ?? null
+            ];
+
+            $items[] = [
+                'key' => 'segunda_oportunidad',
+                'nombre' => 'Evidencias de segunda oportunidad',
+                'archivos_multiples' => $evidencias['segunda_oportunidad'] ?? [],
+                'documento_na' => empty($evidencias['segunda_oportunidad'])
+            ];
         }
 
         return view('modules.evaluacion.index', compact('evidencia', 'items'));

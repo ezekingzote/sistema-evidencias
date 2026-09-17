@@ -8,17 +8,18 @@
             <div class="limiter w-100">
                 <div class="container-login100">
                     <div class="wrap-login100 d-flex align-items-center justify-content-center">
-                        <div class="login100-pic js-tilt" data-tilt>
-                            <img src="{{ asset('Login/img-01.png') }}" alt="Login Image">
+                        <div class="login100-pic js-tilt" data-tilt style="width: 400px; max-width: 95%;">
+                            <img src="{{ asset('Login/img-01.png') }}" alt="Login Image"
+                                style="width: 90%; height: auto; transform: scale(1.15);">
                         </div>
-                        
+
                         <form class="login100-form validate-form" method="POST" action="{{ route('logear') }}">
                             @csrf
 
                             <span class="login100-form-title">
                                 LOGIN DE USUARIO
                             </span>
-                            
+
                             <div class="wrap-input100 validate-input" data-validate="Valid email is required: ex@abc.xyz">
                                 <input class="input100" type="text" name="email" placeholder="Email"
                                     value="{{ old('email') }}">
@@ -27,7 +28,7 @@
                                     <i class="fa fa-envelope" aria-hidden="true"></i>
                                 </span>
                             </div>
-                            
+
                             <div class="wrap-input100 validate-input" data-validate="Password is required">
                                 <input class="input100" type="password" name="password" placeholder="Password">
                                 <span class="focus-input100"></span>
@@ -54,12 +55,13 @@
                                 </div>
                             @endif
                             <div class="text-center pt-4 mt-2">
-                                <a class="text-secondary text-decoration-none d-inline-flex align-items-center fw-semibold small" href="#" data-bs-toggle="modal" data-bs-target="#modalManualLogin">
-                                    <i class="fa fa-question-circle me-1 fs-5 text-success"></i> 
+                                <a class="text-secondary text-decoration-none d-inline-flex align-items-center fw-semibold small"
+                                    href="#" data-bs-toggle="modal" data-bs-target="#modalManualLogin">
+                                    <i class="fa fa-question-circle me-1 fs-5 text-success"></i>
                                     <span class="hover-text-success">¿Necesitas ayuda para ingresar?</span>
                                 </a>
                             </div>
-                            
+
                         </form>
 
                     </div>
@@ -68,9 +70,14 @@
         </section>
     </main>
 
-    @include('modules.auth.manual') 
+    @include('modules.auth.manual')
     <style>
-        .hover-text-success { transition: color 0.3s ease; }
-        a:hover .hover-text-success { color: #198754; /* success color en Bootstrap */ }
+        .hover-text-success {
+            transition: color 0.3s ease;
+        }
+
+        a:hover .hover-text-success {
+            color: #198754;
+        }
     </style>
 @endsection

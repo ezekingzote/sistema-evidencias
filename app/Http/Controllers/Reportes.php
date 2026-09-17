@@ -108,7 +108,7 @@ class Reportes extends Controller
 
     /**
      * Obtiene la evaluación completa para una evidencia, fusionando
-     * los datos de la Revisión 1 cuando la revisión actual no es la 1.
+     * 
      *
      * @param Evidencia $evidencia
      * @return array
@@ -194,8 +194,9 @@ class Reportes extends Controller
             'asiste_seguimiento'   => 'Asiste al seguimiento',
         ];
 
-        // Si es revisión 4, agregamos los dos criterios extra
+        // Si es revisión 4, agregamos calificaciones finales, acta y evidencias de 2da oportunidad
         if ($esRevision4) {
+            $criterios['calificaciones_finales'] = 'Lista de calificaciones finales';
             $criterios['acta'] = 'Acta de revisión';
             $criterios['segunda_oportunidad'] = 'Evidencias de segunda oportunidad';
         }
@@ -223,7 +224,7 @@ class Reportes extends Controller
                 'evaluacion'     => $evaluacion,
                 'criterios'      => $criterios,
                 'promedioFinal'  => $promedioFinal,
-                'admin'          => Auth::user(), // El administrador que genera el reporte
+                'admin'          => Auth::user(),
             ]
         );
 
@@ -264,7 +265,9 @@ class Reportes extends Controller
             'asiste_seguimiento'   => 'Asiste al seguimiento',
         ];
 
+        // Si es revisión 4, agregamos calificaciones finales, acta y evidencias de 2da oportunidad
         if ($esRevision4) {
+            $criterios['calificaciones_finales'] = 'Lista de calificaciones finales';
             $criterios['acta'] = 'Acta de revisión';
             $criterios['segunda_oportunidad'] = 'Evidencias de segunda oportunidad';
         }

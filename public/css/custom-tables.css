@@ -872,3 +872,279 @@ table thead tr th:first-child {
 table thead tr th:last-child {
     border-top-right-radius: 12px;
 }
+
+
+/* ==========================================================================
+                       1. ESTILOS BASE DEL CONTENEDOR PRINCIPAL (CONSISTENCIA VISUAL)
+                       ========================================================================== */
+                       
+.usuario-card {
+    border-radius: 22px !important;
+    background: #ffffff;
+}
+
+.custom-input {
+    min-height: 50px;
+    border-radius: 12px !important;
+    border: 1px solid #dee2e6;
+    padding-left: 14px;
+}
+
+.custom-input-sm {
+    min-height: 36px !important;
+    border-radius: 10px !important;
+    border: 1px solid #dee2e6;
+    font-size: 13px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.15);
+}
+
+.header-icon-box {
+    width: 45px;
+    height: 45px;
+    flex-shrink: 0;
+}
+
+.btn {
+    transition: 0.25s;
+    font-weight: 600;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 10px 20px rgba(13, 110, 253, 0.20);
+}
+
+/* ==========================================================================
+                       2. DROPZONE E INPUTS DINÁMICOS
+                       ========================================================================== */
+.style-dropzone input[type="file"] {
+    display: none !important;
+}
+
+.style-dropzone .row.align-items-center {
+    background-color: #f8f9fa;
+    border: 1px dashed #dee2e6;
+    border-radius: 0.5rem;
+}
+
+.border-dashed {
+    border-style: dashed !important;
+    border-color: #ced4da !important;
+}
+
+/* ==========================================================================
+                       3. FORZAR 7 CARDS EN UNA SOLA FILA (NUEVO AJUSTE)
+                       ========================================================================== */
+/* Asegúrate de ponerle el id "contenedor_tarjetas_unidades" al div padre */
+#contenedor_tarjetas_unidades {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    /* Evita que salten de línea */
+    gap: 10px !important;
+    /* Espaciado controlado entre las 7 cards */
+    overflow-x: auto;
+    /* Si la pantalla es muy chica, permite scroll horizontal en vez de romperse */
+    padding-bottom: 5px;
+}
+
+/* Modificación de las tarjetas para que se repartan el espacio equitativamente */
+#contenedor_tarjetas_unidades>div {
+    flex: 1 1 0% !important;
+    /* Fuerza a las 7 a medir exactamente lo mismo */
+    min-width: 100px;
+    /* Evita que se colapsen por completo */
+    width: auto !important;
+}
+
+.card-unidad-check {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid #dee2e6 !important;
+    padding: 12px 8px !important;
+    /* Padding vertical óptimo y horizontal recortado */
+    font-size: 13px;
+    /* Texto ligeramente más compacto para que entre el título */
+    text-align: center;
+    height: 100%;
+    /* Mismo alto para todas */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-unidad-check:hover {
+    border-color: #0d6efd !important;
+    background-color: #f8f9fa;
+}
+
+.card-unidad-check.active {
+    border-color: #198754 !important;
+    background-color: #f0fdf4;
+}
+
+/* Achicar un poco los iconos decorativos de tu imagen */
+.card-unidad-check i,
+.card-unidad-check svg {
+    font-size: 20px !important;
+    margin-bottom: 6px;
+}
+
+/* ==========================================================================
+                       4. COMPONENTES INTERNOS DE LAS TARJETAS
+                       ========================================================================== */
+.rac-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+}
+
+.rac-row .unidad-badge {
+    min-width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin-top: 2px;
+    font-size: 13px;
+}
+
+.rac-row .rac-file-wrapper {
+    flex: 1;
+}
+
+.rac-row .rac-file {
+    width: 100%;
+    min-height: 36px !important;
+    font-size: 13px;
+    padding: 4px 10px;
+}
+
+.rac-file:disabled {
+    background-color: #e9ecef !important;
+    cursor: not-allowed;
+    opacity: 0.75;
+}
+
+.rac-na-box {
+    min-width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 999px;
+    padding: 4px 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    margin-top: 2px;
+}
+
+.rac-na-box .form-check-input {
+    margin-top: 0;
+    cursor: pointer;
+    width: 0.9em;
+    height: 0.9em;
+}
+
+.rac-na-box .form-check-label {
+    cursor: pointer;
+    user-select: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+}
+
+.motivo-no-unidad-box {
+    background-color: #f8f9fa;
+    border: 1px dashed #ced4da;
+    border-radius: 12px;
+    padding: 10px;
+    margin-top: 6px !important;
+}
+
+.motivo-no-unidad-box textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-size: 13px;
+}
+
+/* ==========================================================================
+                       5. ANIMACIONES Y COLAPSO
+                       ========================================================================== */
+.dropzone-body-collapse {
+    transition: max-height 0.35s ease, opacity 0.3s ease;
+    max-height: 500px;
+    opacity: 1;
+    overflow: hidden;
+}
+
+.dropzone-body-collapse.collapsed {
+    max-height: 0px !important;
+    opacity: 0 !important;
+    pointer-events: none;
+}
+
+.btn-minimizar {
+    transition: transform 0.25s ease;
+}
+
+.btn-minimizar.rotated {
+    transform: rotate(-180deg);
+}
+
+.archivo-cargado-item {
+    animation: fadeInItem 0.25s ease-out forwards;
+}
+
+.btn-eliminar-archivo:hover {
+    background-color: #fde8e8 !important;
+    color: #dc3545 !important;
+}
+
+@keyframes fadeInItem {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================================================
+                       6. RESPONSIVE (Móviles vuelven a bloque para que no se aplasten)
+                       ========================================================================== */
+@media (max-width: 768px) {
+    #contenedor_tarjetas_unidades {
+        flex-wrap: wrap !important;
+        /* En celulares sí permite bajar de línea para que sea usable */
+    }
+
+    #contenedor_tarjetas_unidades>div {
+        flex: 1 1 45% !important;
+        /* Se ponen de 2 en 2 en pantallas chicas */
+    }
+
+    .rac-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .rac-na-box {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
