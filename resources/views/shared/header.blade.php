@@ -58,9 +58,15 @@
 
             <li class="nav-item dropdown pe-3">
 
+                @php
+                $usuario = Auth::user();
+                $esAdmin = $usuario && $usuario->rol === 'admin';
+                $rolActivo = session('rol_activo', $usuario->rol ?? 'docente');
+                @endphp
+
                 <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
                     <span class="d-none d-md-block dropdown-toggle ps-2">
-                        {{ Auth::user()->name }}
+                        {{ $usuario->name }}
                     </span>
 
                     <img src="{{ asset('NiceAdmin/assets/img/user.png') }}"
@@ -70,16 +76,34 @@
 
                 <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
                     <li class="dropdown-header">
-                        <h6>{{ Auth::user()->name }}</h6>
-                        <span>{{ Auth::user()->rol }}</span>
+                        <h6>{{ $usuario->name }}</h6>
+                        <span>{{ $usuario->rol }}</span>
                     </li>
                     <li>
                         <hr class="dropdown-divider">
                     </li>
 
+                    {{-- ── Solo visible para admins ── --}}
+                    @if ($esAdmin)
+                    <li>
+                        <form action="{{ route('cambiar-modo') }}" method="POST" class="m-0">
+                            @csrf
+                            <button type="submit" class="dropdown-item d-flex align-items-center">
+                                @if ($rolActivo === 'admin')
+                                <i class="bi bi-mortarboard"></i>
+                                <span>Cambiar a modo Docente</span>
+                                @else
+                                <i class="bi bi-shield-lock"></i>
+                                <span>Volver a modo Admin</span>
+                                @endif
+                            </button>
+                        </form>
+                    </li>
+
                     <li>
                         <hr class="dropdown-divider">
                     </li>
+                    @endif
 
                     <li>
                         <a class="dropdown-item d-flex align-items-center" href="#" data-bs-toggle="modal"

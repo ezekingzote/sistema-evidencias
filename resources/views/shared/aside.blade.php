@@ -1,8 +1,13 @@
 <aside id="sidebar" class="sidebar">
 
+    @php
+    // Modo activo (admin o docente). Por defecto el rol real.
+    $rolActivo = session('rol_activo', auth()->user()->rol);
+    @endphp
+
     <ul class="sidebar-nav" id="sidebar-nav">
 
-        @if(auth()->user()->rol == 'admin')
+        @if($rolActivo == 'admin')
         <li class="nav-heading">Panel Administrativo</li>
 
         <li class="nav-item">
@@ -87,7 +92,7 @@
         @endif
 
 
-        @if(auth()->user()->rol == 'docente')
+        @if($rolActivo == 'docente')
         <li class="nav-heading">Panel del Docente</li>
 
         <li class="nav-item">

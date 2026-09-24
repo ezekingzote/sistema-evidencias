@@ -21,7 +21,7 @@
 
                         <li class="breadcrumb-item">
                             <a href="{{ route('home') }}"
-                               class="text-decoration-none text-secondary">
+                                class="text-decoration-none text-secondary">
                                 Home
                             </a>
                         </li>
@@ -40,7 +40,7 @@
             </div>
 
             <a href="{{ route('asignar-materias.create') }}"
-               class="btn btn-primary rounded-pill px-4 shadow-sm">
+                class="btn btn-primary rounded-pill px-4 shadow-sm">
 
                 <i class="fa-solid fa-plus me-2"></i>
                 Nueva Asignación
@@ -85,9 +85,10 @@
 
                 <div class="table-responsive">
 
+                    {{-- 👇 ID único, sin clase .datatable para que el layout NO la toque --}}
                     <table
-                        class="table table-hover align-middle text-center custom-table datatable"
-                    >
+                        id="tabla_asignaciones"
+                        class="table table-hover align-middle text-center custom-table">
 
                         <thead>
                             <tr>
@@ -118,7 +119,6 @@
 </main>
 
 <style>
-
     .asignaciones-card {
         border-radius: 22px;
         overflow: hidden;
@@ -207,7 +207,6 @@
     .btn:hover {
         transform: translateY(-2px);
     }
-
 </style>
 
 @endsection
@@ -216,7 +215,39 @@
 @push('scripts')
 
 <script>
+    // ─────────────────────────────────────────────────────────
+    //  Inicializa DataTables sobre #tabla_asignaciones
+    // ─────────────────────────────────────────────────────────
+    function initDataTable() {
 
+        const $tabla = $('#tabla_asignaciones');
+
+        // Si ya existe, destruirla primero
+        if ($.fn.DataTable.isDataTable($tabla)) {
+            $tabla.DataTable().destroy();
+        }
+
+        // Contar filas reales (excluir .fila-vacia)
+        const hayFilas = $('#tbody_asignaciones tr').not('.fila-vacia').length > 0;
+
+        if (!hayFilas) return;
+
+        // Inicializar con las MISMAS opciones que usa tu layout
+        $tabla.DataTable({
+            layout: {
+                topStart: {
+                    buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+                }
+            },
+            language: {
+                url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-MX.json"
+            }
+        });
+    }
+
+    // ─────────────────────────────────────────────────────────
+    //  Recargar tbody + re-inicializar DataTables
+    // ─────────────────────────────────────────────────────────
     function recargar_tbody() {
 
         $.ajax({
@@ -227,7 +258,15 @@
 
             success: function(respuesta) {
 
+                const $tabla = $('#tabla_asignaciones');
+
+                if ($.fn.DataTable.isDataTable($tabla)) {
+                    $tabla.DataTable().destroy();
+                }
+
                 $('#tbody_asignaciones').html(respuesta);
+
+                initDataTable();
 
             }
 
@@ -235,53 +274,59 @@
 
     }
 
+    // ─────────────────────────────────────────────────────────
+    //  Cambiar estado activo/inactivo
+    // ─────────────────────────────────────────────────────────
     function cambiar_estado(id, estado) {
 
         fetch("{{ route('asignar-materias.estado') }}", {
 
-            method: 'POST',
+                method: 'POST',
 
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
 
-            body: JSON.stringify({
-                id: id,
-                estado: estado
+                body: JSON.stringify({
+                    id: id,
+                    estado: estado
+                })
+
             })
 
-        })
+            .then(res => res.json())
 
-        .then(res => res.json())
+            .then(data => {
 
-        .then(data => {
+                if (data.success) {
 
-            if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Logrado!',
+                        text: data.mensaje,
+                        confirmButtonText: 'Entendido'
+                    });
 
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Logrado!',
-                    text: data.mensaje,
-                    confirmButtonText: 'Entendido'
-                });
+                }
 
-            }
+                recargar_tbody();
 
-            recargar_tbody();
+            })
 
-        })
+            .catch(error => {
 
-        .catch(error => {
+                console.error('Error:', error);
 
-            console.error('Error:', error);
+                recargar_tbody();
 
-            recargar_tbody();
-
-        });
+            });
 
     }
 
+    // ─────────────────────────────────────────────────────────
+    //  Switch de estado
+    // ─────────────────────────────────────────────────────────
     $('#tbody_asignaciones').on("change", ".chkToggle", function() {
 
         let id = $(this).data("id");
@@ -292,6 +337,14 @@
 
     });
 
+    // ─────────────────────────────────────────────────────────
+    //  Al cargar la página
+    // ─────────────────────────────────────────────────────────
+    $(document).ready(function() {
+
+        initDataTable();
+
+    });
 </script>
 
 @endpush

@@ -12,7 +12,6 @@ use App\Http\Controllers\Materias;
 use App\Http\Controllers\Pdfs;
 use App\Http\Controllers\PlanesEstudio;
 use App\Http\Controllers\Reportes;
-use App\Http\Controllers\SeguimientoDocentes;
 use App\Http\Controllers\Revisiones;
 use App\Http\Controllers\SeguimientoAcademico;
 use App\Http\Controllers\Semestres;
@@ -28,6 +27,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::put('/update-password', [AuthController::class, 'updatePassword'])->name('password.update');
+    Route::post('/cambiar-modo', [AuthController::class, 'cambiarModo'])->name('cambiar-modo');
 
     // ==========================================
     // RUTAS COMPARTIDAS (ADMIN Y DOCENTE)
@@ -96,7 +96,7 @@ Route::middleware('auth')->group(function () {
             Route::delete('/destroy/{id}', [Materias::class, 'destroy'])->name('materias.destroy');
             Route::post('/estado', [Materias::class, 'estado'])->name('materias.estado.ajax');
             Route::get('materias/buscar', [Materias::class, 'buscar'])->name('materias.buscar');
-            Route::get('/unidades/{materia}',[Evidencias::class, 'unidadesDisponibles']);
+            Route::get('/unidades/{materia}', [Evidencias::class, 'unidadesDisponibles']);
         });
 
         Route::prefix('revisiones')->group(function () {

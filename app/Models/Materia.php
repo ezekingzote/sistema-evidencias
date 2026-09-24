@@ -36,7 +36,19 @@ use Laravel\Scout\Searchable;
 class Materia extends Model
 {
     use Searchable;
+
     protected $table = 'materias';
+
+    // ✅ ANTES NO LO TENÍA: se lo agregamos (era necesario para que create/update funcionen)
+    protected $fillable = [
+        'nombre',
+        'clave',
+        'unidades',
+        'semestre',
+        'carrera',
+        'activo',
+        'num_grupos',   // ← agregado
+    ];
 
     public function semestres()
     {
@@ -45,12 +57,12 @@ class Materia extends Model
             ->withTimestamps();
     }
 
-
     public function asignaciones()
     {
         return $this->hasMany(AsignacionMateria::class, 'materia_id');
     }
 
+    // ✅ ESTA ES LA QUE FALTABA EN MI VERSIÓN ANTERIOR
     public function evidencias()
     {
         return $this->hasMany(Evidencia::class, 'materia_id');
