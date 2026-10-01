@@ -11,50 +11,28 @@ return new class extends Migration
         Schema::create('asignacion_materias', function (Blueprint $table) {
             $table->id();
 
-            // ─── Relaciones ────────────────────────────────────────────
-            $table->foreignId('materia_id')
-                ->constrained('materias')
-                ->cascadeOnDelete();
-
-            // ⚠️ Apunta a 'docentes' porque el modelo AsignacionMateria
-            //    usa Docente::class y el controlador envía $docente->id
+            $table->foreignId('materia_id')->constrained()->cascadeOnDelete();
             $table->foreignId('docente_id')
-                ->constrained('users')
-                ->cascadeOnDelete();
+                ->constrained('docentes')
+                ->onDelete('cascade');
+            $table->foreignId('semestre_id')->constrained()->cascadeOnDelete();
 
-            $table->foreignId('semestre_id')
-                ->constrained('semestres')
-                ->cascadeOnDelete();
-
-            // ─── Datos del grupo ───────────────────────────────────────
-            // Ej: "SIS-5"  (grupo único)  o  "SIS-5-A"  (varios grupos)
             $table->string('grupo', 20);
+            $table->string('alumnos', 20);
 
-            $table->unsignedSmallInteger('alumnos')->default(1);
+            $table->boolean('activo')->default(1);
+            $table->boolean('asignada')->default(0);
 
-            // ─── Estado ────────────────────────────────────────────────
-            $table->boolean('activo')->default(true);
-            $table->boolean('asignada')->default(false);
-
-            // ─── Timestamps estándar ───────────────────────────────────
-            $table->timestamps();
-
-            // ─── Restricciones e índices ───────────────────────────────
-            $table->unique(
-                ['materia_id', 'semestre_id', 'grupo'],
-                'asignacion_unica_grupo'
-            );
-
-            $table->index('docente_id', 'idx_asig_docente');
-            $table->index(
-                ['semestre_id', 'materia_id', 'activo'],
-                'idx_asig_sem_mat_act'
-            );
+            $table->datetime('created_at')->nullable();
+            $table->datetime('updated_at')->nullable();
         });
     }
 
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('asignacion_materias');
+        Schema::table('asignacion_materias', function (Blueprint $table) {
+            $table->dropForeign(['docente_id']);
+            $table->dropColumn('docente_id');
+        });
     }
 };

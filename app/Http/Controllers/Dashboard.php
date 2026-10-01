@@ -46,9 +46,21 @@ class Dashboard extends Controller
 
     public function indexDocente()
     {
+        // 1. FORZAMOS EL CAMBIO DE MODO EN LA SESIÓN
+        session(['panel_activo' => 'docente']);
+
         $titulo = 'Dashboard';
 
-        $docenteId = Auth::id();
+        // Obtenemos el perfil docente del usuario autenticado
+        $docente = Auth::user()->docente;
+
+        // Validación de seguridad: si no tiene perfil docente, no puede ver este dashboard
+        if (!$docente) {
+            return redirect()->route('home')->with('error', 'No tienes un perfil docente configurado.');
+        }
+
+        // Usamos el ID de la tabla 'docentes' para filtrar todo lo académico
+        $docenteId = $docente->id;
 
         $totalEvidencias = Evidencia::whereHas('asignacion', function ($q) use ($docenteId) {
             $q->where('docente_id', $docenteId);

@@ -33,7 +33,7 @@ class AsignacionMateria extends Model
     // ✅ Ahora apunta a User, no a Docente
     public function docente()
     {
-        return $this->belongsTo(User::class, 'docente_id');
+        return $this->belongsTo(Docente::class, 'docente_id');
     }
 
     public function semestre()

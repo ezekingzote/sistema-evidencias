@@ -13,7 +13,8 @@
         style="display:none;">
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    {{-- CABECERA CON BOTÓN DE AYUDA ALINEADO A LA DERECHA --}}
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
             <h3 class="fw-bold text-dark mb-1">
                 @if($rutaActual)
@@ -35,16 +36,26 @@
                     </li>
 
                     @php $rutaAcumulada = ''; @endphp
+
                     @foreach($breadcrumbs as $crumb)
                     @php $rutaAcumulada .= ($rutaAcumulada ? '/' : '') . $crumb; @endphp
+
                     <li class="breadcrumb-item active">
-                        <a href="{{ route('archivos', ['ruta' => $rutaAcumulada]) }}" class="text-decoration-none text-capitalize">
+                        <a href="{{ route('archivos', ['ruta' => $rutaAcumulada]) }}"
+                            class="text-decoration-none text-capitalize">
                             {{ $crumb }}
                         </a>
                     </li>
                     @endforeach
                 </ol>
             </nav>
+        </div>
+
+        {{-- BOTÓN DE AYUDA --}}
+        <div>
+            <button type="button" class="btn btn-info text-white rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalManualMiUnidad">
+                <i class="bi bi-question-circle me-1"></i> Ayuda
+            </button>
         </div>
     </div>
 
@@ -60,22 +71,38 @@
                 @if(count($carpetas) > 0)
                 <div class="row g-3">
                     @foreach($carpetas as $carpeta)
+                    {{-- IGNORAR CARPETAS OCULTAS --}}
+                    @if(str_starts_with($carpeta['nombre'], '.'))
+                        @continue
+                    @endif
+
                     <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
                         <div class="card folder-card border-0 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between folder-link"
                             data-url="{{ route('archivos', ['ruta' => $carpeta['ruta_completa']]) }}">
 
-                            <div class="d-flex align-items-center truncate-box">
-                                <i class="bi bi-folder-fill text-warning fs-3 me-3"></i>
-                                <span class="fw-semibold text-dark text-truncate small">
-                                    {{ $carpeta['nombre'] }}
-                                </span>
+                            <div class="folder-main d-flex align-items-center truncate-box">
+                                <div class="folder-icon-box me-3">
+                                    <i class="bi bi-folder-fill"></i>
+                                </div>
+
+                                <div class="folder-text-box">
+                                    <span class="fw-semibold text-dark text-truncate small d-block">
+                                        {{ $carpeta['nombre'] }}
+                                    </span>
+
+                                    <span class="folder-hint">
+                                        Abrir carpeta
+                                    </span>
+                                </div>
                             </div>
 
                             <a href="{{ route('carpetas.zip', ['ruta' => $carpeta['ruta_completa']]) }}"
-                                class="btn btn-sm btn-light border rounded-pill d-flex align-items-center justify-content-center download-zip-btn"
-                                title="Descargar en ZIP"
+                                class="btn btn-sm rounded-pill d-flex align-items-center justify-content-center download-zip-btn"
+                                title="Descargar carpeta en ZIP"
+                                aria-label="Descargar carpeta en ZIP"
                                 onclick="event.stopPropagation();">
-                                <i class="bi bi-file-earmark-zip-fill text-secondary fs-5"></i>
+                                <i class="bi bi-file-earmark-zip-fill zip-icon"></i>
+                                <span class="zip-label">ZIP</span>
                             </a>
                         </div>
                     </div>
@@ -95,22 +122,32 @@
                 @if(count($archivos) > 0)
                 <div class="row g-4">
                     @foreach($archivos as $archivo)
+                    {{-- IGNORAR ARCHIVOS OCULTOS --}}
+                    @if(str_starts_with($archivo['nombre'], '.'))
+                        @continue
+                    @endif
+
                     @php
                     $rutaSegura = base64_encode($archivo['ruta_completa']);
                     $urlVerPdf = route('archivos.ver', ['ruta' => $rutaSegura]);
                     @endphp
+
                     <div class="col-xl-3 col-lg-4 col-md-6">
                         <div class="card file-card border-0 shadow-sm">
                             <div class="file-preview">
 
                                 {{-- IMÁGENES --}}
                                 @if(in_array($archivo['extension'], ['jpg', 'jpeg', 'png', 'gif', 'webp']))
-                                <img src="{{ asset('storage/' . $archivo['ruta_completa']) }}" class="w-100 h-100 object-fit-cover" alt="">
+                                <img src="{{ asset('storage/' . $archivo['ruta_completa']) }}"
+                                    class="w-100 h-100 object-fit-cover"
+                                    alt="">
 
                                 {{-- PDF: VISTA PEQUEÑA DEL CONTENIDO REAL --}}
                                 @elseif($archivo['extension'] === 'pdf')
                                 <div class="w-100 h-100 position-relative iframe-container">
-                                    <embed src="{{ $urlVerPdf }}#toolbar=0&navpanes=0&scrollbar=0" type="application/pdf" class="w-100 h-100 pointer-events-none">
+                                    <embed src="{{ $urlVerPdf }}#toolbar=0&navpanes=0&scrollbar=0"
+                                        type="application/pdf"
+                                        class="w-100 h-100 pointer-events-none">
                                     <div class="iframe-overlay"></div>
                                 </div>
 
@@ -142,25 +179,31 @@
                                 <p class="small fw-semibold text-truncate mb-1" title="{{ $archivo['nombre'] }}">
                                     {{ $archivo['nombre'] }}
                                 </p>
-                                <p class="text-muted x-small mb-3">{{ $archivo['tamano'] }} • {{ $archivo['fecha'] }}</p>
+
+                                <p class="text-muted x-small mb-3">
+                                    {{ $archivo['tamano'] }} • {{ $archivo['fecha'] }}
+                                </p>
 
                                 <div class="d-flex justify-content-between align-items-center">
 
-                                    {{-- BOTÓN CON DATA-ATTRIBUTES (Cero conflictos de comillas en JS) --}}
+                                    {{-- BOTÓN CON DATA-ATTRIBUTES --}}
                                     @if($archivo['extension'] === 'pdf')
                                     <button type="button"
                                         class="btn btn-sm btn-outline-primary rounded-pill px-3 btn-preview-pdf"
                                         data-url="{{ $urlVerPdf }}"
                                         data-name="{{ $archivo['nombre'] }}">
-                                        <i class="fa-regular fa-eye"></i>  Vista Previa
+                                        <i class="fa-regular fa-eye"></i> Vista Previa
                                     </button>
                                     @else
-                                    <a href="{{ asset('storage/' . $archivo['ruta_completa']) }}" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3">
+                                    <a href="{{ asset('storage/' . $archivo['ruta_completa']) }}"
+                                        target="_blank"
+                                        class="btn btn-sm btn-primary rounded-pill px-3">
                                         Abrir
                                     </a>
                                     @endif
 
-                                    <a href="{{ route('archivos.descargar', ['ruta' => $rutaSegura]) }}" class="btn btn-sm btn-light border rounded-pill px-3">
+                                    <a href="{{ route('archivos.descargar', ['ruta' => $rutaSegura]) }}"
+                                        class="btn btn-sm btn-light border rounded-pill px-3">
                                         <i class="bi bi-download"></i>
                                     </a>
                                 </div>
@@ -177,117 +220,14 @@
         </div>
     </div>
 </main>
-
-<script>
-    // Manejo seguro del click para abrir SweetAlert2 sin romper comillas HTML
-    document.querySelectorAll('.btn-preview-pdf').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const pdfUrl = this.getAttribute('data-url');
-            const pdfName = this.getAttribute('data-name');
-
-            Swal.fire({
-                title: `<span class="fs-5 text-dark fw-bold text-truncate d-block px-3">${pdfName}</span>`,
-                html: `
-                    <div style="width: 100%; height: 72vh; overflow: hidden; border-radius: 8px; border: 1px solid #dee2e6;">
-                        <iframe src="${pdfUrl}#toolbar=1" width="100%" height="100%" style="border: none;"></iframe>
-                    </div>
-                `,
-                width: '85%',
-                showCloseButton: true,
-                showConfirmButton: false,
-                focusConfirm: false,
-                customClass: {
-                    popup: 'rounded-4 shadow-lg'
-                }
-            });
-        });
-    });
-
-    // Redirección de carpetas
-    document.querySelectorAll('.folder-link').forEach(folder => {
-        folder.addEventListener('click', function() {
-            window.location.href = this.getAttribute('data-url');
-        });
-    });
-</script>
-
-<style>
-    .folder-card {
-        border: 1px solid #dadce0 !important;
-        border-radius: 14px;
-        transition: all .2s ease;
-        cursor: pointer;
-        background: white;
-    }
-
-    .folder-card:hover {
-        background: #f1f3f4;
-        transform: translateY(-2px);
-    }
-
-    .download-zip-btn {
-        padding: 6px 10px;
-    }
-
-    .download-zip-btn:hover {
-        background: #e8eaed !important;
-        color: #000 !important;
-    }
-
-    .file-card {
-        border: 1px solid #dadce0 !important;
-        border-radius: 14px;
-        overflow: hidden;
-        transition: all .2s ease;
-        background: white;
-    }
-
-    .file-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, .08);
-    }
-
-    .file-preview {
-        height: 160px;
-        background: #f8f9fa;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-bottom: 1px solid #f1f3f4;
-    }
-
-    .iframe-container {
-        position: relative;
-        width: 100%;
-        height: 100%;
-    }
-
-    .iframe-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0);
-        z-index: 10;
-    }
-
-    .pointer-events-none {
-        pointer-events: none;
-    }
-
-    .object-fit-cover {
-        object-fit: cover;
-    }
-
-    .truncate-box {
-        min-width: 0;
-    }
-
-    .x-small {
-        font-size: 11px;
-    }
-</style>
+@include('modules.archivos.manual')
 
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/custom-tables.css') }}">
+@endpush
+
+@push('scripts')
+    @include('modules.archivos.scripts')
+@endpush

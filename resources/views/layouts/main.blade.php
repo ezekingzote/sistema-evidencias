@@ -55,6 +55,7 @@
   * Author: BootstrapMade.com
   * License: https://bootstrapmade.com/license/
   ======================================================== -->
+  @stack('styles')
 </head>
 
 <body>
@@ -116,8 +117,6 @@
                 }
             });
 
-            // 1. Capturamos los mensajes de Laravel en variables de JS
-            // Usamos el operador ternario de PHP para evitar que JS reciba un null
             const successMessage = "{{ session('success') }}";
             const errorMessage = "{{ session('error') }}";
             if (successMessage) {

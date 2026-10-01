@@ -9,9 +9,11 @@ use App\Http\Controllers\Evaluaciones;
 use App\Http\Controllers\Evidencias;
 use App\Http\Controllers\Imagenes;
 use App\Http\Controllers\Materias;
+use App\Http\Controllers\PanelController;
 use App\Http\Controllers\Pdfs;
 use App\Http\Controllers\PlanesEstudio;
 use App\Http\Controllers\Reportes;
+use App\Http\Controllers\SeguimientoDocentes;
 use App\Http\Controllers\Revisiones;
 use App\Http\Controllers\SeguimientoAcademico;
 use App\Http\Controllers\Semestres;
@@ -27,12 +29,16 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::put('/update-password', [AuthController::class, 'updatePassword'])->name('password.update');
-    Route::post('/cambiar-modo', [AuthController::class, 'cambiarModo'])->name('cambiar-modo');
+    Route::post('/cambiar-panel/{panel}', [PanelController::class, 'cambiar'])
+        ->name('cambiar.panel');
+    Route::get('/notificaciones/marcar-leidas', function () {
+        auth()->user()->unreadNotifications->markAsRead();
+        return back();
+    })->name('marcar-leidas');
 
     // ==========================================
     // RUTAS COMPARTIDAS (ADMIN Y DOCENTE)
     // ==========================================
-    // Al dejarlas aquí, cualquier usuario logueado (Admin o Docente) podrá ver y descargar archivos
     Route::prefix('archivos')->group(function () {
         Route::get('/', [Archivos::class, 'index'])->name('archivos');
         Route::get('/carpetas/download-zip', [Archivos::class, 'descargarCarpetaZip'])->name('carpetas.zip');
@@ -45,7 +51,6 @@ Route::middleware('auth')->group(function () {
     // ==========================================
     Route::middleware('Checkrol:admin')->group(function () {
         Route::get('/home', [Dashboard::class, 'index'])->name('home');
-
         Route::prefix('semestres')->group(function () {
             Route::get('/', [Semestres::class, 'index'])->name('semestres');
             Route::get('/create', [Semestres::class, 'create'])->name('semestre.create');
@@ -77,6 +82,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [AsignarMaterias::class, 'index'])->name('asignar-materias');
             Route::get('/tbody', [AsignarMaterias::class, 'tbody'])->name('asignar-materias.tbody');
             Route::get('/create', [AsignarMaterias::class, 'create'])->name('asignar-materias.create');
+            Route::get('/materias/siguiente-grupo', [AsignarMaterias::class, 'siguienteGrupo'])->name('materias.siguiente-grupo');
             Route::post('/store', [AsignarMaterias::class, 'store'])->name('asignar-materias.store');
             Route::get('/edit/{id}', [AsignarMaterias::class, 'edit'])->name('asignar-materias.edit');
             Route::put('/update/{id}', [AsignarMaterias::class, 'update'])->name('asignar-materias.update');
@@ -112,12 +118,14 @@ Route::middleware('auth')->group(function () {
         Route::prefix('evaluar-evidencias')->group(function () {
             Route::get('/{id}', [Evaluaciones::class, 'show'])->name('evaluaciones.show');
             Route::put('/{id}', [Evaluaciones::class, 'update'])->name('evaluaciones.update');
+            Route::post('/{id}/autosave', [Evaluaciones::class, 'autoSave'])->name('evaluaciones.autosave');
+            Route::delete('/eliminar/{id}', [Evidencias::class, 'destroy'])->name('evaluaciones.destroy')->defaults('force', true);
+            Route::post('/rechazar-sin-evidencia',[Evidencias::class, 'rechazarSinEvidencia'])->name('evaluaciones.rechazarSinEvidencia');
         });
 
         Route::prefix('reportes')->group(function () {
             Route::get('/', [Reportes::class, 'index'])->name('reportes');
             Route::get('/{id}', [Reportes::class, 'reportePdf'])->name('reportes-generar');
-            Route::get('/vacio/{materia}/{revision}', [Reportes::class, 'reporteVacio'])->name('reportes-vacio');
         });
 
         Route::prefix('imagenes')->group(function () {
@@ -131,7 +139,6 @@ Route::middleware('auth')->group(function () {
     // ==========================================
     Route::middleware('Checkrol:docente')->group(function () {
         Route::get('/dashboard', [Dashboard::class, 'indexDocente'])->name('dashboard');
-
         Route::prefix('mis-materias')->group(function () {
             Route::get('/', [Materias::class, 'misMaterias'])->name('mis-materias');
         });
@@ -155,12 +162,7 @@ Route::middleware('auth')->group(function () {
         });
 
         Route::prefix('mis-reportes')->group(function () {
-            Route::get('/{id}', [Reportes::class, 'reportePdfDocente'])->name('mis-reportes.pdf');
+            Route::get('/{id}', [Reportes::class, 'reportePdfDocente'])->name('mis-reportes');
         });
-
-        Route::get('/notificaciones/marcar-leidas', function () {
-            auth()->user()->unreadNotifications->markAsRead();
-            return back();
-        })->name('marcar-leidas');
     });
 });

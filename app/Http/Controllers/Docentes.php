@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Docente;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\DataTables;
 
 class Docentes extends Controller
@@ -20,16 +22,71 @@ class Docentes extends Controller
 
     public function data()
     {
-        $query = User::orderBy('id', 'ASC');
+        $query = User::query()
+            ->leftJoin('docentes', 'docentes.user_id', '=', 'users.id')
+            ->select([
+                'users.id',
+                'users.name',
+                'users.email',
+                'users.rol',
+                'docentes.celular as celular',
+                'docentes.departamento as departamento',
+                'docentes.cargo as cargo',
+                'docentes.activo as docente_activo',
+            ])
+            ->orderBy('users.id', 'ASC');
 
         return DataTables::of($query)
+
+            ->filter(function ($query) {
+                $search = request('search.value');
+
+                if (!empty($search)) {
+                    $search = strtolower($search);
+
+                    $query->where(function ($q) use ($search) {
+                        $q->whereRaw('LOWER(users.name) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(users.email) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(users.rol) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(docentes.celular) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(docentes.departamento) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(docentes.cargo) LIKE ?', ["%{$search}%"]);
+                    });
+                }
+            })
+
+            ->addColumn('nombre', function ($row) {
+                return strtoupper($row->name);
+            })
 
             ->editColumn('celular', function ($row) {
                 return $row->celular ?: 'Sin número';
             })
 
-            ->addColumn('nombre', function ($row) {
-                return strtoupper($row->name);
+            ->addColumn('departamento', function ($row) {
+                return $row->departamento ?: 'Sin departamento';
+            })
+
+            ->editColumn('cargo', function ($row) {
+                $cargo = $row->cargo ?: 'SIN CARGO';
+
+                if ($row->rol === 'admin') {
+                    return '<span class="badge bg-danger-subtle text-danger border border-danger">'
+                        . strtoupper($cargo) .
+                        '</span>';
+                }
+
+                return '<span class="badge bg-primary-subtle text-primary border border-primary">'
+                    . strtoupper($cargo) .
+                    '</span>';
+            })
+
+            ->editColumn('rol', function ($row) {
+                if ($row->rol === 'admin') {
+                    return '<span class="badge bg-danger">ADMIN</span>';
+                }
+
+                return '<span class="badge bg-info text-dark">DOCENTE</span>';
             })
 
             ->addColumn('password_btn', function ($row) {
@@ -39,7 +96,7 @@ class Docentes extends Controller
             })
 
             ->addColumn('activo_switch', function ($row) {
-                $checked = $row->activo ? 'checked' : '';
+                $checked = $row->docente_activo ? 'checked' : '';
 
                 return '<div class="form-check form-switch d-flex justify-content-center">
                         <input class="form-check-input cambiar-estado" 
@@ -56,27 +113,12 @@ class Docentes extends Controller
                     </a>';
             })
 
-            ->editColumn('cargo', function ($row) {
-
-                if ($row->rol === 'admin') {
-
-                    return '<span class="badge bg-danger-subtle text-danger border border-danger">
-                    ' . strtoupper($row->cargo) . '
-                </span>';
-                }
-
-                return '<span class="badge bg-primary-subtle text-primary border border-primary">
-                DOCENTE
-            </span>';
-            })
-
-            ->editColumn('rol', function ($row) {
-                if ($row->rol === 'admin') {
-                    return '<span class="badge bg-danger">ADMIN</span>';
-                }
-
-                return '<span class="badge bg-info text-dark">DOCENTE</span>';
-            })
+            ->orderColumn('nombre', 'users.name $1')
+            ->orderColumn('email', 'users.email $1')
+            ->orderColumn('celular', 'docentes.celular $1')
+            ->orderColumn('departamento', 'docentes.departamento $1')
+            ->orderColumn('cargo', 'docentes.cargo $1')
+            ->orderColumn('rol', 'users.rol $1')
 
             ->rawColumns(['cargo', 'rol', 'password_btn', 'activo_switch', 'editar_btn'])
             ->make(true);
@@ -92,21 +134,14 @@ class Docentes extends Controller
     public function store(Request $request)
     {
         try {
-
             $nombre = strtoupper(trim($request->name));
             $apellidoP = strtoupper(trim($request->apellido_p));
             $apellidoM = strtoupper(trim($request->apellido_m));
             $nombreCompleto = "$nombre $apellidoP $apellidoM";
-            $emailBase = strtolower(trim($request->email));
-            $dominio = ($request->rol == 'admin') ? '@admin.com' : '@docente.com';
-            $emailCompleto = $emailBase . $dominio;
-
-
-            if (User::where('email', $emailCompleto)->exists()) {
-                return back()->withInput()->with('error', 'El correo ya existe.');
+            $email = strtolower(trim($request->email));
+            if (User::where('email', $email)->exists()) {
+                return back()->withInput()->with('error', 'El correo ya existe en el sistema.');
             }
-
-
             $partes = explode(' ', strtolower($nombreCompleto));
             $nombreFormateado = '';
             foreach ($partes as $p) {
@@ -115,31 +150,49 @@ class Docentes extends Controller
             $passwordTemporal = "Sistema" . $nombreFormateado;
 
 
-            $user = new User();
-            $user->name = $nombreCompleto;
-            $user->email = $emailCompleto;
-            $user->celular = $request->celular;
-            $user->password = Hash::make($passwordTemporal);
-            $user->rol = $request->rol;
-            $user->departamento = $request->dpto;
-            $user->cargo = $request->rol == 'admin'
-                ? strtoupper($request->cargo)
-                : 'DOCENTE';
-            $user->activo = 1;
-            $user->save();
+            DB::transaction(function () use ($request, $nombreCompleto, $email, $passwordTemporal) {
 
+                $user = new User();
+                $user->name = $nombreCompleto;
+                $user->email = $email;
+                $user->password = Hash::make($passwordTemporal);
+                $user->rol = $request->rol;
+                $user->save();
+
+                $docente = new Docente();
+                $docente->user_id = $user->id;
+
+                if ($request->rol === 'admin') {
+                    $docente->cargo = strtoupper($request->cargo);
+                    $docente->activo = 1;
+
+                    if ($request->has('perfil_docente')) {
+                        $docente->celular = $request->celular;
+                        $docente->departamento = $request->dpto;
+                    } else {
+                        $docente->celular = null;
+                        $docente->departamento = null;
+                    }
+                } else {
+                    $docente->celular = $request->celular;
+                    $docente->departamento = $request->dpto;
+                    $docente->cargo = 'DOCENTE';
+                    $docente->activo = 1;
+                }
+
+                $docente->save();
+            });
             $urlPdf = route('pdf.descargar', [
                 'nombre' => (string)$nombreCompleto,
-                'email'  => (string)$emailCompleto,
+                'email'  => (string)$email,
                 'pass'   => (string)$passwordTemporal
             ]);
-
 
             return redirect()->route('docentes')
                 ->with('success', 'Usuario guardado con éxito!')
                 ->with('pdf', $urlPdf);
-        } catch (Exception $e) {
-            return back()->withInput()->with('error', 'Error: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Error al registrar: ' . $e->getMessage());
         }
     }
 
@@ -204,7 +257,7 @@ class Docentes extends Controller
 
     public function estado($id, $estado)
     {
-        $user = User::find($id);
+        $user = Docente::find($id);
 
         if ($user) {
             $user->activo = $estado;
@@ -218,66 +271,68 @@ class Docentes extends Controller
     public function edit(string $id)
     {
         $titulo = 'Editar Docente';
-        $item = User::find($id);
+
+        $item = User::with('docente')->findOrFail($id);
+
         return view('modules.docentes.edit', compact('item', 'titulo'));
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
         try {
-
-            $item = User::find($id);
-
-            if (!$item) {
-                return to_route('docentes')->with('error', 'Usuario no encontrado');
-            }
-
-            $nombre = strtoupper($request->name);
-            $apellidoP = strtoupper($request->apellido_p);
-            $apellidoM = strtoupper($request->apellido_m);
-
-            $nombreCompleto = trim("$nombre $apellidoP $apellidoM");
+            $user = User::findOrFail($id);
 
             $email = strtolower(trim($request->email));
 
-            $dominio = $request->rol == 'admin'
-                ? '@admin.com'
-                : '@docente.com';
-
-            $emailCompleto = $email . $dominio;
-
-            $existeEmail = User::where('email', $emailCompleto)
-                ->where('id', '!=', $id)
-                ->exists();
-
-            if ($existeEmail) {
-
-                return to_route('docentes.edit', $id)
-                    ->with('error', 'El correo ya está registrado');
+            if (User::where('email', $email)->where('id', '!=', $id)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El correo ya existe en el sistema.'
+                ], 422);
             }
 
-            $item->name = $nombreCompleto;
-            $item->email = $emailCompleto;
-            $item->rol = $request->rol;
-            $item->departamento = $request->dpto;
-            $item->celular = $request->celular;
-            $item->cargo = $request->rol == 'admin'
-                ? strtoupper($request->cargo)
-                : 'DOCENTE';
-            if (!preg_match('/^[0-9]{10}$/', $request->celular)) {
+            $nombre = strtoupper(trim($request->name));
 
-                return to_route('docentes.edit', $id)
-                    ->with('error', 'El número celular debe contener exactamente 10 dígitos');
+            if ($request->filled('apellido_p') || $request->filled('apellido_m')) {
+                $apellidoP = strtoupper(trim($request->apellido_p));
+                $apellidoM = strtoupper(trim($request->apellido_m));
+                $nombreCompleto = trim("$nombre $apellidoP $apellidoM");
+            } else {
+                $nombreCompleto = $nombre;
             }
 
-            $item->save();
+            $departamento = $request->input('dpto', $request->input('departamento'));
 
-            return to_route('docentes')
-                ->with('success', 'Usuario actualizado correctamente');
-        } catch (Exception $e) {
+            DB::transaction(function () use ($request, $user, $nombreCompleto, $email, $departamento) {
 
-            return to_route('docentes')
-                ->with('error', 'No se pudo actualizar: ' . $e->getMessage());
+                $user->name = $nombreCompleto;
+                $user->email = $email;
+                $user->rol = $request->rol;
+                $user->save();
+
+                $docente = $user->docente;
+
+                if (!$docente) {
+                    $docente = new Docente();
+                    $docente->user_id = $user->id;
+                    $docente->activo = 1;
+                }
+
+                $docente->celular = $request->celular;
+                $docente->departamento = $departamento;
+                $docente->cargo = ($request->rol == 'admin')
+                    ? strtoupper($request->cargo)
+                    : 'DOCENTE';
+
+                $docente->save();
+            });
+            return redirect()->route('docentes')
+                ->with('success', 'Usuario actualizado con éxito!');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo actualizar: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

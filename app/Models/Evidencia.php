@@ -71,5 +71,9 @@ class Evidencia extends Model
             'evidencia_id'
         );
     }
-    
+
+    public function evaluador()
+    {
+        return $this->belongsTo(User::class, 'admin_id');
+    }
 }

@@ -1,564 +1,1243 @@
 @extends('layouts.main')
+
 @section('titulo', 'Editar Evidencia')
+
 @section('contenido')
 
-<main id="main" class="main">
-    <div class="pagetitle mb-4">
-        <h1 class="fw-bold text-primary">Editar Evidencia: {{ $evidencia->materia->nombre }}</h1>
-    </div>
-    <section class="section">
-        <div class="card p-4 shadow-lg border-0" style="border-radius: 18px;">
-            @if ($errors->any())
-            <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
-                <h6 class="fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Por favor corrige los siguientes errores:</h6>
-                <ul class="mb-0 small">
-                    @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            @endif
+    @php
+        $datosEvidencia = is_array($evidencia->documentos)
+            ? $evidencia->documentos
+            : json_decode($evidencia->documentos ?? '[]', true);
 
-            <form action="{{ route('evidencias.update', $evidencia->id) }}" method="POST" enctype="multipart/form-data" id="form-evidencias">
-                @csrf @method('PUT')
+        if (!is_array($datosEvidencia)) {
+            $datosEvidencia = [];
+        }
 
-                <div class="row g-3 mb-4">
-                    <div class="col-md-6">
-                        <label class="fw-bold small text-uppercase text-secondary mb-2 block">Materia</label>
-                        <select id="materia_id" name="materia_id" class="form-select form-select-lg fs-6" required disabled>
-                            <option value="{{ $evidencia->materia->id }}">{{ $evidencia->materia->nombre }}</option>
-                        </select>
-                        <input type="hidden" name="materia_id" value="{{ $evidencia->materia->id }}">
-                    </div>
+        $unidadesSeleccionadas = $unidades ?? ($datosEvidencia['unidades'] ?? []);
+        $documentosData = $documentos ?? ($datosEvidencia['documentos'] ?? []);
+        $evidenciasData = $evidencias ?? ($datosEvidencia['evidencias'] ?? []);
+        $instrumentosExistentes = $datosEvidencia['instrumentos'] ?? [];
 
-                    <div class="col-md-6">
-                        <label class="fw-bold small text-uppercase text-secondary mb-2 block">Revisión</label>
-                        <select id="revision_id" name="revision_id" class="form-select form-select-lg fs-6" required disabled>
-                            <option value="{{ $evidencia->revision->id }}">{{ $evidencia->revision->nombre }}</option>
-                        </select>
-                        <input type="hidden" name="revision_id" value="{{ $evidencia->revision->id }}">
-                    </div>
-                </div>
+        $motivoNoEvaluo = old(
+            'motivo_no_evaluo',
+            $motivoNoEvaluo ??
+                ($datosEvidencia['motivo_no_evaluo'] ??
+                    null ??
+                    ($documentosData['calificaciones']['motivo'] ??
+                        null ??
+                        ($documentosData['calificaciones_detalladas']['u0']['motivo'] ?? null ?? ''))),
+        );
 
-                <hr class="my-4">
-                <h5 class="fw-bold text-primary mb-3">¿QUÉ UNIDADES EVALUASTE?</h5>
-                <div class="row g-3 mb-4" id="contenedor_tarjetas_unidades">
-                    @php
-                    $unidadesSeleccionadas = $evidencia->documentos['unidades'] ?? [];
-                    $totalUnidadesMateria = $evidencia->materia->unidades;
-                    @endphp
+        $totalUnidadesMateria = (int) ($evidencia->materia->unidades ?? 0);
 
-                    @if(in_array(0, $unidadesSeleccionadas))
-                    <div class="col-md-3">
-                        <div class="card card-unidad-check p-3 text-center shadow-sm h-100 d-flex flex-column align-items-center justify-content-center active"
-                            id="card_unidad_0">
-                            <input type="checkbox" name="unidades[]" value="0" class="d-none" checked>
-                            <i class="bi bi-dash-circle fs-3 text-secondary mb-2"></i>
-                            <span class="fw-bold text-dark">Ninguna Unidad</span>
-                        </div>
-                    </div>
-                    @else
-                    @for($i = 1; $i <= $totalUnidadesMateria; $i++)
-                        <div class="col-md-3">
-                        <div class="card card-unidad-check p-3 text-center shadow-sm h-100 d-flex flex-column align-items-center justify-content-center {{ in_array($i, $unidadesSeleccionadas) ? 'active' : '' }}"
-                            id="card_unidad_{{ $i }}" onclick="toggleUnidadTarjeta({{ $i }})">
-                            <input type="checkbox" id="chk_unidad_{{ $i }}" name="unidades[]" value="{{ $i }}" class="d-none" {{ in_array($i, $unidadesSeleccionadas) ? 'checked' : '' }}>
-                            <i class="bi bi-bookmark-check fs-3 text-primary mb-2"></i>
-                            <span class="fw-bold text-dark">Unidad {{ $i }}</span>
-                        </div>
-                </div>
-                @endfor
-                @endif
-        </div>
+        $primeraRevisionId = 1;
+        $esPrimeraRevision = (int) ($evidencia->revision->id ?? 0) === $primeraRevisionId;
+        $esCuartaRevision = (int) ($evidencia->revision->id ?? 0) === 4;
 
-        <hr class="my-4">
-        <h5 class="fw-bold text-primary mb-3">DOCUMENTOS</h5>
-        <div class="row g-4">
-            <!-- Instrumentación didáctica -->
-            <div class="col-md-6">
-                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="p-2.5 rounded-3 bg-primary-subtle text-primary me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                            <i class="bi bi-book-half"></i>
-                        </div>
-                        <label class="form-label fw-bold text-dark fs-5 mb-0">Instrumentación didáctica</label>
-                    </div>
-                    @if($evidencia->documentos['documentos']['instrumentacion'] ?? false)
-                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
-                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                        <a href="{{ asset('storage/' . $evidencia->documentos['documentos']['instrumentacion']) }}" target="_blank" class="text-decoration-none small text-truncate">Ver documento actual</a>
-                    </div>
-                    @endif
-                    <input type="file" name="instrumentacion" class="form-control form-control-lg fs-6">
-                    <small class="text-muted mt-1">Dejar vacío para mantener el actual.</small>
-                </div>
-            </div>
+        $estadoActual = strtolower((string) ($evidencia->estado ?? ''));
+        $evidenciaAprobada = in_array($estadoActual, ['2', 'aprobado', 'aprobada'], true);
+        $evidenciaRechazada = in_array($estadoActual, ['4', 'rechazado', 'rechazada'], true);
+        $evidenciaEvaluada = $evidenciaAprobada || $evidenciaRechazada;
 
-            <!-- Reporte de inicio -->
-            <div class="col-md-6">
-                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="p-2.5 rounded-3 bg-info-subtle text-info me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                            <i class="bi bi-calendar-check"></i>
-                        </div>
-                        <label class="form-label fw-bold text-dark fs-5 mb-0">Reporte de inicio de curso</label>
-                    </div>
-                    @if($evidencia->documentos['documentos']['reporte_inicio'] ?? false)
-                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
-                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                        <a href="{{ asset('storage/' . $evidencia->documentos['documentos']['reporte_inicio']) }}" target="_blank" class="text-decoration-none small text-truncate">Ver documento actual</a>
-                    </div>
-                    @endif
-                    <input type="file" name="reporte_inicio" class="form-control form-control-lg fs-6">
-                    <small class="text-muted mt-1">Dejar vacío para mantener el actual.</small>
-                </div>
-            </div>
+        $unidadesOcupadas = array_values(array_unique(array_map('intval', $unidadesOcupadas ?? [])));
+        $unidadesSeleccionadas = array_values(array_map('intval', $unidadesSeleccionadas ?? []));
 
-            <!-- Acuerdos de clase -->
-            <div class="col-md-6">
-                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                            <i class="bi bi-person-workspace"></i>
-                        </div>
-                        <label class="form-label fw-bold text-dark fs-5 mb-0">Acuerdos de clase</label>
-                    </div>
-                    @if($evidencia->documentos['documentos']['acuerdos'] ?? false)
-                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
-                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                        <a href="{{ asset('storage/' . $evidencia->documentos['documentos']['acuerdos']) }}" target="_blank" class="text-decoration-none small text-truncate">Ver documento actual</a>
-                    </div>
-                    @endif
-                    <input type="file" name="acuerdos" class="form-control form-control-lg fs-6">
-                    <small class="text-muted mt-1">Dejar vacío para mantener el actual.</small>
-                </div>
-            </div>
+        $unidadesActualesSinCero = array_values(
+            array_filter($unidadesSeleccionadas, function ($unidad) {
+                return (int) $unidad !== 0;
+            }),
+        );
 
-            <!-- Lista de calificaciones (dinámico por unidad) -->
-            <div class="col-md-6" id="contenedor_calificaciones">
-                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="p-2.5 rounded-3 bg-success-subtle text-success me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                            <i class="bi bi-card-checklist"></i>
-                        </div>
-                        <label class="form-label fw-bold text-dark fs-5 mb-0">Lista de calificaciones</label>
-                    </div>
-                    <div class="wrapper-inputs d-flex flex-column gap-2">
-                        @if(in_array(0, $unidadesSeleccionadas))
-                        <span class="text-muted small">No aplica para esta revisión</span>
-                        <input type="hidden" name="unidades[]" value="0">
-                        @else
-                        @foreach($unidadesSeleccionadas as $unidad)
-                        <div class="mb-2">
-                            <span class="badge bg-secondary mb-1">U{{ $unidad }}</span>
-                            @php
-                            $rutaCal = $evidencia->documentos['documentos']['calificaciones_detalladas']["u{$unidad}"] ?? null;
-                            @endphp
-                            @if($rutaCal)
-                            <div class="d-flex align-items-center bg-light p-1 rounded mb-1">
-                                <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                                <a href="{{ asset('storage/' . $rutaCal) }}" target="_blank" class="text-decoration-none small">Actual</a>
-                            </div>
+        $unidadesDisponiblesParaEditar = [];
+
+        for ($i = 1; $i <= $totalUnidadesMateria; $i++) {
+            $unidadEstaOcupada = in_array($i, $unidadesOcupadas, true);
+            $unidadEsActual = in_array($i, $unidadesActualesSinCero, true);
+
+            if (!$unidadEstaOcupada || $unidadEsActual) {
+                $unidadesDisponiblesParaEditar[] = $i;
+            }
+        }
+
+        $sinUnidadesDisponibles = count($unidadesDisponiblesParaEditar) === 0;
+
+        if ($sinUnidadesDisponibles && count($unidadesActualesSinCero) === 0) {
+            $unidadesSeleccionadas = [0];
+        }
+
+        $permitirNingunaUnidad =
+            $esPrimeraRevision || $sinUnidadesDisponibles || in_array(0, $unidadesSeleccionadas, true);
+
+        $obtenerArchivo = function ($valor) {
+            if (is_array($valor)) {
+                return $valor['archivo'] ?? null;
+            }
+
+            if (is_string($valor) && trim($valor) !== '') {
+                return $valor;
+            }
+
+            return null;
+        };
+
+        $obtenerNa = function ($valor) {
+            return is_array($valor) && !empty($valor['na']);
+        };
+
+        $instrumentacionActual = $obtenerArchivo($documentosData['instrumentacion'] ?? null);
+        $reporteInicioActual = $obtenerArchivo($documentosData['reporte_inicio'] ?? null);
+        $acuerdosActual = $obtenerArchivo($documentosData['acuerdos'] ?? null);
+
+        $examenDiagnosticoActual = $obtenerArchivo($evidenciasData['examen_diagnostico'] ?? null);
+        $analisisDiagnosticoActual = $obtenerArchivo($evidenciasData['analisis_diagnostico'] ?? null);
+
+        // Datos para Revisión 4
+        $actaActual = $obtenerArchivo($documentosData['acta'] ?? null);
+        $evidenciasSegundaOportunidad = $evidenciasData['segunda_oportunidad'] ?? [];
+
+        $evaluaciones = $evidencia->evaluacion ?? [];
+
+        function documentoAprobado($evaluaciones, $key)
+        {
+            if (!isset($evaluaciones[$key])) {
+                return false;
+            }
+
+            $item = $evaluaciones[$key];
+
+            if (!empty($item['na'])) {
+                return false;
+            }
+
+            $calif = $item['calificacion'] ?? null;
+
+            return is_numeric($calif) && (float) $calif >= 70;
+        }
+
+        $instrumentacionAprobada = documentoAprobado($evaluaciones, 'instrumentacion');
+        $reporteInicioAprobado = documentoAprobado($evaluaciones, 'reporte_inicio');
+        $acuerdosAprobado = documentoAprobado($evaluaciones, 'acuerdos');
+        $examenDiagnosticoAprobado = documentoAprobado($evaluaciones, 'examen_diagnostico');
+        $analisisDiagnosticoAprobado = documentoAprobado($evaluaciones, 'analisis_diagnostico');
+        $calificacionesAprobadas = documentoAprobado($evaluaciones, 'calificaciones');
+        $racAprobado = documentoAprobado($evaluaciones, 'rac');
+        $rubricasAprobadas = documentoAprobado($evaluaciones, 'rubricas');
+        $instrumentosAprobados = documentoAprobado($evaluaciones, 'instrumentos');
+        $actaAprobada = documentoAprobado($evaluaciones, 'acta');
+        $segundaOportunidadAprobada = documentoAprobado($evaluaciones, 'segunda_oportunidad');
+    @endphp
+
+    <main id="main" class="main">
+
+        <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-primary px-3 py-2">
+                                <i class="bi bi-journal-bookmark-fill me-1"></i>
+                                Evidencia
+                            </span>
+
+                            <span class="badge bg-light text-dark border px-3 py-2">
+                                {{ $evidencia->revision->nombre }}
+                            </span>
+
+                            @if ($evidenciaAprobada)
+                                <span class="badge bg-success px-3 py-2">
+                                    <i class="bi bi-check-circle-fill me-1"></i>
+                                    Aprobada
+                                </span>
+                            @elseif($evidenciaRechazada)
+                                <span class="badge bg-danger px-3 py-2">
+                                    <i class="bi bi-x-circle-fill me-1"></i>
+                                    Rechazada
+                                </span>
+                            @else
+                                <span class="badge bg-warning text-dark px-3 py-2">
+                                    <i class="bi bi-clock-history me-1"></i>
+                                    Pendiente de evaluación
+                                </span>
                             @endif
-                            <input type="file" name="calificaciones[{{ $unidad }}]" class="form-control form-control-sm fs-6">
-                            <small class="text-muted">Dejar vacío para mantener</small>
                         </div>
-                        @endforeach
-                        @endif
-                    </div>
-                </div>
-            </div>
 
-            <!-- Actividades de Regularización (RAC) -->
-            <div class="col-md-6" id="contenedor_rac">
-                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white" id="rac_card">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="d-flex align-items-center">
-                            <div class="p-2.5 rounded-3 bg-secondary-subtle text-secondary me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                                <i class="bi bi-arrow-repeat"></i>
-                            </div>
-                            <label class="form-label fw-bold text-dark fs-5 mb-0">Actividades de Regularización (RAC)</label>
-                        </div>
-                        <div class="form-check form-switch bg-light border rounded-pill px-3 py-1.5 d-flex align-items-center shadow-sm">
-                            <input class="form-check-input me-2 mt-0" type="checkbox" id="rac_na" name="rac_na" style="cursor: pointer;" {{ ($evidencia->documentos['documentos']['rac']['na'] ?? false) ? 'checked' : '' }}>
-                            <label class="form-check-label small fw-semibold text-secondary" for="rac_na" style="cursor: pointer; user-select: none;">No aplica</label>
+                        <h2 class="fw-bold text-primary mb-1">
+                            {{ $evidencia->materia->nombre }}
+                        </h2>
+
+                        <div class="text-muted">
+                            <i class="bi bi-person-fill me-1"></i>
+                            {{ $evidencia->asignacionMateria->docente->name ?? 'Sin docente' }}
                         </div>
                     </div>
-                    <div class="wrapper-inputs d-flex flex-column gap-2">
-                        @if(in_array(0, $unidadesSeleccionadas))
-                        <span class="text-muted small">No aplica para esta revisión</span>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        @if ($evidenciaEvaluada)
+                            <a href="{{ route('mis-reportes', $evidencia->id) }}" target="_blank"
+                                class="btn btn-outline-success shadow-sm px-4">
+                                <i class="bi bi-file-earmark-pdf-fill me-2"></i>
+                                Imprimir Comprobante
+                            </a>
                         @else
-                        @foreach($unidadesSeleccionadas as $unidad)
-                        <div class="mb-2">
-                            <span class="badge bg-secondary mb-1">U{{ $unidad }}</span>
-                            @php
-                            $racData = $evidencia->documentos['documentos']['rac_detallado']["u{$unidad}"] ?? null;
-                            $rutaRac = is_array($racData) ? ($racData['archivo'] ?? null) : null;
-                            @endphp
-                            @if($rutaRac && !($racData['na'] ?? false))
-                            <div class="d-flex align-items-center bg-light p-1 rounded mb-1">
-                                <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                                <a href="{{ asset('storage/' . $rutaRac) }}" target="_blank" class="text-decoration-none small">Actual</a>
-                            </div>
-                            @endif
-                            <input type="file" name="rac[{{ $unidad }}]" class="form-control form-control-sm fs-6" {{ ($evidencia->documentos['documentos']['rac']['na'] ?? false) ? 'disabled' : '' }}>
-                            <small class="text-muted">Dejar vacío para mantener</small>
-                        </div>
-                        @endforeach
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <hr class="my-4">
-        <h5 class="fw-bold text-success mb-3">EVIDENCIAS</h5>
-        <div class="row g-4">
-            <!-- Examen diagnóstico -->
-            <div class="col-md-6">
-                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="p-2.5 rounded-3 bg-primary-subtle text-primary me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                            <i class="bi bi-file-earmark-medical"></i>
-                        </div>
-                        <label class="form-label fw-bold text-dark fs-5 mb-0">Examen diagnóstico</label>
-                    </div>
-                    @if($evidencia->documentos['evidencias']['examen_diagnostico'] ?? false)
-                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
-                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                        <a href="{{ asset('storage/' . $evidencia->documentos['evidencias']['examen_diagnostico']) }}" target="_blank" class="text-decoration-none small text-truncate">Ver documento actual</a>
-                    </div>
-                    @endif
-                    <input type="file" name="examen_diagnostico" class="form-control form-control-lg fs-6">
-                    <small class="text-muted mt-1">Dejar vacío para mantener el actual.</small>
-                </div>
-            </div>
-
-            <!-- Análisis del diagnóstico -->
-            <div class="col-md-6">
-                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="p-2.5 rounded-3 bg-info-subtle text-info me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                            <i class="bi bi-bar-chart-line"></i>
-                        </div>
-                        <label class="form-label fw-bold text-dark fs-5 mb-0">Análisis del diagnóstico</label>
-                    </div>
-                    @if($evidencia->documentos['evidencias']['analisis_diagnostico'] ?? false)
-                    <div class="d-flex align-items-center bg-light p-2 rounded mb-2 border">
-                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                        <a href="{{ asset('storage/' . $evidencia->documentos['evidencias']['analisis_diagnostico']) }}" target="_blank" class="text-decoration-none small text-truncate">Ver documento actual</a>
-                    </div>
-                    @endif
-                    <input type="file" name="analisis_diagnostico" class="form-control form-control-lg fs-6">
-                    <small class="text-muted mt-1">Dejar vacío para mantener el actual.</small>
-                </div>
-            </div>
-
-            <!-- Rúbricas del semestre (dinámico por unidad) -->
-            <div class="col-md-6" id="contenedor_rubricas">
-                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                            <i class="bi bi-table"></i>
-                        </div>
-                        <label class="form-label fw-bold text-dark fs-5 mb-0">Rúbricas del semestre</label>
-                    </div>
-                    <div class="wrapper-inputs d-flex flex-column gap-2">
-                        @if(in_array(0, $unidadesSeleccionadas))
-                        <span class="text-muted small">No aplica para esta revisión</span>
-                        @else
-                        @foreach($unidadesSeleccionadas as $unidad)
-                        <div class="mb-2">
-                            <span class="badge bg-secondary mb-1">U{{ $unidad }}</span>
-                            @php
-                            $rutaRub = $evidencia->documentos['evidencias']['rubricas_detalladas']["u{$unidad}"] ?? null;
-                            @endphp
-                            @if($rutaRub)
-                            <div class="d-flex align-items-center bg-light p-1 rounded mb-1">
-                                <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                                <a href="{{ asset('storage/' . $rutaRub) }}" target="_blank" class="text-decoration-none small">Actual</a>
-                            </div>
-                            @endif
-                            <input type="file" name="rubricas[{{ $unidad }}]" class="form-control form-control-sm fs-6">
-                            <small class="text-muted">Dejar vacío para mantener</small>
-                        </div>
-                        @endforeach
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- INSTRUMENTOS DE EVALUACIÓN INDIVIDUALES (Dropzones por unidad) -->
-        <hr class="my-4">
-        <div id="seccion_dropzones_dinamicos">
-            <h5 class="fw-bold text-success mb-3">INSTRUMENTOS DE EVALUACIÓN INDIVIDUALES</h5>
-            @if(!in_array(0, $unidadesSeleccionadas))
-            @foreach($unidadesSeleccionadas as $unidad)
-            @php
-            $instrumentosExistentes = $evidencia->documentos['instrumentos'] ?? [];
-            $instrumentosUnidad = array_filter($instrumentosExistentes, function($path) use ($unidad) {
-            return strpos($path, "instrumento_u{$unidad}_") !== false;
-            });
-            @endphp
-            <div class="card border border-light-subtle rounded-3 shadow-sm p-4 bg-white style-dropzone mb-3" id="dropzone_u_{{ $unidad }}">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="d-flex align-items-center">
-                        <div class="p-2.5 rounded-3 bg-success-subtle text-success me-3 fs-4 d-inline-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                            <i class="bi bi-file-earmark-arrow-up"></i>
-                        </div>
-                        <div>
-                            <h5 class="fw-bold text-dark fs-5 mb-0">Instrumentos de Evaluación - <span class="text-success">Unidad {{ $unidad }}</span></h5>
-                            <p class="text-muted small mb-0">Sube hasta 3 archivos PDF para esta unidad</p>
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-light border-0 p-2 rounded-circle btn-minimizar" onclick="toggleMinimizarDropzone({{ $unidad }}, this)">
-                        <i class="bi bi-chevron-down fs-5 text-secondary"></i>
-                    </button>
-                </div>
-
-                <div class="dropzone-body-collapse mt-3" id="body_dropzone_u_{{ $unidad }}">
-                    <div class="row align-items-center bg-light p-3 rounded-3 g-3">
-                        <div class="col-md-4">
-                            <input type="file" id="helper_file_u_{{ $unidad }}" accept="application/pdf" multiple onchange="agregarArchivosDropzone(this, {{ $unidad }})">
-                            <button type="button" class="btn btn-outline-success rounded-pill fw-semibold small px-4 py-2.5 w-100 shadow-sm d-flex align-items-center justify-content-center gap-2" onclick="document.getElementById('helper_file_u_{{ $unidad }}').click()">
-                                <i class="bi bi-folder2-open"></i> Archivos Unidad {{ $unidad }}
+                            <button type="button" class="btn btn-outline-secondary shadow-sm px-4" disabled
+                                title="La evidencia aún no ha sido evaluada">
+                                <i class="bi bi-file-earmark-pdf-fill me-2"></i>
+                                Imprimir Comprobante
+                                <small class="d-block small text-muted">(No evaluada)</small>
                             </button>
-                        </div>
-                        <div class="col-md-8">
-                            <div id="lista_archivos_u_{{ $unidad }}" class="d-flex flex-column gap-2 text-start">
-                                @foreach($instrumentosUnidad as $idx => $path)
-                                <div class="archivo-cargado-item d-flex align-items-center justify-content-between p-2.5 bg-white border border-light-subtle rounded-3 shadow-sm">
-                                    <div class="d-flex align-items-center">
-                                        <div class="p-2 rounded-2 bg-danger-subtle text-danger me-2.5 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                            <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
-                                        </div>
-                                        <span class="text-secondary fw-medium small">{{ basename($path) }}</span>
-                                    </div>
-                                    <button type="button" class="btn-eliminar-archivo btn border-0 p-2 text-muted rounded-2 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="eliminarArchivoExistente({{ $unidad }}, '{{ $path }}', this)">
-                                        <i class="bi bi-trash3 fs-5"></i>
-                                    </button>
-                                </div>
-                                @endforeach
+                        @endif
+
+                        @if (!$evidenciaAprobada)
+                            <form action="{{ route('evidencias.destroy', $evidencia->id) }}" method="POST"
+                                id="form-eliminar-evidencia" class="d-inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="button" class="btn btn-outline-danger shadow-sm px-4"
+                                    onclick="confirmarEliminar(event)">
+                                    <i class="bi bi-trash-fill me-2"></i>
+                                    Eliminar Evidencia
+                                    @if ($evidenciaRechazada)
+                                        <small class="d-block small text-muted">(Rechazada)</small>
+                                    @endif
+                                </button>
+                            </form>
+                        @else
+                            <button type="button" class="btn btn-outline-secondary shadow-sm px-4" disabled
+                                title="La evidencia ya fue aprobada y no puede eliminarse">
+                                <i class="bi bi-trash-fill me-2"></i>
+                                Eliminar Evidencia
+                                <small class="d-block small text-muted">(Aprobada)</small>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+
+                @if ($evidenciaEvaluada)
+                    <div class="alert alert-{{ $evidenciaAprobada ? 'success' : 'danger' }} mt-3 mb-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-{{ $evidenciaAprobada ? 'check-circle-fill' : 'x-circle-fill' }} fs-4"></i>
+                            <div>
+                                <strong class="d-block">
+                                    {{ $evidenciaAprobada ? 'EVIDENCIA APROBADA' : 'EVIDENCIA RECHAZADA' }}
+                                </strong>
+                                <small>
+                                    Fecha de revisión:
+                                    {{ $evidencia->fecha_revision ? \Carbon\Carbon::parse($evidencia->fecha_revision)->format('d/m/Y H:i') : 'No disponible' }}
+                                    @if ($evidencia->admin_id)
+                                        | Revisado por: {{ $evidencia->admin->name ?? 'Administrador' }}
+                                    @endif
+                                </small>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div id="hidden_inputs_u_{{ $unidad }}"></div>
+                @endif
             </div>
-            @endforeach
-            @endif
         </div>
 
-        <div class="mt-4 d-flex gap-2">
-            <a href="{{ route('evidencias') }}" class="btn btn-light border px-4 rounded-pill">
-                <i class="bi bi-arrow-left me-1"></i> Regresar
-            </a>
-            <button type="submit" class="btn btn-primary px-4 rounded-pill">
-                <i class="bi bi-floppy me-1"></i> Actualizar Evidencia
-            </button>
-        </div>
-        </form>
-        </div>
-    </section>
-</main>
+        <section class="section">
+            <div class="card p-4 shadow-lg border-0" style="border-radius: 18px;">
 
-<style>
-    .style-dropzone input[type="file"] {
-        display: none !important;
-    }
+                @if ($errors->any())
+                    <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
+                        <h6 class="fw-bold">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            Por favor corrige los siguientes errores:
+                        </h6>
 
-    .style-dropzone .row.align-items-center {
-        background-color: #f8f9fa;
-        border: 1px dashed #dee2e6;
-        border-radius: 0.5rem;
-    }
+                        <ul class="mb-0 small">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
 
-    .card-unidad-check {
-        cursor: pointer;
-        transition: all 0.2s ease;
-        border: 2px solid #dee2e6 !important;
-    }
-
-    .card-unidad-check:hover {
-        border-color: #0d6efd !important;
-        background-color: #f8f9fa;
-    }
-
-    .card-unidad-check.active {
-        border-color: #198754 !important;
-        background-color: #f0fdf4;
-    }
-
-    .dropzone-body-collapse {
-        transition: max-height 0.35s ease, opacity 0.3s ease;
-        max-height: 500px;
-        opacity: 1;
-        overflow: hidden;
-    }
-
-    .dropzone-body-collapse.collapsed {
-        max-height: 0px !important;
-        opacity: 0 !important;
-        pointer-events: none;
-    }
-
-    .btn-minimizar {
-        transition: transform 0.25s ease;
-    }
-
-    .btn-minimizar.rotated {
-        transform: rotate(-180deg);
-    }
-
-    .archivo-cargado-item {
-        animation: fadeInItem 0.25s ease-out forwards;
-    }
-
-    .btn-eliminar-archivo:hover {
-        background-color: #fde8e8 !important;
-        color: #dc3545 !important;
-    }
-
-    @keyframes fadeInItem {
-        from {
-            opacity: 0;
-            transform: translateY(4px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-</style>
-
-<script>
-    // Variables globales para manejar archivos nuevos por unidad (sustituye a archivosPorUnidad)
-    let nuevosArchivosPorUnidad = {};
-    let archivosExistentesAEliminar = []; // almacenará rutas a eliminar en el servidor
-
-    // Inicializar estructura para unidades seleccionadas
-    const unidadesSeleccionadas = @json($unidadesSeleccionadas);
-    if (!unidadesSeleccionadas.includes(0)) {
-        unidadesSeleccionadas.forEach(unidad => {
-            nuevosArchivosPorUnidad[unidad] = [];
-        });
-    }
-
-    // Función para agregar nuevos archivos a una unidad (desde el input)
-    window.agregarArchivosDropzone = function(inputElement, unidad) {
-        if (!nuevosArchivosPorUnidad[unidad]) nuevosArchivosPorUnidad[unidad] = [];
-        for (let file of inputElement.files) {
-            if (file.type !== 'application/pdf') continue;
-            if (nuevosArchivosPorUnidad[unidad].length >= 3) break;
-            nuevosArchivosPorUnidad[unidad].push(file);
-        }
-        renderizarDropzoneUnidad(unidad);
-        inputElement.value = '';
-    };
-
-    // Eliminar archivo existente (marcar para borrar físicamente)
-    window.eliminarArchivoExistente = function(unidad, ruta, boton) {
-        if (confirm('¿Eliminar este archivo permanentemente?')) {
-            archivosExistentesAEliminar.push(ruta);
-            // Remover visualmente el elemento
-            const item = boton.closest('.archivo-cargado-item');
-            item.remove();
-            // Agregar input oculto para notificar al servidor qué rutas eliminar
-            const hiddenContainer = document.getElementById(`hidden_inputs_u_${unidad}`);
-            const inputDel = document.createElement('input');
-            inputDel.type = 'hidden';
-            inputDel.name = `eliminar_instrumentos[${unidad}][]`;
-            inputDel.value = ruta;
-            hiddenContainer.appendChild(inputDel);
-        }
-    };
-
-    // Renderizar los archivos nuevos (no los existentes) en la lista de cada dropzone
-    function renderizarDropzoneUnidad(unidad) {
-        const lista = document.getElementById(`lista_archivos_u_${unidad}`);
-        const hiddenContainer = document.getElementById(`hidden_inputs_u_${unidad}`);
-        const files = nuevosArchivosPorUnidad[unidad] || [];
-
-        // Eliminar los elementos que representan archivos nuevos (para evitar duplicados)
-        const nuevosItems = lista.querySelectorAll('.archivo-nuevo');
-        nuevosItems.forEach(el => el.remove());
-
-        files.forEach((file, index) => {
-            const nuevoDiv = document.createElement('div');
-            nuevoDiv.className = 'archivo-cargado-item archivo-nuevo d-flex align-items-center justify-content-between p-2.5 bg-white border border-light-subtle rounded-3 shadow-sm';
-            nuevoDiv.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <div class="p-2 rounded-2 bg-danger-subtle text-danger me-2.5 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                        <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
-                    <span class="text-secondary fw-medium small">${file.name}</span>
-                </div>
-                <button type="button" class="btn-eliminar-archivo btn border-0 p-2 text-muted rounded-2 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="eliminarArchivoNuevo(${unidad}, ${index})">
-                    <i class="bi bi-trash3 fs-5"></i>
-                </button>
-            `;
-            lista.appendChild(nuevoDiv);
-        });
+                @endif
 
-        // Crear input múltiple con los archivos nuevos
-        const dt = new DataTransfer();
-        files.forEach(f => dt.items.add(f));
-        let realInput = hiddenContainer.querySelector('input[type="file"][name^="instrumentos"]');
-        if (!realInput) {
-            realInput = document.createElement('input');
-            realInput.type = 'file';
-            realInput.name = `instrumentos[${unidad}][]`;
-            realInput.multiple = true;
-            realInput.className = 'd-none';
-            hiddenContainer.appendChild(realInput);
+                @if ($evidenciaAprobada)
+                    <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+                        <div class="card-body text-center py-4">
+                            <div class="mb-3">
+                                <i class="bi bi-patch-check-fill text-success" style="font-size: 4rem;"></i>
+                            </div>
+
+                            <h3 class="fw-bold text-success mb-2">
+                                DOCUMENTO VALIDADO
+                            </h3>
+
+                            <p class="text-muted mb-0">
+                                Esta evidencia ha sido revisada y aprobada. No se permiten modificaciones.
+                            </p>
+                        </div>
+                    </div>
+                @endif
+
+                <form action="{{ route('evidencias.update', $evidencia->id) }}" method="POST"
+                    enctype="multipart/form-data" id="form-evidencias">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="fw-bold small text-uppercase text-secondary mb-2 block">
+                                Materia
+                            </label>
+
+                            <select id="materia_id" name="materia_id" class="form-select form-select-lg fs-6" required
+                                disabled>
+                                <option value="{{ $evidencia->materia->id }}">
+                                    {{ $evidencia->materia->nombre }}
+                                </option>
+                            </select>
+
+                            <input type="hidden" name="materia_id" value="{{ $evidencia->materia->id }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="fw-bold small text-uppercase text-secondary mb-2 block">
+                                Revisión
+                            </label>
+
+                            <select id="revision_id" name="revision_id" class="form-select form-select-lg fs-6" required
+                                disabled>
+                                <option value="{{ $evidencia->revision->id }}">
+                                    {{ $evidencia->revision->nombre }}
+                                </option>
+                            </select>
+
+                            <input type="hidden" name="revision_id" value="{{ $evidencia->revision->id }}">
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h5 class="fw-bold text-primary mb-3">
+                        ¿QUÉ UNIDADES EVALUASTE?
+                    </h5>
+
+                    <div class="row g-3 mb-4" id="contenedor_tarjetas_unidades">
+                        @if ($permitirNingunaUnidad)
+                            <div class="col-md-3">
+                                <div class="card card-unidad-check p-3 text-center shadow-sm h-100 d-flex flex-column align-items-center justify-content-center {{ in_array(0, $unidadesSeleccionadas) ? 'active' : '' }} {{ $evidenciaAprobada ? 'unidad-bloqueada' : '' }}"
+                                    id="card_unidad_0"
+                                    @if (!$evidenciaAprobada) onclick="toggleUnidadTarjeta(0)" @endif>
+
+                                    <input type="checkbox" id="chk_unidad_0" name="unidades[]" value="0" class="d-none"
+                                        {{ in_array(0, $unidadesSeleccionadas) ? 'checked' : '' }}>
+
+                                    <i class="bi bi-dash-circle fs-3 text-secondary mb-2"></i>
+
+                                    <span class="fw-bold text-dark">
+                                        Ninguna Unidad
+                                    </span>
+
+                                    @if ($sinUnidadesDisponibles)
+                                        <span class="badge bg-secondary mt-2">
+                                            Sin unidades disponibles
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+
+                        @for ($i = 1; $i <= $totalUnidadesMateria; $i++)
+                            @php
+                                $unidadEstaOcupada = in_array($i, $unidadesOcupadas, true);
+                                $unidadEsActual = in_array($i, $unidadesActualesSinCero, true);
+                                $unidadBloqueada = $unidadEstaOcupada && !$unidadEsActual;
+                                $unidadActiva = in_array($i, $unidadesSeleccionadas, true);
+                            @endphp
+
+                            <div class="col-md-3">
+                                <div class="card card-unidad-check p-3 text-center shadow-sm h-100 d-flex flex-column align-items-center justify-content-center {{ $unidadActiva ? 'active' : '' }} {{ $unidadBloqueada || $evidenciaAprobada ? 'unidad-bloqueada' : '' }}"
+                                    id="card_unidad_{{ $i }}"
+                                    @if (!$unidadBloqueada && !$evidenciaAprobada) onclick="toggleUnidadTarjeta({{ $i }})" @endif>
+
+                                    <input type="checkbox" id="chk_unidad_{{ $i }}" name="unidades[]"
+                                        value="{{ $i }}" class="d-none" {{ $unidadActiva ? 'checked' : '' }}
+                                        {{ $unidadBloqueada ? 'disabled' : '' }}>
+
+                                    <i
+                                        class="bi bi-bookmark-check fs-3 {{ $unidadBloqueada ? 'text-muted' : 'text-primary' }} mb-2"></i>
+
+                                    <span class="fw-bold text-dark">
+                                        Unidad {{ $i }}
+                                    </span>
+
+                                    @if ($unidadBloqueada)
+                                        <span class="badge bg-danger-subtle text-danger mt-2">
+                                            Ya evaluada
+                                        </span>
+                                    @elseif($unidadEsActual)
+                                        <span class="badge bg-success-subtle text-success mt-2">
+                                            Actual
+                                        </span>
+                                    @else
+                                        <span class="badge bg-primary-subtle text-primary mt-2">
+                                            Disponible
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endfor
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h5 class="fw-bold text-primary mb-3">
+                        DOCUMENTOS
+                    </h5>
+
+                    <div class="row g-4">
+
+                        @if ($esPrimeraRevision)
+                            <div class="col-md-6 campo-solo-revision-1">
+                                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="p-2.5 rounded-3 bg-primary-subtle text-primary me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                            style="width: 45px; height: 45px;">
+                                            <i class="bi bi-book-half"></i>
+                                        </div>
+
+                                        <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                            Instrumentación didáctica
+                                        </label>
+                                    </div>
+
+                                    @if ($instrumentacionActual)
+                                        <div class="border rounded-3 p-3 bg-light mb-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-file-earmark-pdf-fill text-danger fs-4 me-3"></i>
+                                                    <div>
+                                                        <a href="{{ asset('storage/' . $instrumentacionActual) }}"
+                                                            target="_blank" class="text-decoration-none fw-semibold">
+                                                            Ver documento actual
+                                                        </a>
+                                                        <div class="small text-muted">Instrumentación didáctica cargada
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @if ($instrumentacionAprobada)
+                                                    <span class="badge bg-success px-3 py-2">
+                                                        <i class="bi bi-check-circle-fill me-1"></i>
+                                                        Aprobado (≥70)
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if (!$evidenciaAprobada && !$instrumentacionAprobada)
+                                        <input type="file" name="instrumentacion"
+                                            class="form-control form-control-lg fs-6 archivo-pdf-5mb mt-2"
+                                            accept="application/pdf">
+
+                                        <small class="text-muted mt-1 d-block">
+                                            Dejar vacío para mantener el actual. Solo PDF, máximo 5 MB.
+                                        </small>
+                                    @elseif($instrumentacionAprobada)
+                                        <div class="alert alert-success mt-3 mb-0">
+                                            <i class="bi bi-check-circle-fill me-2"></i>
+                                            Este documento ya fue aprobado (calificación ≥70) y no puede ser modificado.
+                                        </div>
+                                    @else
+                                        <div class="alert alert-secondary mt-3 mb-0">
+                                            <i class="bi bi-lock-fill me-2"></i>
+                                            La evidencia general está aprobada, no se permiten cambios.
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 campo-solo-revision-1">
+                                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="p-2.5 rounded-3 bg-info-subtle text-info me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                            style="width: 45px; height: 45px;">
+                                            <i class="bi bi-calendar-check"></i>
+                                        </div>
+
+                                        <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                            Reporte de inicio de curso
+                                        </label>
+                                    </div>
+
+                                    @if ($reporteInicioActual)
+                                        <div class="border rounded-3 p-3 bg-light mb-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-file-earmark-pdf-fill text-danger fs-4 me-3"></i>
+                                                    <div>
+                                                        <a href="{{ asset('storage/' . $reporteInicioActual) }}"
+                                                            target="_blank" class="text-decoration-none fw-semibold">
+                                                            Ver documento actual
+                                                        </a>
+                                                        <div class="small text-muted">Reporte de inicio de curso cargado
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @if ($reporteInicioAprobado)
+                                                    <span class="badge bg-success px-3 py-2">
+                                                        <i class="bi bi-check-circle-fill me-1"></i>
+                                                        Aprobado (≥70)
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if (!$evidenciaAprobada && !$reporteInicioAprobado)
+                                        <input type="file" name="reporte_inicio"
+                                            class="form-control form-control-lg fs-6 archivo-pdf-5mb"
+                                            accept="application/pdf">
+
+                                        <small class="text-muted mt-1 d-block">
+                                            Dejar vacío para mantener el actual. Solo PDF, máximo 5 MB.
+                                        </small>
+                                    @elseif($reporteInicioAprobado)
+                                        <div class="alert alert-success mt-3 mb-0">
+                                            <i class="bi bi-check-circle-fill me-2"></i>
+                                            Este documento ya fue aprobado y no puede ser modificado.
+                                        </div>
+                                    @else
+                                        <div class="alert alert-secondary mt-3 mb-0">
+                                            <i class="bi bi-lock-fill me-2"></i>
+                                            No se permiten cambios.
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 campo-solo-revision-1">
+                                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                            style="width: 45px; height: 45px;">
+                                            <i class="bi bi-person-workspace"></i>
+                                        </div>
+
+                                        <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                            Acuerdos de clase
+                                        </label>
+                                    </div>
+
+                                    @if ($acuerdosActual)
+                                        <div class="border rounded-3 p-3 bg-light mb-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-file-earmark-pdf-fill text-danger fs-4 me-3"></i>
+                                                    <div>
+                                                        <a href="{{ asset('storage/' . $acuerdosActual) }}"
+                                                            target="_blank" class="text-decoration-none fw-semibold">
+                                                            Ver documento actual
+                                                        </a>
+                                                        <div class="small text-muted">Acuerdos de clase cargados</div>
+                                                    </div>
+                                                </div>
+                                                @if ($acuerdosAprobado)
+                                                    <span class="badge bg-success px-3 py-2">
+                                                        <i class="bi bi-check-circle-fill me-1"></i>
+                                                        Aprobado (≥70)
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if (!$evidenciaAprobada && !$acuerdosAprobado)
+                                        <input type="file" name="acuerdos"
+                                            class="form-control form-control-lg fs-6 archivo-pdf-5mb"
+                                            accept="application/pdf">
+
+                                        <small class="text-muted mt-1 d-block">
+                                            Dejar vacío para mantener el actual. Solo PDF, máximo 5 MB.
+                                        </small>
+                                    @elseif($acuerdosAprobado)
+                                        <div class="alert alert-success mt-3 mb-0">
+                                            <i class="bi bi-check-circle-fill me-2"></i>
+                                            Este documento ya fue aprobado y no puede ser modificado.
+                                        </div>
+                                    @else
+                                        <div class="alert alert-secondary mt-3 mb-0">
+                                            <i class="bi bi-lock-fill me-2"></i>
+                                            No se permiten cambios.
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+
+                        <div class="col-md-6" id="contenedor_calificaciones">
+                            <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="p-2.5 rounded-3 bg-success-subtle text-success me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                        style="width: 45px; height: 45px;">
+                                        <i class="bi bi-card-checklist"></i>
+                                    </div>
+
+                                    <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                        Lista de calificaciones
+                                    </label>
+                                </div>
+
+                                <div class="wrapper-inputs d-flex flex-column gap-2" id="wrapper_calificaciones">
+                                    @if (in_array(0, $unidadesSeleccionadas, true))
+                                        <input type="hidden" name="unidades[]" value="0">
+
+                                        <div class="motivo-no-unidad-box">
+                                            <label for="motivo_no_evaluo" class="form-label fw-bold text-dark mb-2">
+                                                Motivo por el que no se evaluó ninguna unidad
+                                            </label>
+
+                                            <textarea name="motivo_no_evaluo" id="motivo_no_evaluo" class="form-control fs-6" rows="4" maxlength="1000"
+                                                required {{ $evidenciaAprobada ? 'disabled' : '' }}
+                                                placeholder="Escribe el motivo por el que no se evaluó ninguna unidad...">{{ $motivoNoEvaluo }}</textarea>
+
+                                            <small class="text-muted d-block mt-2">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                Este motivo queda registrado porque no se subió lista de calificaciones.
+                                            </small>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6" id="contenedor_rac">
+                            <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white"
+                                id="rac_card">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="p-2.5 rounded-3 bg-secondary-subtle text-secondary me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                        style="width: 45px; height: 45px;">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </div>
+
+                                    <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                        Actividades de Regularización (RAC)
+                                    </label>
+                                </div>
+
+                                <div class="wrapper-inputs d-flex flex-column gap-3" id="wrapper_rac"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h5 class="fw-bold text-success mb-3">
+                        EVIDENCIAS
+                    </h5>
+
+                    <div class="row g-4">
+
+                        @if ($esPrimeraRevision)
+                            <div class="col-md-6 campo-solo-revision-1">
+                                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="p-2.5 rounded-3 bg-primary-subtle text-primary me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                            style="width: 45px; height: 45px;">
+                                            <i class="bi bi-file-earmark-medical"></i>
+                                        </div>
+
+                                        <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                            Examen diagnóstico
+                                        </label>
+                                    </div>
+
+                                    @if ($examenDiagnosticoActual)
+                                        <div class="border rounded-3 p-3 bg-light mb-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-file-earmark-pdf-fill text-danger fs-4 me-3"></i>
+                                                    <div>
+                                                        <a href="{{ asset('storage/' . $examenDiagnosticoActual) }}"
+                                                            target="_blank" class="text-decoration-none fw-semibold">
+                                                            Ver documento actual
+                                                        </a>
+                                                        <div class="small text-muted">Examen diagnóstico cargado</div>
+                                                    </div>
+                                                </div>
+                                                @if ($examenDiagnosticoAprobado)
+                                                    <span class="badge bg-success px-3 py-2">
+                                                        <i class="bi bi-check-circle-fill me-1"></i>
+                                                        Aprobado (≥70)
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if (!$evidenciaAprobada && !$examenDiagnosticoAprobado)
+                                        <input type="file" name="examen_diagnostico"
+                                            class="form-control form-control-lg fs-6 archivo-pdf-5mb"
+                                            accept="application/pdf">
+
+                                        <small class="text-muted mt-1 d-block">
+                                            Dejar vacío para mantener el actual. Solo PDF, máximo 5 MB.
+                                        </small>
+                                    @elseif($examenDiagnosticoAprobado)
+                                        <div class="alert alert-success mt-3 mb-0">
+                                            <i class="bi bi-check-circle-fill me-2"></i>
+                                            Este documento ya fue aprobado y no puede ser modificado.
+                                        </div>
+                                    @else
+                                        <div class="alert alert-secondary mt-3 mb-0">
+                                            <i class="bi bi-lock-fill me-2"></i>
+                                            No se permiten cambios.
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 campo-solo-revision-1">
+                                <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="p-2.5 rounded-3 bg-info-subtle text-info me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                            style="width: 45px; height: 45px;">
+                                            <i class="bi bi-bar-chart-line"></i>
+                                        </div>
+
+                                        <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                            Análisis del diagnóstico
+                                        </label>
+                                    </div>
+
+                                    @if ($analisisDiagnosticoActual)
+                                        <div class="border rounded-3 p-3 bg-light mb-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-file-earmark-pdf-fill text-danger fs-4 me-3"></i>
+                                                    <div>
+                                                        <a href="{{ asset('storage/' . $analisisDiagnosticoActual) }}"
+                                                            target="_blank" class="text-decoration-none fw-semibold">
+                                                            Ver documento actual
+                                                        </a>
+                                                        <div class="small text-muted">Análisis del diagnóstico cargado
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @if ($analisisDiagnosticoAprobado)
+                                                    <span class="badge bg-success px-3 py-2">
+                                                        <i class="bi bi-check-circle-fill me-1"></i>
+                                                        Aprobado (≥70)
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if (!$evidenciaAprobada && !$analisisDiagnosticoAprobado)
+                                        <input type="file" name="analisis_diagnostico"
+                                            class="form-control form-control-lg fs-6 archivo-pdf-5mb"
+                                            accept="application/pdf">
+
+                                        <small class="text-muted mt-1 d-block">
+                                            Dejar vacío para mantener el actual. Solo PDF, máximo 5 MB.
+                                        </small>
+                                    @elseif($analisisDiagnosticoAprobado)
+                                        <div class="alert alert-success mt-3 mb-0">
+                                            <i class="bi bi-check-circle-fill me-2"></i>
+                                            Este documento ya fue aprobado y no puede ser modificado.
+                                        </div>
+                                    @else
+                                        <div class="alert alert-secondary mt-3 mb-0">
+                                            <i class="bi bi-lock-fill me-2"></i>
+                                            No se permiten cambios.
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+
+                        <div class="col-md-6" id="contenedor_rubricas">
+                            <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                        style="width: 45px; height: 45px;">
+                                        <i class="bi bi-table"></i>
+                                    </div>
+
+                                    <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                        Rúbricas del semestre
+                                    </label>
+                                </div>
+
+                                <div class="wrapper-inputs d-flex flex-column gap-2" id="wrapper_rubricas"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6" id="contenedor_instrumentos">
+                            <div id="seccion_dropzones_dinamicos"></div>
+
+                        </div>
+
+                    </div>
+
+                    @if ($esCuartaRevision)
+                        <div id="campos_revision_4">
+                            <hr class="my-4">
+
+                            <h5 class="fw-bold text-warning mb-3">
+                                <i class="bi bi-star-fill me-2"></i>
+                                DOCUMENTOS DE REVISIÓN 4
+                            </h5>
+
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="p-2.5 rounded-3 bg-danger-subtle text-danger me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                                style="width: 45px; height: 45px;">
+                                                <i class="bi bi-file-text-fill"></i>
+                                            </div>
+
+                                            <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                                Adjuntar Actas
+                                                <span class="text-danger ms-1">*</span>
+                                            </label>
+                                        </div>
+
+                                        @if ($actaActual)
+                                            <div class="border rounded-3 p-3 bg-light mb-2">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="bi bi-file-earmark-pdf-fill text-danger fs-4 me-3"></i>
+                                                        <div>
+                                                            <a href="{{ asset('storage/' . $actaActual) }}"
+                                                                target="_blank" class="text-decoration-none fw-semibold">
+                                                                Ver documento actual
+                                                            </a>
+                                                            <div class="small text-muted">Acta cargada</div>
+                                                        </div>
+                                                    </div>
+                                                    @if ($actaAprobada)
+                                                        <span class="badge bg-success px-3 py-2">
+                                                            <i class="bi bi-check-circle-fill me-1"></i>
+                                                            Aprobado (≥70)
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endif
+
+                                        @if (!$evidenciaAprobada && !$actaAprobada)
+                                            <input type="file" name="actas" id="actas_file"
+                                                class="form-control form-control-lg fs-6 archivo-pdf-5mb input-revision-4"
+                                                accept="application/pdf">
+
+                                            <small class="text-muted d-block mt-2">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                @if ($actaActual)
+                                                    Dejar vacío para mantener el actual.
+                                                @endif
+                                                Solo PDF, máximo 5 MB.
+                                            </small>
+                                        @elseif($actaAprobada)
+                                            <div class="alert alert-success mt-3 mb-0">
+                                                <i class="bi bi-check-circle-fill me-2"></i>
+                                                Este documento ya fue aprobado y no puede ser modificado.
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="card h-100 border border-light-subtle rounded-3 shadow-sm p-4 bg-white">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="p-2.5 rounded-3 bg-warning-subtle text-warning me-3 fs-4 d-inline-flex align-items-center justify-content-center"
+                                                style="width: 45px; height: 45px;">
+                                                <i class="bi bi-clock-history"></i>
+                                            </div>
+
+                                            <label class="form-label fw-bold text-dark fs-5 mb-0">
+                                                Evidencias de Segunda Oportunidad
+                                                <span class="text-danger ms-1">*</span>
+                                            </label>
+                                        </div>
+
+                                        @if (!$evidenciaAprobada && !$segundaOportunidadAprobada)
+                                            <div id="contenedor_evidencias_segunda_oportunidad_edit">
+                                                @php
+                                                    $evidenciasExistentes = $evidenciasSegundaOportunidad;
+                                                @endphp
+
+                                                @foreach ($evidenciasExistentes as $index => $ruta)
+                                                    <div class="evidencia-existente mb-3"
+                                                        data-ruta="{{ $ruta }}">
+                                                        <div class="border rounded-3 p-3 bg-light">
+                                                            <div class="d-flex justify-content-between align-items-center">
+                                                                <div class="d-flex align-items-center">
+                                                                    <i
+                                                                        class="bi bi-file-earmark-pdf-fill text-danger fs-4 me-3"></i>
+                                                                    <div>
+                                                                        <a href="{{ asset('storage/' . $ruta) }}"
+                                                                            target="_blank"
+                                                                            class="text-decoration-none fw-semibold">
+                                                                            Ver documento actual
+                                                                        </a>
+                                                                        <div class="small text-muted">
+                                                                            {{ basename($ruta) }}
+                                                                            @if ($segundaOportunidadAprobada)
+                                                                                <span
+                                                                                    class="badge bg-success ms-2">Aprobado
+                                                                                    (≥70)</span>
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                @if (!$evidenciaAprobada && !$segundaOportunidadAprobada)
+                                                                    <button type="button"
+                                                                        class="btn-eliminar-archivo btn border-0 p-2 text-muted rounded-2 d-inline-flex align-items-center justify-content-center"
+                                                                        style="width: 32px; height: 32px;"
+                                                                        onclick="marcarEliminarEvidenciaSegundaOportunidad(this, '{{ $ruta }}')">
+                                                                        <i class="bi bi-trash3 fs-5"></i>
+                                                                    </button>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+
+                                                <div id="nuevas_evidencias_container_edit"></div>
+
+                                                @if (!$evidenciaAprobada && !$segundaOportunidadAprobada)
+                                                    <div class="row g-2 mt-2">
+                                                        <div class="col-12">
+                                                            <button type="button" class="btn btn-outline-success w-100"
+                                                                onclick="agregarCampoEvidenciaSegundaOportunidadEdit()">
+                                                                <i class="bi bi-plus-circle"></i> Agregar nueva evidencia
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            </div>
+
+                                            <small class="text-muted d-block mt-2">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                Sube al menos una evidencia. Solo PDF, máximo 5 MB por archivo.
+                                            </small>
+                                        @elseif($segundaOportunidadAprobada)
+                                            <div class="alert alert-success mt-3 mb-0">
+                                                <i class="bi bi-check-circle-fill me-2"></i>
+                                                Estas evidencias ya fueron aprobadas y no pueden ser modificadas.
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <hr class="my-4">
+
+                    <div class="mt-4 d-flex gap-2">
+                        <a href="{{ route('evidencias') }}" class="btn btn-light border px-4 rounded-pill">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Regresar
+                        </a>
+
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill"
+                            {{ $evidenciaAprobada ? 'disabled' : '' }}>
+                            <i class="bi bi-floppy me-1"></i>
+                            Actualizar Evidencia
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <style>
+        /* ==========================================================================
+           1. ESTILOS DE EVIDENCIAS Y TARJETAS GENERALES
+           ========================================================================== */
+        .archivo-aprobado {
+            border: 2px solid #198754;
+            background: #f0fdf4;
+            border-radius: 14px;
+            padding: 12px;
+            /* Ligeramente más compacto */
         }
-        realInput.files = dt.files;
-    }
 
-    window.eliminarArchivoNuevo = function(unidad, index) {
-        nuevosArchivosPorUnidad[unidad].splice(index, 1);
-        renderizarDropzoneUnidad(unidad);
-    };
-
-    window.toggleMinimizarDropzone = function(unidad, boton) {
-        const cuerpo = document.getElementById(`body_dropzone_u_${unidad}`);
-        cuerpo.classList.toggle('collapsed');
-        boton.classList.toggle('rotated');
-    };
-
-    // Manejo del switch RAC
-    const racCheck = document.getElementById('rac_na');
-    const racCard = document.getElementById('rac_card');
-
-    function aplicarRacDisabled() {
-        const inputsRac = document.querySelectorAll('#contenedor_rac .wrapper-inputs input[type="file"]');
-        if (racCheck.checked) {
-            inputsRac.forEach(input => {
-                input.disabled = true;
-                input.value = '';
-            });
-            racCard.style.opacity = '0.6';
-        } else {
-            inputsRac.forEach(input => {
-                input.disabled = false;
-            });
-            racCard.style.opacity = '1';
+        .badge-aprobado {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            font-weight: 600;
+            padding: 6px 12px;
+            /* Más compacto */
+            border-radius: 999px;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, .25);
+            font-size: 13px;
         }
-    }
-    racCheck.addEventListener('change', aplicarRacDisabled);
-    aplicarRacDisabled();
 
-    // Unidades: como la materia y revisión están fijas, solo permitimos cambiar las unidades seleccionadas
-    // pero hay que sincronizar los campos dinámicos al cambiar las tarjetas.
-    // Para simplificar, no permitimos cambiar las unidades en edición (por coherencia con los archivos ya subidos).
-    // Si quieres habilitarlo, necesitarías una lógica más compleja. Por ahora dejamos las tarjetas sin evento de toggle
-    // y deshabilitamos los clicks para evitar inconsistencia.
-    document.querySelectorAll('.card-unidad-check').forEach(card => {
-        card.style.cursor = 'default';
-        card.removeAttribute('onclick');
-    });
-</script>
+        .card-header-evidencia {
+            background: linear-gradient(135deg, #f8fbff, #eef5ff);
+        }
+
+        .btn-danger,
+        .btn-outline-danger {
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .badge {
+            border-radius: 10px;
+        }
+
+        .card {
+            border-radius: 20px;
+        }
+
+        .style-dropzone input[type="file"] {
+            display: none !important;
+        }
+
+        .style-dropzone .row.align-items-center {
+            background-color: #f8f9fa;
+            border: 1px dashed #dee2e6;
+            border-radius: 0.5rem;
+        }
+
+        /* ==========================================================================
+           2. FORZAR 7 CARDS DE UNIDAD EN UNA SOLA FILA (COMPACTAS)
+           ========================================================================== */
+        /* Asegúrate de que el div padre tenga el id "contenedor_tarjetas_unidades" */
+        #contenedor_tarjetas_unidades {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            /* Evita que salten de línea */
+            gap: 10px !important;
+            /* Espacio controlado entre las 7 cards */
+            overflow-x: auto;
+            /* Scroll preventivo si la pantalla es ultra pequeña */
+            padding-bottom: 5px;
+        }
+
+        /* Fuerza a las 7 tarjetas a medir exactamente lo mismo */
+        #contenedor_tarjetas_unidades>div {
+            flex: 1 1 0% !important;
+            min-width: 100px;
+            width: auto !important;
+        }
+
+        .card-unidad-check {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid #dee2e6 !important;
+            padding: 12px 8px !important;
+            /* Menos aire a los lados */
+            font-size: 13px;
+            /* Texto más chico para que quepa el título */
+            text-align: center;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-unidad-check:hover {
+            border-color: #0d6efd !important;
+            background-color: #f8f9fa;
+        }
+
+        .card-unidad-check.active {
+            border-color: #198754 !important;
+            background-color: #f0fdf4;
+        }
+
+        /* Iconos dentro de las tarjetas (como el check o el menos de tu imagen) */
+        .card-unidad-check i,
+        .card-unidad-check svg {
+            font-size: 20px !important;
+            margin-bottom: 6px;
+        }
+
+        /* Estado Bloqueado */
+        .unidad-bloqueada {
+            cursor: not-allowed !important;
+            opacity: 0.55;
+            /* Un poco más opaco para denotar bloqueo */
+            background-color: #f8f9fa !important;
+        }
+
+        .unidad-bloqueada:hover {
+            border-color: #dee2e6 !important;
+            background-color: #f8f9fa !important;
+        }
+
+        /* ==========================================================================
+           3. EDICIÓN DE FILAS INTERNAS (RAC-EDIT) ULTRA COMPACTAS
+           ========================================================================== */
+        .rac-edit-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            /* Más pegado */
+            width: 100%;
+        }
+
+        .rac-edit-badge {
+            min-width: 32px;
+            /* Antes 38px */
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            margin-top: 2px;
+            /* Alineado al input compacto */
+            font-size: 13px;
+        }
+
+        .rac-edit-file-box {
+            flex: 1;
+        }
+
+        /* Campo de archivo más compacto */
+        .rac-edit-file-box .form-control,
+        .rac-edit-file {
+            min-height: 36px !important;
+            /* Antes era más alto */
+            font-size: 13px;
+            padding: 4px 10px;
+        }
+
+        /* Pastilla "No Aplica" (N/A) Encogida */
+        .rac-edit-na-box {
+            min-width: 100px;
+            /* Antes 120px */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 999px;
+            padding: 4px 12px;
+            /* Más delgada */
+            margin-top: 2px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        }
+
+        .rac-edit-na-box .form-check-input {
+            margin-top: 0;
+            cursor: pointer;
+            width: 0.9em;
+            height: 0.9em;
+        }
+
+        .rac-edit-na-box .form-check-label {
+            cursor: pointer;
+            user-select: none;
+            font-size: 12px;
+            /* Antes 13px */
+            font-weight: 600;
+            color: #6c757d;
+        }
+
+        .rac-edit-file:disabled {
+            background-color: #e9ecef !important;
+            cursor: not-allowed;
+            opacity: 0.75;
+        }
+
+        /* Caja de motivo de no unidad */
+        .motivo-no-unidad-box {
+            background-color: #f8f9fa;
+            border: 1px dashed #ced4da;
+            border-radius: 12px;
+            padding: 10px;
+            /* Antes 14px */
+            margin-top: 6px !important;
+        }
+
+        .motivo-no-unidad-box textarea {
+            resize: vertical;
+            min-height: 80px;
+            /* Antes 110px */
+            font-size: 13px;
+        }
+
+        .motivo-no-unidad-box textarea:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+
+        .evidencia-eliminada {
+            display: none !important;
+        }
+
+        /* ==========================================================================
+           4. ANIMACIONES, COLAPSO Y RESPONSIVE
+           ========================================================================== */
+        .dropzone-body-collapse {
+            transition: max-height 0.35s ease, opacity 0.3s ease;
+            max-height: 500px;
+            opacity: 1;
+            overflow: hidden;
+        }
+
+        .dropzone-body-collapse.collapsed {
+            max-height: 0px !important;
+            opacity: 0 !important;
+            pointer-events: none;
+        }
+
+        .btn-minimizar {
+            transition: transform 0.25s ease;
+        }
+
+        .btn-minimizar.rotated {
+            transform: rotate(-180deg);
+        }
+
+        .archivo-cargado-item {
+            animation: fadeInItem 0.25s ease-out forwards;
+        }
+
+        .btn-eliminar-archivo:hover {
+            background-color: #fde8e8 !important;
+            color: #dc3545 !important;
+        }
+
+        @keyframes fadeInItem {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive para celulares (se acomodan de 2 en 2 o en bloque para no romperse) */
+        @media (max-width: 768px) {
+            #contenedor_tarjetas_unidades {
+                flex-wrap: wrap !important;
+            }
+
+            #contenedor_tarjetas_unidades>div {
+                flex: 1 1 45% !important;
+            }
+
+            .rac-edit-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .rac-edit-na-box {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+    </style>
+
 @endsection
+@push('scripts')
+    @include('modules.evidencias.scripts')
+@endpush
