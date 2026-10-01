@@ -1,6 +1,6 @@
-
 <script>
     function recargar_tbody() {
+        let tabla = $('.datatable').DataTable();
         $('#tbody_materias').html(
             '<tr><td colspan="7" class="text-center py-4">Cargando información...</td></tr>'
         );
@@ -10,7 +10,14 @@
             url: "{{ route('materias.tbody') }}",
 
             success: function(respuesta) {
+                tabla.destroy();
                 $('#tbody_materias').html(respuesta);
+
+                $('.datatable').DataTable({
+                    language: {
+                        emptyTable: "Aún no tienes materias asignadas en este momento."
+                    }
+                });
             },
 
             error: function() {

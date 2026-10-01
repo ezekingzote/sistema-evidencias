@@ -82,6 +82,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [AsignarMaterias::class, 'index'])->name('asignar-materias');
             Route::get('/tbody', [AsignarMaterias::class, 'tbody'])->name('asignar-materias.tbody');
             Route::get('/create', [AsignarMaterias::class, 'create'])->name('asignar-materias.create');
+            Route::get('/materias/siguiente-grupo', [AsignarMaterias::class, 'siguienteGrupo'])->name('materias.siguiente-grupo');
             Route::post('/store', [AsignarMaterias::class, 'store'])->name('asignar-materias.store');
             Route::get('/edit/{id}', [AsignarMaterias::class, 'edit'])->name('asignar-materias.edit');
             Route::put('/update/{id}', [AsignarMaterias::class, 'update'])->name('asignar-materias.update');

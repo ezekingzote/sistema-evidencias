@@ -50,9 +50,6 @@ class AsignarMaterias extends Controller
 
         if ($semestreActivo) {
             $materias = Materia::where('activo', 1)
-                ->whereDoesntHave('asignaciones', function ($query) use ($semestreActivo) {
-                    $query->where('semestre_id', $semestreActivo->id);
-                })
                 ->orderBy('nombre')
                 ->get();
         } else {
@@ -74,34 +71,39 @@ class AsignarMaterias extends Controller
 
             $request->validate([
                 'semestre_id' => 'required|exists:semestres,id',
-                'materia_id' => 'required|exists:materias,id',
-                'docente_id' => 'required|exists:users,id',
-                'grupo' => 'required'
+                'materia_id'  => 'required|exists:materias,id',
+                'docente_id'  => 'required|exists:users,id',
+                'grupo'       => 'required',
+                'alumnos'     => 'required|integer|min:1'
             ]);
-
-            $asignacionExistente = AsignacionMateria::where('semestre_id', $request->semestre_id)
+            $asignacionesPrevias = AsignacionMateria::where('semestre_id', $request->semestre_id)
                 ->where('materia_id', $request->materia_id)
-                ->first();
+                ->get();
+
+            $cantidadExistentes = $asignacionesPrevias->count();
+            $asignacionExistente = $asignacionesPrevias->where('grupo', $request->grupo)->first();
 
             if ($asignacionExistente) {
-
                 if (!$asignacionExistente->activo) {
-                    return back()->with('warning_existente', 'Existe una asignación inactiva para esta asignatura. Por favor, actívela desde la lista principal.');
+                    return back()->with('warning_existente', 'Existe una asignación inactiva para el grupo ' . $request->grupo . '. Por favor, actívela desde la lista principal.');
                 }
-
-                return back()->with('error', 'Esta materia ya está asignada y activa en este semestre.');
+                return back()->with('error', 'El grupo ' . $request->grupo . ' ya está asignado y activo en este semestre.');
             }
 
-
+            if ($cantidadExistentes == 1) {
+                $primeraAsignacion = $asignacionesPrevias->first();
+                $primeraAsignacion->update([
+                    'grupo' => $primeraAsignacion->grupo . 'A'
+                ]);
+            }
             AsignacionMateria::create([
                 'semestre_id' => $request->semestre_id,
-                'materia_id' => $request->materia_id,
-                'docente_id' => $request->docente_id,
-                'grupo' => $request->grupo,
-                'alumnos' => $request->alumnos,
-                'activo' => 1
+                'materia_id'  => $request->materia_id,
+                'docente_id'  => $request->docente_id,
+                'grupo'       => $request->grupo,
+                'alumnos'     => $request->alumnos,
+                'activo'      => 1
             ]);
-
             DB::table('materias_semestres')
                 ->where('semestre_id', $request->semestre_id)
                 ->where('materia_id', $request->materia_id)
@@ -113,19 +115,44 @@ class AsignarMaterias extends Controller
             DB::commit();
 
             return redirect()->route('asignar-materias')
-                ->with('success', 'Materia asignada correctamente');
+                ->with('success', 'Grupo ' . $request->grupo . ' asignado correctamente');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', $e->getMessage());
         }
     }
 
+    public function siguienteGrupo(Request $request)
+    {
+        $materia_id = $request->materia_id;
+        $semestre_id = $request->semestre_id;
+        $cantidadExistentes = AsignacionMateria::where('materia_id', $materia_id)
+            ->where('semestre_id', $semestre_id)
+            ->count();
+
+        $abecedario = range('A', 'Z');
+
+        if ($cantidadExistentes == 0) {
+            $letraQueToca = '';
+        } else {
+            $letraQueToca = $abecedario[$cantidadExistentes] ?? 'Z';
+        }
+
+        return response()->json([
+            'letra' => $letraQueToca
+        ]);
+    }
+
     public function edit($id)
     {
         $titulo = "Editar Asignación";
         $item = AsignacionMateria::findOrFail($id);
-        $docentes = User::where('rol', 'docente')
-            ->where('activo', 1)
+        $docentes = Docente::with('user')
+            ->join('users', 'docentes.user_id', '=', 'users.id')
+            ->where('docentes.activo', 1)
+            ->whereIn('users.rol', ['admin', 'docente'])
+            ->select('docentes.*')
+            ->orderBy('users.name', 'asc')
             ->get();
 
         return view('modules.asignar-materias.edit', compact(

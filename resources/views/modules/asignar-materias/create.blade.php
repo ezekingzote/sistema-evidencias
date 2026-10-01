@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('titulo', $titulo)
+@section('titulo', $titulo ?? 'Asignar Materia')
 
 @section('contenido')
     <main id="main" class="main">
@@ -45,7 +45,6 @@
                 <div class="card-body p-4">
 
                     @if (!$semestreActivo)
-
                         <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center">
                             <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
                             <div>
@@ -55,7 +54,7 @@
                     @elseif($materias->isEmpty())
                         <div class="alert alert-info border-0 shadow-sm text-center">
                             <i class="bi bi-info-circle-fill me-2"></i>
-                            Todas las materias activas ya fueron asignadas para el semestre
+                            No hay materias activas disponibles para asignar en el semestre
                             <strong>{{ $semestreActivo->nombre }}</strong>.
                         </div>
 
@@ -113,7 +112,7 @@
                                     </select>
 
                                     <div class="form-text">
-                                        Solo aparecen materias activas no asignadas en este semestre.
+                                        Selecciona la materia que deseas asignar. El grupo se calculará automáticamente.
                                     </div>
                                 </div>
 
@@ -232,6 +231,7 @@
     <script>
         $(document).ready(function() {
             const sessionError = "{{ session('error') }}";
+            const semestreActivoId = "{{ $semestreActivo ? $semestreActivo->id : '' }}";
 
             const siglasCarreras = {
                 'Ingeniería en Sistemas Computacionales': 'SIS',
@@ -242,18 +242,42 @@
 
             $('#materia_select').on('change', function() {
                 const opcion = $(this).find('option:selected');
-
+                const materiaId = $(this).val();
                 const carreraNom = opcion.data('carrera');
                 const semestre = opcion.data('semestre');
 
-                if (!carreraNom || !semestre) {
+                // Si no hay materia seleccionada, limpiamos
+                if (!materiaId) {
                     $('#grupo_input').val('');
                     return;
                 }
 
                 const sigla = siglasCarreras[carreraNom] || 'GEN';
+                const baseGrupo = sigla + '-' + semestre;
 
-                $('#grupo_input').val(sigla + '-' + semestre);
+                // Mostramos estado de carga
+                $('#grupo_input').val('Calculando grupo...');
+
+                // Consultamos al servidor la letra que le toca
+                $.ajax({
+                    url: "{{ route('materias.siguiente-grupo') }}",
+                    type: 'GET',
+                    data: {
+                        materia_id: materiaId,
+                        semestre_id: semestreActivoId
+                    },
+                    success: function(response) {
+                        $('#grupo_input').val(baseGrupo + response.letra);
+                    },
+                    error: function() {
+                        $('#grupo_input').val('Error al calcular grupo');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: 'No se pudo obtener el grupo. Revisa tu conexión o la ruta.'
+                        });
+                    }
+                });
             });
 
             if (sessionError) {

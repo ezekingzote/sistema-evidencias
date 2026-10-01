@@ -51,7 +51,7 @@
                         <div class="card-body p-4">
 
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle text-center materia-table datatable">
+                                <table class="table table-hover align-middle text-center materia-table datatable t_materias">
                                     <thead>
                                         <tr>
                                             <th>NOMBRE</th>
@@ -63,7 +63,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse ($materias as $materia)
+                                        @foreach ($materias as $materia)
                                             <tr>
                                                 <td class="fw-semibold text-dark">
                                                     {{ $materia->nombre }}
@@ -92,20 +92,14 @@
                                                 </td>
 
                                                 <td>
-                                                    <a href="{{route('evidencias')}}"
+                                                    <a href="{{ route('evidencias') }}"
                                                         class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">
                                                         <i class="bi bi-folder2-open me-2"></i>
                                                         Ver Evidencias
                                                     </a>
                                                 </td>
                                             </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="6" class="text-muted py-4">
-                                                    No tienes materias asignadas en este momento.
-                                                </td>
-                                            </tr>
-                                        @endforelse
+                                        @endforeach
                                     </tbody>
                                 </table>
                             </div>
@@ -120,6 +114,7 @@
         </section>
 
     </main>
+
 
 
     <style>
